@@ -1,0 +1,2 @@
+class JobPlanException(Exception):
+    pass
