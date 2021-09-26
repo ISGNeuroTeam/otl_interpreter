@@ -9,9 +9,9 @@ class TestSimpleParsing(TestCase):
             "readfile": [{"type": "arg"}, {"type": "arg"}, {"type": "arg"}],
             "table": [{"type": "arg"}, {"type": "arg"}, {"type": "arg"}, {"type": "kwarg"}],
             "join": [{"type": "subsearch"}, ],
-            "test_sum": [{"type": "arg"}, {"type": "arg"}, ],
+            "sum": [{"type": "arg"}, {"type": "arg"}, ],
             "async": [{"type": "kwarg"}, {"type": "subsearch"}, ],
-            "await": [{"type": "kwarg"}, {"type": "subsearch"}, ],
+            "await": [{"type": "kwarg"}, {"type": "kwarg"} ],
 
         }
         self.parser = Parser()
@@ -27,7 +27,7 @@ class TestSimpleParsing(TestCase):
             self.parser.parse("| readfile2 arg3", self.commands)
 
     def test_subsearch(self):
-        parsed_otl = self.parser.parse("async name='s3', [|readfile 1, 2, 3 ]| table a, b, c, key=val \n| join [| test_sum a, b | await name='s3', [| readfile 1, 2, 3]]", self.commands)
+        parsed_otl = self.parser.parse("async name='s3', [|readfile 1, 2, 3 ]| table a, b, c, key=val \n| join [| sum a, b | await name='s3', override=True]", self.commands)
         print(type(parsed_otl))
         pp(parsed_otl)
 
