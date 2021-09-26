@@ -25,10 +25,17 @@ class NodeJobStatus(models.TextChoices):
     FAILED = 'FAILED', _('Failed')
 
 
+class CommandType(models.TextChoices):
+    REQUIRED_COMMAND = 'REQUIRED_COMMAND', _('Required command')
+    MACROS_COMMAND = 'MACROS_COMMAND', _('Command-macros')
+    NODE_COMMAND = 'NODE_COMMAND', _('Node command')
+
+
 class ResourceType(models.TextChoices):
     JOB_CAPACITY = 'JOB_CAPACITY', _('Job capacity')
     COMPUTING_RESOURCE = 'COMPUTING_RESOURCE', _('Computing resource')
     RAM_MEMORY = 'RAM_MEMORY', _('RAM memory')
+
 
 
 class OtlQuery(TimeStampedModel):
@@ -77,7 +84,8 @@ class ComputingNode(models.Model):
 
 
 class NodeCommand(models.Model):
-    # if node is null then command must be implemented on every node
+    # if node is null then command is required must be implemented on every node
+    # or it is macros command
     node = models.ForeignKey(
         ComputingNode, on_delete=models.CASCADE, related_name='node_commands', null=True
     )
@@ -86,6 +94,10 @@ class NodeCommand(models.Model):
     )
     syntax = models.JSONField()
 
+    type = models.CharField(
+        max_length=255,
+        choices=CommandType.choices, default=CommandType.NODE_COMMAND
+    )
     resource_necessity = models.JSONField(
         null=True
     )
@@ -108,7 +120,7 @@ class NodeJob(TimeStampedModel):
     )
     next_job = models.ForeignKey(
         'otl_interpreter.NodeJob', null=True, on_delete=models.SET_NULL,
-        related_name='dependent_jobs'
+        related_name='awaited_jobs'
     )
 
     result_address = models.CharField(
