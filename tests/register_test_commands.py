@@ -13,9 +13,24 @@ def register_test_commands():
 
     node_commands_manager.register_required_commands(
         {
-            "join": [{"type": "subsearch"}, ],
-            "async": [{"type": "kwarg", "key": "name"}, {"type": "subsearch"}, ],
-            "await": [{"type": "kwarg", "key": "name"},],
+            "join": [
+                {"type": "subsearch"},
+            ],
+            "async": [
+                {
+                    "type": "kwarg", "key": "name", "required": True
+                },
+
+                {
+                    "type": "subsearch"
+                },
+            ],
+            "await": [
+                {"type": "kwarg", "key": "name"},
+                {
+                    "type": "kwarg", "key": "override", "required": False
+                },
+            ],
         }
     )
     node_commands_manager.register_node_commands(

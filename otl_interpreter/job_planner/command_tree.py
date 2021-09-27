@@ -5,7 +5,8 @@ class CommandTree(object):
             previous_command_tree_in_pipeline=None,
             subsearch_command_trees=None,
             awaited_command_trees=None,
-            next_command_tree_in_pipeline=None
+            next_command_tree_in_pipeline=None,
+            next_command_tree_outside_pipeline=None
     ):
         """
         :param command: Command object
@@ -18,7 +19,10 @@ class CommandTree(object):
         self.previous_command_tree_in_pipeline = None
         self.subsearch_command_trees = []
         self.awaited_command_trees = []
+
         self.next_command_tree_in_pipeline = None
+        # next command tree that awaiting current command tree
+        self.next_command_tree_outside_pipeline = None
 
         # if previous command tree in pipeline is None then current command tree is first command tree in pipeline
         self.first_command_tree_in_pipeline = self
@@ -37,6 +41,19 @@ class CommandTree(object):
         if next_command_tree_in_pipeline is not None:
             self.set_next_command_tree_in_pipeline(next_command_tree_in_pipeline)
 
+        if next_command_tree_outside_pipeline is not None:
+            self.set_next_command_tree_outside_pipeline(next_command_tree_outside_pipeline)
+
+    @property
+    def next_command_tree(self):
+        if self.next_command_tree_in_pipeline is not None:
+            return self.next_command_tree_in_pipeline
+        elif self.next_command_tree_outside_pipeline is not None:
+            return self.next_command_tree_outside_pipeline
+
+        else:
+            return None
+
     def __repr__(self):
         return self.command
 
@@ -51,5 +68,11 @@ class CommandTree(object):
         self.awaited_command_trees.append(awaited_command_tree)
 
     def set_next_command_tree_in_pipeline(self, next_command_tree_in_pipeline):
+        assert self.next_command_tree_outside_pipeline is None
         self.next_command_tree_in_pipeline = next_command_tree_in_pipeline
+
+    def set_next_command_tree_outside_pipeline(self, next_command_tree_outside_pipeline):
+        assert self.next_command_tree_in_pipeline is None
+        self.next_command_tree_outside_pipeline = next_command_tree_outside_pipeline
+
 

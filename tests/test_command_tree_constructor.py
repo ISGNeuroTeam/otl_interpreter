@@ -217,6 +217,46 @@ class TestCommandTree(TestCase):
         self.assertEqual(len(command_tree.awaited_command_trees), 1)
         self.assertEqual(command_tree.awaited_command_trees[0].command.name, 'collect')
 
+    def test_await_with_override(self):
+        test_otl = "| otstats index='test_index' \
+        | join [\
+                | readfile 23,3,4 | sum 4,3,4,3,3,3\
+                | merge_dataframes [ | readfile 1,2,3]  \
+                | async name=test_async, [readfile 23,5,4 | collect index='test'] \
+               ] \
+        | table asdf,34,34,key=34 | await name=test_async, override=True |  merge_dataframes [ | readfile 1,2,3]"
+
+        command_tree, awaited_command_trees_list = self.get_command_tree_from_otl(test_otl)
+
+        self.assertEqual(command_tree.command.name, 'merge_dataframes')
+        self.assertEqual(
+            command_tree.previous_command_tree_in_pipeline.command.name,
+            'collect'
+        )
+        self.assertEqual(
+            command_tree.previous_command_tree_in_pipeline.first_command_tree_in_pipeline.command.name,
+            'readfile'
+        )
+        self.assertEqual(
+            len(awaited_command_trees_list),
+            0
+        )
+
+        self.assertIs(
+            command_tree.previous_command_tree_in_pipeline.next_command_tree_in_pipeline,
+            command_tree
+        )
+
+        self.assertEqual(
+            command_tree.awaited_command_trees[0].command.name,
+            'table'
+        )
+
+        self.assertIs(
+            command_tree.awaited_command_trees[0].next_command_tree_outside_pipeline,
+            command_tree
+        )
+
 
 
 

@@ -58,6 +58,7 @@ class CommandPipelineState:
         :return:
         """
         for awaited_command_tree in self.awaited_command_trees:
+            awaited_command_tree.set_next_command_tree_outside_pipeline(command_tree)
             command_tree.add_awaited_command_tree(awaited_command_tree)
         self.awaited_command_trees = []
 
