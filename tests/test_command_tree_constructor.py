@@ -52,7 +52,7 @@ class TestCommandPipelineState(TestCase):
         self.command_pipeline_state.add_awaited_command_tree(command1)
         self.command_pipeline_state.add_awaited_command_tree(command2)
         self.assertEqual(len(self.command_pipeline_state.awaited_command_trees), 2)
-        self.command_pipeline_state.set_awaited_command_to_command_tree(command3)
+        self.command_pipeline_state._set_awaited_command_to_command_tree(command3)
         self.assertEqual(len(self.command_pipeline_state.awaited_command_trees), 0)
         self.assertEqual(len(command3.awaited_command_trees), 2)
 
@@ -63,7 +63,7 @@ class TestCommandPipelineState(TestCase):
         self.assertIs(self.command_pipeline_state.previous_command_tree_in_pipeline, command1)
         self.command_pipeline_state.add_command_tree_in_pipeline(command2)
         self.assertIs(self.command_pipeline_state.previous_command_tree_in_pipeline, command2)
-        self.assertIs(command1.next_command_tree, command2)
+        self.assertIs(command1.next_command_tree_in_pipeline, command2)
 
 
 class TestCommandTreeConstructorInnerMethods(TestCase):
@@ -132,6 +132,99 @@ class TestCommandTreeConstructorInnerMethods(TestCase):
             command_tree_constructor._is_await(translated_otl_commands[0]),
             True
         )
+
+
+class TestCommandTree(TestCase):
+    def setUp(self):
+        register_test_commands()
+        self.command_syntax = node_commands_manager.get_commands_syntax()
+        self.parser = Parser()
+        self.parse = partial(self.parser.parse, syntax=self.command_syntax)
+
+    def get_command_tree_from_otl(self, otl):
+        translated_otl_commands = self.parse(otl)
+        command_tree_constructor = CommandTreeConstructor()
+        command_tree, awaited_command_trees_list = command_tree_constructor.create_command_tree(translated_otl_commands)
+        return command_tree, awaited_command_trees_list
+
+    def test_simple_tree(self):
+        test_otl = "| otstats index='test_index' \
+        | join [ | readfile 23,3,4 | sum 4,3,4,3,3,3  | merge_dataframes [| readfile 1,2,3] ] \
+        | table asdf,34,34,key=34"
+
+        command_tree, awaited_command_trees_list = self.get_command_tree_from_otl(test_otl)
+
+        # there is no async commands
+        self.assertEqual(len(awaited_command_trees_list), 0)
+
+        # top is table command
+        self.assertEqual(command_tree.command.name, 'table')
+
+        join_command_tree = command_tree.previous_command_tree_in_pipeline
+
+        self.assertEqual(join_command_tree.command.name, 'join')
+        self.assertEqual(len(join_command_tree.subsearch_command_trees), 1)
+        self.assertEqual(join_command_tree.subsearch_command_trees[0].command.name, 'merge_dataframes')
+        self.assertEqual(command_tree.first_command_tree_in_pipeline.command.name, 'otstats')
+
+    def test_tree_with_async(self):
+        test_otl = "| otstats index='test_index' \
+        | join [\
+                | readfile 23,3,4 | sum 4,3,4,3,3,3\
+                | merge_dataframes [ | readfile 1,2,3]  \
+                | async name=test_async, [readfile 23,5,4 | collect index='test'] \
+               ] \
+        | table asdf,34,34,key=34 | await name=test_async"
+
+        command_tree, awaited_command_trees_list = self.get_command_tree_from_otl(test_otl)
+
+        self.assertEqual(len(awaited_command_trees_list), 1)
+
+        top_command_name_in_awaited_command_tree = awaited_command_trees_list[0].command.name
+        self.assertEqual(top_command_name_in_awaited_command_tree, 'collect')
+
+        first_command_name_in_awaited_pipeline = \
+            awaited_command_trees_list[0].first_command_tree_in_pipeline.command.name
+
+        self.assertEqual(first_command_name_in_awaited_pipeline, 'readfile')
+
+        # check join subsearches
+        self.assertEqual(
+            command_tree.first_command_tree_in_pipeline.\
+            next_command_tree_in_pipeline.subsearch_command_trees[0].command.name,
+            'merge_dataframes'
+        )
+
+        self.assertEqual(
+            command_tree.first_command_tree_in_pipeline.
+            next_command_tree_in_pipeline.subsearch_command_trees[0].
+            first_command_tree_in_pipeline.command.name,
+            'readfile'
+        )
+
+    def test_tree_with_async_await(self):
+        test_otl = "| otstats index='test_index' \
+        | join [\
+                | readfile 23,3,4 | sum 4,3,4,3,3,3\
+                | merge_dataframes [ | readfile 1,2,3]  \
+                | async name=test_async, [readfile 23,5,4 | collect index='test'] \
+               ] \
+        | table asdf,34,34,key=34 | await name=test_async |  merge_dataframes [ | readfile 1,2,3]"
+
+        command_tree, awaited_command_trees_list = self.get_command_tree_from_otl(test_otl)
+
+        self.assertEqual(len(awaited_command_trees_list), 0)
+        self.assertEqual(len(command_tree.awaited_command_trees), 1)
+        self.assertEqual(command_tree.awaited_command_trees[0].command.name, 'collect')
+
+
+
+
+
+
+
+
+
 
 
 

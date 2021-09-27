@@ -11,6 +11,10 @@ class Command:
         if computin_node:
             self.set_computing_node(computin_node)
 
+    @property
+    def name(self):
+        return self.translated_command['command']['value']
+
     def set_computing_node(self, computing_node):
         self.computing_node = computing_node
 
