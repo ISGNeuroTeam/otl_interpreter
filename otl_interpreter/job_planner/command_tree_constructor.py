@@ -22,18 +22,44 @@ class CommandPipelineState:
         self.previous_command_tree_in_pipeline = command_tree
 
     def add_awaited_command_tree(self, command_tree):
+        """
+        Save command_tree that should be awaited
+        """
         self.awaited_command_trees.append(command_tree)
 
-    def set_awaited_command_to_command_tree(self, command_tree):
+    def add_awaited_command_tree_list(self, command_tree_list):
+        """
+        Save several command_tree that should be awaited
+        """
+        self.awaited_command_trees.extend(command_tree_list)
+
+    def add_command_tree_in_pipeline(self, command_tree):
+        """
+        Make link between self.previous_command_tree_in_pipeline and command_tree
+        Set previous_command_tree_in_pipeline and next_command_tree_in_pipeline
+        """
+        # all current awaited command link to command tree
+        self._set_awaited_command_to_command_tree(command_tree)
+
+        if self.previous_command_tree_in_pipeline is not None:
+            self.previous_command_tree_in_pipeline.set_next_command_tree_in_pipeline(
+                command_tree
+            )
+            command_tree.set_previous_command_tree_in_pipeline(
+                self.previous_command_tree_in_pipeline
+            )
+
+        self.previous_command_tree_in_pipeline = command_tree
+
+    def _set_awaited_command_to_command_tree(self, command_tree):
+        """
+        All self.awaited_command_trees  append to command tree
+        :param command_tree:
+        :return:
+        """
         for awaited_command_tree in self.awaited_command_trees:
             command_tree.add_awaited_command_tree(awaited_command_tree)
         self.awaited_command_trees = []
-
-    def add_command_tree_in_pipeline(self, command_tree):
-        if self.previous_command_tree_in_pipeline is not None:
-            self.previous_command_tree_in_pipeline.set_next_command_tree(command_tree)
-
-        self.previous_command_tree_in_pipeline = command_tree
 
 
 class CommandTreeConstructor:
@@ -44,7 +70,7 @@ class CommandTreeConstructor:
         """
         :param translated_otl_commands: translated otl, list of dictionaries
         :return:
-        CommandTree object
+        tuple: CommandTree object, awaited_command_tree_list
         """
         command_pipeline_state = CommandPipelineState()
 
@@ -58,12 +84,13 @@ class CommandTreeConstructor:
             else:
                 self._process_ordinary_command(translated_otl_command, command_pipeline_state)
 
-        return command_pipeline_state.previous_command_tree_in_pipeline
+        return command_pipeline_state.previous_command_tree_in_pipeline,\
+               command_pipeline_state.awaited_command_trees
 
     def _process_await_command(self, translated_otl_command, command_pipeline_state):
         await_name = self._get_await_name(translated_otl_command)
         if await_name in self.async_subsearches:
-            async_subsearch_tree = self.create_command_tree(self.async_subsearches[await_name])
+            async_subsearch_tree, subsearch_awaited_command_trees = self.create_command_tree(self.async_subsearches[await_name])
         else:
             raise JobPlanException(f'Not found async command with name <{await_name}> for await command')
 
@@ -73,6 +100,10 @@ class CommandTreeConstructor:
             command_pipeline_state.override_previous_command_tree_in_pipeline(async_subsearch_tree)
         else:
             command_pipeline_state.add_awaited_command_tree(async_subsearch_tree)
+
+        # all not linked awaited commands from subsearches goes further in pipeline
+        if subsearch_awaited_command_trees:
+            command_pipeline_state.add_awaited_command_tree_list(subsearch_awaited_command_trees)
 
     def _process_async_command(self, translated_otl_command):
         async_name = self._get_async_name(translated_otl_command)
@@ -89,13 +120,20 @@ class CommandTreeConstructor:
         command = self._make_command(translated_otl_command)
         command_tree = CommandTree(command, command_pipeline_state.previous_command_tree_in_pipeline)
 
-        for subsearch in subseartches:
-            subsearch_tree = self.create_command_tree(subsearch)
-            command_tree.add_subsearch_command_tree(subsearch_tree)
+        # collect all awaited command trees from subsearches
+        awaited_command_trees_from_subsearches = []
 
-        command_pipeline_state.set_awaited_command_to_command_tree(command_tree)
+        for subsearch in subseartches:
+            subsearch_tree, subsearch_awaited_command_trees = self.create_command_tree(subsearch)
+            command_tree.add_subsearch_command_tree(subsearch_tree)
+            awaited_command_trees_from_subsearches.extend(subsearch_awaited_command_trees)
 
         command_pipeline_state.add_command_tree_in_pipeline(command_tree)
+
+        # all not linked awaited commands from subsearches goes further in pipeline
+        command_pipeline_state.add_awaited_command_tree_list(
+            awaited_command_trees_from_subsearches
+        )
 
     @staticmethod
     def _is_async(translated_otl_command):
@@ -113,7 +151,7 @@ class CommandTreeConstructor:
 
     def _is_await_with_override(self, translated_otl_command):
         override = self._get_kwarg_by_name(translated_otl_command, 'override')
-        return override.lower() == 'true'
+        return override is not None and override.lower() == 'true'
 
     def _get_await_name(self, translated_otl_command):
         return self._get_kwarg_by_name(translated_otl_command, 'name')
@@ -144,5 +182,10 @@ class CommandTreeConstructor:
 
 
 def construct_command_tree_from_translated_otl_commands(translated_otl_commands):
+    """
+    :param translated_otl_commands: list of translated otl commands
+    :return:
+    tuple: command_tree, list of awaited command trees
+    """
     constructor = CommandTreeConstructor()
     return constructor.create_command_tree(translated_otl_commands)
