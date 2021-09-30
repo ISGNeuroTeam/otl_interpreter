@@ -1,4 +1,4 @@
-import json
+from otl_interpreter.settings import ini_config
 from .models import NodeCommand, ComputingNode, CommandType
 
 
@@ -91,23 +91,33 @@ class NodeCommandsManager:
         return set(ComputingNode.objects.values_list('type', flat=True).distinct())
 
     @staticmethod
-    def get_commands_for_node_type(node_type):
+    def get_node_types_priority():
+        """
+        :return:
+        list of node types in priority order
+        """
+        return ini_config['job_planer']['computing_node_type_priority'].split()
+
+    @staticmethod
+    def get_command_name_set_for_node_type(node_type):
         """
         Returns set of commands for given node type
         :param node_type:
         :return:
         Set of command names
         """
-        return set(NodeCommand.objects.get(node__type=node_type).values_list('name', flat=True))
+        return set(
+            NodeCommand.objects.filter(node__type__exact=node_type).values_list('name', flat=True)
+        ).union(
+           NodeCommandsManager.get_command_name_set_available_on_all_nodes()
+        )
 
     @staticmethod
-    def get_commands_names(node_type):
+    def get_command_name_set_available_on_all_nodes():
         """
-        Returns set of node_type commands names
-        :param node_type:
-        :return:
+        Returns set of commands available for all computing nodes
         """
-        return set(NodeCommand.objects.get(node__type=node_type).values_list('name', flat=True))
+        return set(NodeCommand.objects.filter(node__type=None).values_list('name', flat=True))
 
     @staticmethod
     def get_commands_syntax():

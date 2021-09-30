@@ -10,7 +10,8 @@ class TestGetCommands(TestCase):
 
     def test_node_types(self):
         types = node_commands_manager.get_node_types()
-        self.assertSetEqual(types, {'spark', 'eep', 'post_processing'})
+        self.assertSetEqual(types, {'SPARK', 'EEP', 'POST_PROCESSING'})
+
 
 
 

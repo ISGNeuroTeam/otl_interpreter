@@ -6,17 +6,11 @@ class Command:
         :param computin_node: node guid
         """
         self.translated_command = tranlated_command
-        self.computing_node = None
-
-        if computin_node:
-            self.set_computing_node(computin_node)
 
     @property
     def name(self):
         return self.translated_command['command']['value']
 
-    def set_computing_node(self, computing_node):
-        self.computing_node = computing_node
 
 
 

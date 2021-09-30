@@ -257,7 +257,18 @@ class TestCommandTree(TestCase):
             command_tree
         )
 
+    def test_child_command_tree_with_dataframes_iter(self):
+        test_otl = "| otstats index='test_index' \
+        | join [\
+                | readfile 23,3,4 | sum 4,3,4,3,3,3\
+                | merge_dataframes [ | readfile 1,2,3]  \
+                | async name=test_async, [readfile 23,5,4 | collect index='test'] \
+               ] \
+        | table asdf,34,34,key=34 | await name=test_async, override=True |  merge_dataframes [ | readfile 1,2,3]"
 
+        command_tree, awaited_command_trees_list = self.get_command_tree_from_otl(test_otl)
+        child_tree_names = [ child_command_tree.command.name for child_command_tree in command_tree.child_trees_with_dataframe()]
+        self.assertListEqual(child_tree_names, ['collect', 'readfile' ])
 
 
 

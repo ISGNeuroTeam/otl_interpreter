@@ -7,9 +7,9 @@ def register_test_commands():
     eep_node_id1 = uuid.uuid4().hex
     post_processing_node_id1 = uuid.uuid4().hex
 
-    node_commands_manager.register_node('spark', spark_node_id1)
-    node_commands_manager.register_node('eep', eep_node_id1)
-    node_commands_manager.register_node('post_processing', post_processing_node_id1)
+    node_commands_manager.register_node('SPARK', spark_node_id1)
+    node_commands_manager.register_node('EEP', eep_node_id1)
+    node_commands_manager.register_node('POST_PROCESSING', post_processing_node_id1)
 
     node_commands_manager.register_required_commands(
         {

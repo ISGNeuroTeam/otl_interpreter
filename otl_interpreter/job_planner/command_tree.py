@@ -27,6 +27,8 @@ class CommandTree(object):
         # if previous command tree in pipeline is None then current command tree is first command tree in pipeline
         self.first_command_tree_in_pipeline = self
 
+        self.computing_node_type = None
+
         if previous_command_tree_in_pipeline is not None:
             self.set_previous_command_tree_in_pipeline(previous_command_tree_in_pipeline)
 
@@ -75,4 +77,13 @@ class CommandTree(object):
         assert self.next_command_tree_in_pipeline is None
         self.next_command_tree_outside_pipeline = next_command_tree_outside_pipeline
 
+    def child_trees_with_dataframe(self):
+        if self.previous_command_tree_in_pipeline:
+            yield self.previous_command_tree_in_pipeline
+
+        for command_tree in self.subsearch_command_trees:
+            yield command_tree
+
+    def set_computing_node_type(self, computing_node_type):
+        self.computing_node_type = computing_node_type
 
