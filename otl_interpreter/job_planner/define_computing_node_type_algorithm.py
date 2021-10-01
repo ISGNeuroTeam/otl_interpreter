@@ -1,5 +1,5 @@
 from collections import deque
-
+from .abstract_tree import AbstractTree
 
 class DefineComputingNodeTypeEror(Exception):
     pass
@@ -8,7 +8,7 @@ class DefineComputingNodeTypeEror(Exception):
 INF = 2147483647
 
 
-class WeightTree:
+class WeightTree(AbstractTree):
     """
     Each WeightTree object corresponds to CommandTree
     """
@@ -37,33 +37,9 @@ class WeightTree:
                 WeightTree(child_command_tree, self.computing_node_types, parent_weight_tree=self)
             )
 
-    def children_first_order_traverse_iterator(self):
-        """
-        Generator. Traverse through all child tree nodes then goes to parent node
-        """
-        first_stack = deque()
-        second_stack = deque()
-
-        first_stack.append(self)
-
-        while first_stack:
-            weight_tree = first_stack.pop()
-            second_stack.append(weight_tree)
-            first_stack.extend(weight_tree.child_weight_trees)
-
-        for weight_tree in reversed(second_stack):
-            yield weight_tree
-
-    def parent_first_order_traverse_iterator(self):
-        """
-        Generator. Traverse through parent node then goes to children
-        """
-        stack = deque()
-        stack.append(self)
-        while stack:
-            weight_tree = stack.pop()
-            yield weight_tree
-            stack.extend(reversed(weight_tree.child_weight_trees))
+    @property
+    def children(self):
+        return self.child_weight_trees
 
 
 def _derive_weight_from_child_weights(weight_tree, command_name_set):

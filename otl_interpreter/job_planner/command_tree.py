@@ -1,4 +1,7 @@
-class CommandTree(object):
+from .abstract_tree import AbstractTree
+
+
+class CommandTree(AbstractTree):
 
     def __init__(
             self, command,
@@ -45,6 +48,10 @@ class CommandTree(object):
 
         if next_command_tree_outside_pipeline is not None:
             self.set_next_command_tree_outside_pipeline(next_command_tree_outside_pipeline)
+
+    @property
+    def children(self):
+        return self.child_trees_with_dataframe()
 
     @property
     def next_command_tree(self):
