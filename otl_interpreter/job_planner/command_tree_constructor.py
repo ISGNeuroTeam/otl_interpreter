@@ -66,6 +66,7 @@ class CommandPipelineState:
 class CommandTreeConstructor:
     def __init__(self):
         self.async_subsearches = {}
+        self.processed_async_subsearches = set()
 
     def create_command_tree(self, translated_otl_commands):
         """
@@ -86,14 +87,24 @@ class CommandTreeConstructor:
                 self._process_ordinary_command(translated_otl_command, command_pipeline_state)
 
         return command_pipeline_state.previous_command_tree_in_pipeline,\
-               command_pipeline_state.awaited_command_trees
+            command_pipeline_state.awaited_command_trees
 
     def _process_await_command(self, translated_otl_command, command_pipeline_state):
         await_name = self._get_await_name(translated_otl_command)
+
         if await_name in self.async_subsearches:
-            async_subsearch_tree, subsearch_awaited_command_trees = self.create_command_tree(self.async_subsearches[await_name])
+
+            async_subsearch_tree, subsearch_awaited_command_trees = \
+                self.create_command_tree(self.async_subsearches[await_name])
+
+            self.processed_async_subsearches.add(await_name)
+            del self.async_subsearches[await_name]
+
         else:
-            raise JobPlanException(f'Not found async command with name <{await_name}> for await command')
+            if await_name in self.processed_async_subsearches:
+                raise JobPlanException(f'Second await with name <{await_name}> is not allowed')
+            else:
+                raise JobPlanException(f'Not found async command with name <{await_name}> for await command')
 
         # await override=True means that dataframe goes to next command
         # and previous command just awaited
@@ -107,6 +118,9 @@ class CommandTreeConstructor:
             command_pipeline_state.add_awaited_command_tree_list(subsearch_awaited_command_trees)
 
     def _process_async_command(self, translated_otl_command):
+        """
+        put async subsearch in set for later processing with await
+        """
         async_name = self._get_async_name(translated_otl_command)
         async_subsearch = self._get_async_subsearch(translated_otl_command)
         if async_name in self.async_subsearches:

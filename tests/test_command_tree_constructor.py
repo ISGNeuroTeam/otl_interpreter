@@ -5,6 +5,7 @@ from rest.test import TestCase
 from otl_interpreter.job_planner.command_tree_constructor import CommandPipelineState, CommandTreeConstructor
 from otl_interpreter.job_planner.command import Command
 from otl_interpreter.job_planner.command_tree import CommandTree
+from otl_interpreter.job_planner.exceptions import JobPlanException
 
 from register_test_commands import register_test_commands
 from otl_interpreter.interpreter_db import node_commands_manager
@@ -270,6 +271,12 @@ class TestCommandTree(TestCase):
         child_tree_names = [ child_command_tree.command.name for child_command_tree in command_tree.child_trees_with_dataframe()]
         self.assertListEqual(child_tree_names, ['collect', 'readfile' ])
 
+    def test_two_await(self):
+        test_otl = "otstats index='test_index' | async name=test, [readfile d,g,d | pp_command1 hello] | " \
+                   " await name=test | table 3,4,5,key=nothing | merge_dataframes [| readfile 3,4,5 | await name=test]"
+
+        with self.assertRaises(JobPlanException):
+            command_tree, awaited_command_trees_list = self.get_command_tree_from_otl(test_otl)
 
 
 
