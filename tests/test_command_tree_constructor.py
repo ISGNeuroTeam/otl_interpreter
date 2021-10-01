@@ -2,7 +2,9 @@ from functools import partial
 from py_otl_parser import Parser
 from rest.test import TestCase
 
-from otl_interpreter.job_planner.command_tree_constructor import CommandPipelineState, CommandTreeConstructor
+from otl_interpreter.job_planner.command_tree_constructor import (
+    construct_command_tree_from_translated_otl_commands, CommandPipelineState, CommandTreeConstructor
+)
 from otl_interpreter.job_planner.command import Command
 from otl_interpreter.job_planner.command_tree import CommandTree
 from otl_interpreter.job_planner.exceptions import JobPlanException
@@ -144,8 +146,8 @@ class TestCommandTree(TestCase):
 
     def get_command_tree_from_otl(self, otl):
         translated_otl_commands = self.parse(otl)
-        command_tree_constructor = CommandTreeConstructor()
-        command_tree, awaited_command_trees_list = command_tree_constructor.create_command_tree(translated_otl_commands)
+        command_tree, awaited_command_trees_list =\
+            construct_command_tree_from_translated_otl_commands(translated_otl_commands)
         return command_tree, awaited_command_trees_list
 
     def test_simple_tree(self):
@@ -278,7 +280,10 @@ class TestCommandTree(TestCase):
         with self.assertRaises(JobPlanException):
             command_tree, awaited_command_trees_list = self.get_command_tree_from_otl(test_otl)
 
-
+    def test_async_without_await(self):
+        test_otl = "otstats index='test_index' | async name=test, [readfile d,g,d | pp_command1 hello] "
+        with self.assertRaises(JobPlanException):
+            command_tree, awaited_command_trees_list = self.get_command_tree_from_otl(test_otl)
 
 
 
