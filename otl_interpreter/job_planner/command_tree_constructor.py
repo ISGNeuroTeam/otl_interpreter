@@ -193,7 +193,7 @@ class CommandTreeConstructor:
             lambda arg: arg['type'] != 'subsearch',
             translated_otl_command['commandargs']
         ))
-        return Command(translated_otl_command)
+        return Command.make_command_from_translated_otl(translated_otl_command)
 
 
 def construct_command_tree_from_translated_otl_commands(translated_otl_commands):

@@ -18,9 +18,9 @@ class TestCommandPipelineState(TestCase):
         self.command_pipeline_state = CommandPipelineState()
 
     def test_add_awaited_command_tree(self):
-        command1 = CommandTree(Command('command1'))
-        command2 = CommandTree(Command('command2'))
-        command3 = CommandTree(Command('command3'))
+        command1 = CommandTree(Command())
+        command2 = CommandTree(Command())
+        command3 = CommandTree(Command())
 
         self.assertEqual(len(self.command_pipeline_state.awaited_command_trees), 0)
         self.command_pipeline_state.add_awaited_command_tree(command1)
@@ -31,10 +31,10 @@ class TestCommandPipelineState(TestCase):
         self.assertEqual(len(self.command_pipeline_state.awaited_command_trees), 3)
 
     def test_override_previous_command_tree_in_pipeline(self):
-        command1 = CommandTree(Command('command1'))
-        command2 = CommandTree(Command('command2'))
-        command3 = CommandTree(Command('command3'))
-        command4 = CommandTree(Command('command4'))
+        command1 = CommandTree(Command())
+        command2 = CommandTree(Command())
+        command3 = CommandTree(Command())
+        command4 = CommandTree(Command())
 
         self.command_pipeline_state.add_command_tree_in_pipeline(command1)
 
@@ -48,9 +48,9 @@ class TestCommandPipelineState(TestCase):
         self.assertIn(command1, self.command_pipeline_state.awaited_command_trees)
 
     def test_set_awaited_command_to_command_tree(self):
-        command1 = CommandTree(Command('command1'))
-        command2 = CommandTree(Command('command2'))
-        command3 = CommandTree(Command('command3'))
+        command1 = CommandTree(Command())
+        command2 = CommandTree(Command())
+        command3 = CommandTree(Command())
 
         self.command_pipeline_state.add_awaited_command_tree(command1)
         self.command_pipeline_state.add_awaited_command_tree(command2)
@@ -60,8 +60,8 @@ class TestCommandPipelineState(TestCase):
         self.assertEqual(len(command3.awaited_command_trees), 2)
 
     def test_add_command_tree_in_pipeline(self):
-        command1 = CommandTree(Command('command1'))
-        command2 = CommandTree(Command('command2'))
+        command1 = CommandTree(Command())
+        command2 = CommandTree(Command())
         self.command_pipeline_state.add_command_tree_in_pipeline(command1)
         self.assertIs(self.command_pipeline_state.previous_command_tree_in_pipeline, command1)
         self.command_pipeline_state.add_command_tree_in_pipeline(command2)
