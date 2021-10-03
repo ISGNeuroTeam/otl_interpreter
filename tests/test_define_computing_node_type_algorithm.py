@@ -7,9 +7,12 @@ from otl_interpreter.job_planner.define_computing_node_type_algorithm import (
     define_computing_node_type_for_command_tree,
     WeightTree
 )
+from otl_interpreter.settings import ini_config
 
 from otl_interpreter.interpreter_db import node_commands_manager
 from otl_interpreter.job_planner.command_tree_constructor import CommandTreeConstructor
+from otl_interpreter.job_planner import JobPlanner
+
 from register_test_commands import register_test_commands
 
 
@@ -19,6 +22,12 @@ class TestWeightTree(TestCase):
         self.command_syntax = node_commands_manager.get_commands_syntax()
         self.parser = Parser()
         self.parse = partial(self.parser.parse, syntax=self.command_syntax)
+        self.computing_node_type_priority_list = ini_config['job_planer']['computing_node_type_priority'].split()
+        self.command_name_sets = {
+            computing_node_type:
+                node_commands_manager.get_command_name_set_for_node_type(computing_node_type)
+            for computing_node_type in self.computing_node_type_priority_list
+        }
 
     def get_command_tree_from_otl(self, otl):
         translated_otl_commands = self.parse(otl)
@@ -48,7 +57,7 @@ class TestWeightTree(TestCase):
         self.assertEqual(_find_next_min_weight_for_node_type('POST_PROCESSING', weights), 4)
 
     def test_find_computing_node_type_for_parent_node_type(self):
-        priority_list = node_commands_manager.get_node_types_priority()
+        priority_list = self.computing_node_type_priority_list
         weights = {
             'SPARK': 4,
             'EEP': 3,
@@ -121,7 +130,7 @@ class TestWeightTree(TestCase):
 
         command_tree, awaited_command_trees_list = self.get_command_tree_from_otl(test_otl)
         root_weight_tree = WeightTree(
-            command_tree, node_commands_manager.get_node_types_priority()
+            command_tree, self.computing_node_type_priority_list
         )
 
         visited = set()
@@ -146,7 +155,7 @@ class TestWeightTree(TestCase):
 
         command_tree, awaited_command_trees_list = self.get_command_tree_from_otl(test_otl)
         root_weight_tree = WeightTree(
-            command_tree, node_commands_manager.get_node_types_priority()
+            command_tree, self.computing_node_type_priority_list
         )
 
         visited = set()
@@ -166,18 +175,34 @@ class TestWeightTree(TestCase):
         test_otl = "| otstats index='test_index' | join [ readfile 1,2,3 ] | merge_dataframes [| readfile 2,3,4]"
 
         command_tree, awaited_command_trees_list = self.get_command_tree_from_otl(test_otl)
-        computing_node_type_priority_list = node_commands_manager.get_node_types_priority()
-        command_name_sets = {
-            computing_node_type:
-                node_commands_manager.get_command_name_set_for_node_type(computing_node_type)
-            for computing_node_type in computing_node_type_priority_list
-        }
 
         define_computing_node_type_for_command_tree(
-            command_tree, computing_node_type_priority_list, command_name_sets
+            command_tree, self.computing_node_type_priority_list, self.command_name_sets
         )
 
         self.assertEqual(command_tree.computing_node_type, 'EEP')
         self.assertEqual(command_tree.subsearch_command_trees[0].computing_node_type, 'SPARK')
         self.assertEqual(command_tree.previous_command_tree_in_pipeline.computing_node_type, 'SPARK')
 
+    def test_define_computing_node_async_await(self):
+        test_otl = "| otstats index='test_index' \
+               | join [\
+                       | readfile 23,3,4 | sum 4,3,4,3,3,3\
+                       | merge_dataframes [ | readfile 1,2,3]  \
+                       | async name=test_async, [readfile 23,5,4 | collect index='test'] \
+                      ] \
+               | table asdf,34,34,key=34 | await name=test_async, override=True |  merge_dataframes [ | readfile 1,2,3]"
+
+        command_tree, awaited_command_trees_list = self.get_command_tree_from_otl(test_otl)
+        job_planner = JobPlanner(self.computing_node_type_priority_list)
+        root_command_tree = job_planner._make_top_command_tree(
+            command_tree, awaited_command_trees_list
+        )
+
+        define_computing_node_type_for_command_tree(
+            root_command_tree, self.computing_node_type_priority_list, self.command_name_sets
+        )
+
+        # make sure that all nodes in command tree have defined computing node type
+        for command_tree in root_command_tree.parent_first_order_traverse_iterator('all_child_trees'):
+            self.assertIsNotNone(command_tree.computing_node_type)

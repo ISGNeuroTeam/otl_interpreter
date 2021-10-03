@@ -1,8 +1,5 @@
-from collections import deque
+from .exceptions import JobPlanException
 from .abstract_tree import AbstractTree
-
-class DefineComputingNodeTypeEror(Exception):
-    pass
 
 
 INF = 2147483647
@@ -28,14 +25,6 @@ class WeightTree(AbstractTree):
 
         # minimum number of dataframe transfers if current command evaluates on node with that type
         self.weights = {computing_node_type: 0 for computing_node_type in computing_node_types}
-
-        self.construct_child_weight_trees(command_tree)
-
-    def construct_child_weight_trees(self, command_tree):
-        for child_command_tree in command_tree.child_trees_with_dataframe():
-            self.child_weight_trees.append(
-                WeightTree(child_command_tree, self.computing_node_types, parent_weight_tree=self)
-            )
 
     @property
     def children(self):
@@ -68,7 +57,7 @@ def _derive_weight_from_child_weights(weight_tree, command_name_set):
             weight_tree.weights.values()
         )
     ):
-        raise DefineComputingNodeTypeEror(
+        raise JobPlanException(
             f'Can\'t define computnig node for {weight_tree.command_tree.command.name}  command'
         )
 
@@ -114,14 +103,35 @@ def _find_computing_node_type_for_parent_node_type(parent_node_type, cur_weights
     )
 
 
-def define_computing_node_type_for_command_tree(command_tree, computing_node_type_priority_list, command_name_set):
+def define_computing_node_type_for_command_tree(root_command_tree, computing_node_type_priority_list, command_name_set):
     """
-    :param command_tree: CommandTree object
+    :param root_command_tree: CommandTree object
     :param computing_node_type_priority_list: computing node type names in priority order
     :param command_name_set: {computing_node_type: set(command_name1, command_name2....)}
     :return:
     """
-    root_weight_tree = WeightTree(command_tree, computing_node_type_priority_list)
+    root_weight_tree = WeightTree(root_command_tree, computing_node_type_priority_list)
+
+    weight_tree_for_command_tree = {root_command_tree: root_weight_tree}
+
+    # construct weight trees
+    for command_tree in root_command_tree.parent_first_order_traverse_iterator():
+        # weight tree for command tree must be in dict already
+        weight_tree = weight_tree_for_command_tree[command_tree]
+        for child_command_tree in command_tree.child_trees_with_dataframe():
+            child_weight_tree = WeightTree(
+                child_command_tree, computing_node_type_priority_list, parent_weight_tree=weight_tree
+            )
+            weight_tree.child_weight_trees.append(
+                child_weight_tree
+            )
+            weight_tree_for_command_tree[child_command_tree] = child_weight_tree
+
+        # separate calculation for awaited trees
+        for awaited_command_tree in command_tree.awaited_command_trees:
+            define_computing_node_type_for_command_tree(
+                awaited_command_tree, computing_node_type_priority_list, command_name_set
+            )
 
     # calculate weights
     for weight_tree in root_weight_tree.children_first_order_traverse_iterator():

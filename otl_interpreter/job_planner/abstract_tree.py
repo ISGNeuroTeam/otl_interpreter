@@ -53,4 +53,4 @@ class AbstractTree(ABC):
             if callable(children):
                 children = children()
 
-            stack.extend(reversed(children))
+            stack.extend(reversed(list(children)))

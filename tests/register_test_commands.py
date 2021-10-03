@@ -31,6 +31,11 @@ def register_test_commands():
                     "type": "kwarg", "key": "override", "required": False
                 },
             ],
+            "sys_write_result": [
+                {
+                    "type": "kwarg", "key": "address"
+                }
+            ]
         }
     )
     node_commands_manager.register_node_commands(

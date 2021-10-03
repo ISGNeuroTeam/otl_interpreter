@@ -1,24 +1,31 @@
+from uuid import uuid4
 from otl_interpreter.interpreter_db import node_commands_manager
+
 from .command_tree_constructor import construct_command_tree_from_translated_otl_commands
 from .define_computing_node_type_algorithm import define_computing_node_type_for_command_tree
+from .command import Command, Arg, ArgType
+from .command_tree import CommandTree
 
 
 class JobPlanner:
     def __init__(self, node_type_priority):
-        self.async_subsearches = {}
+        self.node_type_priority = node_type_priority
 
     def plan_job(self, translated_otl_commands):
         """
-        Gets parsed otl as json
-        Splits it into task chains for nodes
-        Creates node tasks
+        Gets translated otl commands
+        Splits it into command trees
+        Creates node jobs
         Raises JobPlanException if job planning failed
-        :param pasrsed_otl: parsed otl as json
+        :param translated_otl_commands: translated_otl_commands
         """
         # create command tree
+        command_tree, awaited_command_trees = construct_command_tree_from_translated_otl_commands(translated_otl_commands)
 
-        command_tree = construct_command_tree_from_translated_otl_commands(translated_otl_commands)
-        # split command tree to node job tree
+        # get tree with sys_write_result on the top
+        top_command_tree = self._make_top_command_tree(
+            command_tree, awaited_command_trees
+        )
 
         node_types_priority_list = node_commands_manager.get_node_types_priority()
 
@@ -28,16 +35,34 @@ class JobPlanner:
         }
 
         define_computing_node_type_for_command_tree(
-            command_tree, node_types_priority_list, command_name_set
+            top_command_tree, node_types_priority_list, command_name_set
         )
 
-            # traverse tree from left to right making node jobs
-            # node job is command tree for single node
+    def _make_top_command_tree(self, command_tree, awaited_command_trees):
+        sys_write_result_command = self._make_sys_write_result_command_tree()
 
+        return CommandTree(
+            sys_write_result_command,
+            previous_command_tree_in_pipeline=command_tree,
+            awaited_command_trees=awaited_command_trees
+        )
 
-        # put job trees to database
-        # signal to dispatcher
+    @staticmethod
+    def _make_sys_write_result_command_tree():
+        """
+        :return:
+        command tree with  sys_write_result command for top of the tree
+        """
+        return Command(
+            name='sys_write_result',
+            args=[
+                Arg(
+                    arg_type=ArgType.NAMED,
+                    arg_data_type='string',
+                    arg_value=uuid4().hex,
+                    arg_name='address',
 
-
-
+                )
+            ]
+        )
 

@@ -91,6 +91,17 @@ class CommandTree(AbstractTree):
         for command_tree in self.subsearch_command_trees:
             yield command_tree
 
+    def all_child_trees(self):
+        if self.previous_command_tree_in_pipeline:
+            yield self.previous_command_tree_in_pipeline
+
+        for command_tree in self.subsearch_command_trees:
+            yield command_tree
+
+        for command_tree in self.awaited_command_trees:
+            yield command_tree
+
+
     def set_computing_node_type(self, computing_node_type):
         self.computing_node_type = computing_node_type
 

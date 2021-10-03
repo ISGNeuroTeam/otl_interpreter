@@ -1,9 +1,9 @@
-from otl_interpreter.settings import ini_config
 from .models import NodeCommand, ComputingNode, CommandType
 
 
 class NodeCommandsError(ValueError):
     pass
+
 
 class NodeCommandsManager:
 
@@ -90,13 +90,6 @@ class NodeCommandsManager:
         """
         return set(ComputingNode.objects.values_list('type', flat=True).distinct())
 
-    @staticmethod
-    def get_node_types_priority():
-        """
-        :return:
-        list of node types in priority order
-        """
-        return ini_config['job_planer']['computing_node_type_priority'].split()
 
     @staticmethod
     def get_command_name_set_for_node_type(node_type):
