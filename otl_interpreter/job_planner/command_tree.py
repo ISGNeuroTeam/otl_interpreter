@@ -54,6 +54,10 @@ class CommandTree(AbstractTree):
         return self.child_trees_with_dataframe()
 
     @property
+    def parent(self):
+        return self.next_command_tree_in_pipeline or self.next_command_tree_outside_pipeline
+
+    @property
     def next_command_tree(self):
         if self.next_command_tree_in_pipeline is not None:
             return self.next_command_tree_in_pipeline

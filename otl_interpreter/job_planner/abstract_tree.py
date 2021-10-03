@@ -12,6 +12,15 @@ class AbstractTree(ABC):
         """
         raise NotImplementedError
 
+    @property
+    @abstractmethod
+    def parent(self):
+        """
+        :return:
+        Parent tree object
+        """
+        raise NotImplementedError
+
     def children_first_order_traverse_iterator(self, children_attribute=None):
         """
         Generator. Traverse through all child tree nodes then goes to parent node

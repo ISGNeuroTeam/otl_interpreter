@@ -30,6 +30,10 @@ class WeightTree(AbstractTree):
     def children(self):
         return self.child_weight_trees
 
+    @property
+    def parent(self):
+        return self.parent_weight_tree
+
 
 def _derive_weight_from_child_weights(weight_tree, command_name_set):
     """
