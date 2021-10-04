@@ -40,29 +40,6 @@ class NodeJobTree(AbstractTree):
         node_job_tree.parent_node_job_tree = self
 
 
-def _make_address_for_interproc_dataframe():
-    return uuid4().hex
-
-
-def _split_command_tree(command_tree):
-    """
-    split command tree beetween two node jobss
-    :param command_tree: CommandTree object
-    :return:
-    tuple: command tree with sys_write_interproc command for new NodeJob
-      and command tree with sys_read_interproc command for current NodeJob
-    """
-
-    dataframe_adderss = _make_address_for_interproc_dataframe()
-    write_sys_command = make_sys_write_interproc(dataframe_adderss)
-    read_sys_command = make_sys_read_interproc(dataframe_adderss)
-    read_sys_command_tree = CommandTree(read_sys_command)
-    write_sys_command_tree = CommandTree(write_sys_command)
-    write_sys_command_tree.set_previous_command_tree_in_pipeline(command_tree)
-
-    return write_sys_command_tree, read_sys_command_tree
-
-
 class NodeJobTreeStorage:
     def __init__(self):
         self._node_job_tree_for_command_tree = {}
@@ -78,6 +55,10 @@ class NodeJobTreeStorage:
             print(command_tree.command.name)
             raise err
         return result
+
+
+def _make_address_for_interproc_dataframe():
+    return uuid4().hex
 
 
 def make_node_job_tree(top_command_tree):
@@ -105,6 +86,41 @@ def make_node_job_tree(top_command_tree):
     return top_node_job
 
 
+def _create_new_node_job_for_child_command_tree(command_tree, child_command_tree, node_job_tree_storage):
+    node_job_tree = node_job_tree_storage.get_node_job_tree_for_command_tree(command_tree)
+
+    dataframe_adderss = _make_address_for_interproc_dataframe()
+    write_sys_command = make_sys_write_interproc(dataframe_adderss)
+    read_sys_command = make_sys_read_interproc(dataframe_adderss)
+
+    read_sys_command_tree = CommandTree(read_sys_command)
+    write_sys_command_tree = CommandTree(write_sys_command)
+
+    write_sys_command_tree.set_computing_node_type(child_command_tree.computing_node_type)
+    read_sys_command_tree.set_computing_node_type(command_tree.computing_node_type)
+
+    write_sys_command_tree.set_previous_command_tree_in_pipeline(child_command_tree)
+
+    new_node_job_tree = NodeJobTree(write_sys_command_tree, parent_node_job_tree=node_job_tree)
+
+    node_job_tree_storage.set_node_job_tree_for_command_tree(
+        read_sys_command_tree,
+        node_job_tree
+    )
+
+    node_job_tree_storage.set_node_job_tree_for_command_tree(
+        write_sys_command_tree,
+        new_node_job_tree
+    )
+
+    node_job_tree_storage.set_node_job_tree_for_command_tree(
+        child_command_tree,
+        new_node_job_tree
+    )
+
+    return read_sys_command_tree
+
+
 def _define_node_job_tree_for_previous_command_tree_in_pipeline(command_tree, node_job_tree_storage):
     if command_tree.previous_command_tree_in_pipeline is None:
         return
@@ -114,12 +130,8 @@ def _define_node_job_tree_for_previous_command_tree_in_pipeline(command_tree, no
     if command_tree.previous_command_tree_in_pipeline.computing_node_type != \
             command_tree.computing_node_type:
 
-        write_sys_command_tree, read_sys_command_tree = \
-            _split_command_tree(command_tree.previous_command_tree_in_pipeline)
-
-        new_node_job_tree = NodeJobTree(write_sys_command_tree, parent_node_job_tree=node_job_tree)
-        node_job_tree_storage.set_node_job_tree_for_command_tree(
-            command_tree.previous_command_tree_in_pipeline, new_node_job_tree
+        read_sys_command_tree = _create_new_node_job_for_child_command_tree(
+            command_tree, command_tree.previous_command_tree_in_pipeline, node_job_tree_storage
         )
 
         command_tree.set_previous_command_tree_in_pipeline(read_sys_command_tree)
@@ -138,16 +150,9 @@ def _define_node_job_tree_for_subsearch_command_trees(command_tree, node_job_tre
     for index, subsearch_command_tree in enumerate(command_tree.subsearch_command_trees):
 
         if subsearch_command_tree.computing_node_type != command_tree.computing_node_type:
-            write_sys_command_tree, read_sys_command_tree = \
-                _split_command_tree(subsearch_command_tree)
-
-            new_node_job_tree = NodeJobTree(write_sys_command_tree, parent_node_job_tree=node_job_tree)
-
-            node_job_tree_storage.set_node_job_tree_for_command_tree(
-                subsearch_command_tree,
-                new_node_job_tree
+            read_sys_command_tree = _create_new_node_job_for_child_command_tree(
+                command_tree, subsearch_command_tree, node_job_tree_storage
             )
-
             new_command_trees_for_subsearches[index] = read_sys_command_tree
 
         else:
