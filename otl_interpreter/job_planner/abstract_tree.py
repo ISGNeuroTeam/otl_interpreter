@@ -56,10 +56,10 @@ class AbstractTree(ABC):
         stack.append(self)
         while stack:
             tree = stack.pop()
-            yield tree
-
             children = getattr(tree, children_attribute)
             if callable(children):
                 children = children()
 
             stack.extend(reversed(list(children)))
+
+            yield tree
