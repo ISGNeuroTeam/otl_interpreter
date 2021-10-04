@@ -1,10 +1,9 @@
-from uuid import uuid4
 from otl_interpreter.interpreter_db import node_commands_manager
 
-from .command_tree_constructor import construct_command_tree_from_translated_otl_commands
+from .command_tree_constructor import make_command_tree
 from .define_computing_node_type_algorithm import define_computing_node_type_for_command_tree
-from .command import Command, Arg, ArgType
-from .command_tree import CommandTree
+
+from .node_job_tree import make_node_job_tree
 
 
 class JobPlanner:
@@ -20,49 +19,29 @@ class JobPlanner:
         :param translated_otl_commands: translated_otl_commands
         """
         # create command tree
-        command_tree, awaited_command_trees = construct_command_tree_from_translated_otl_commands(translated_otl_commands)
 
-        # get tree with sys_write_result on the top
-        top_command_tree = self._make_top_command_tree(
-            command_tree, awaited_command_trees
+        top_command_tree = make_command_tree(
+            translated_otl_commands
         )
 
-        node_types_priority_list = node_commands_manager.get_node_types_priority()
-
+        # command names by computing node types
         command_name_set = {
             node_type: node_commands_manager.get_command_name_set_for_node_type(node_type)
-            for node_type in node_types_priority_list
+            for node_type in self.node_type_priority
         }
 
         define_computing_node_type_for_command_tree(
-            top_command_tree, node_types_priority_list, command_name_set
+            top_command_tree, self.node_type_priority, command_name_set
         )
 
-    def _make_top_command_tree(self, command_tree, awaited_command_trees):
-        sys_write_result_command = self._make_sys_write_result_command_tree()
+        node_job_tree = make_node_job_tree(top_command_tree)
 
-        return CommandTree(
-            sys_write_result_command,
-            previous_command_tree_in_pipeline=command_tree,
-            awaited_command_trees=awaited_command_trees
-        )
+        # todo if only one node job tree send node job to computing node directly
 
-    @staticmethod
-    def _make_sys_write_result_command_tree():
-        """
-        :return:
-        command tree with  sys_write_result command for top of the tree
-        """
-        return Command(
-            name='sys_write_result',
-            args=[
-                Arg(
-                    arg_type=ArgType.NAMED,
-                    arg_data_type='string',
-                    arg_value=uuid4().hex,
-                    arg_name='address',
+        # save node job
 
-                )
-            ]
-        )
+        # send signal to dispatcher
+
+
+
 
