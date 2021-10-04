@@ -1,5 +1,7 @@
 from .command import Command
 from .command_tree import CommandTree
+from .sys_commands import make_sys_write_result_command
+
 from .exceptions import JobPlanException
 
 
@@ -42,9 +44,6 @@ class CommandPipelineState:
         self._set_awaited_command_to_command_tree(command_tree)
 
         if self.previous_command_tree_in_pipeline is not None:
-            self.previous_command_tree_in_pipeline.set_next_command_tree_in_pipeline(
-                command_tree
-            )
             command_tree.set_previous_command_tree_in_pipeline(
                 self.previous_command_tree_in_pipeline
             )
@@ -58,7 +57,6 @@ class CommandPipelineState:
         :return:
         """
         for awaited_command_tree in self.awaited_command_trees:
-            awaited_command_tree.set_next_command_tree_outside_pipeline(command_tree)
             command_tree.add_awaited_command_tree(awaited_command_tree)
         self.awaited_command_trees = []
 
@@ -209,3 +207,19 @@ def construct_command_tree_from_translated_otl_commands(translated_otl_commands)
         raise JobPlanException(f"Async subsearches with names {' '.join(constructor.async_subsearches.keys())}")
 
     return command_tree, awaited_command_trees
+
+
+def make_command_tree(translated_otl_commands):
+    command_tree, awaited_command_trees = construct_command_tree_from_translated_otl_commands(translated_otl_commands)
+    top_command_tree = _make_top_command_tree(command_tree, awaited_command_trees)
+    return top_command_tree
+
+
+def _make_top_command_tree(command_tree, awaited_command_trees):
+    sys_write_result_command = make_sys_write_result_command()
+
+    return CommandTree(
+        sys_write_result_command,
+        previous_command_tree_in_pipeline=command_tree,
+        awaited_command_trees=awaited_command_trees
+    )

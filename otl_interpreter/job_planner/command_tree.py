@@ -73,20 +73,26 @@ class CommandTree(AbstractTree):
     def set_previous_command_tree_in_pipeline(self, previous_command_tree_in_pipeline):
         self.previous_command_tree_in_pipeline = previous_command_tree_in_pipeline
         self.first_command_tree_in_pipeline = previous_command_tree_in_pipeline.first_command_tree_in_pipeline
+        self.previous_command_tree_in_pipeline.next_command_tree_in_pipeline = self
 
     def add_subsearch_command_tree(self, subsearch_command_trees):
         self.subsearch_command_trees.append(subsearch_command_trees)
 
+    def replace_subsearch_command_tree(self, subsearch_command_tree, index):
+        self.subsearch_command_trees[index] = subsearch_command_tree
+
     def add_awaited_command_tree(self, awaited_command_tree):
         self.awaited_command_trees.append(awaited_command_tree)
+        awaited_command_tree.next_command_tree_outside_pipeline = self
 
     def set_next_command_tree_in_pipeline(self, next_command_tree_in_pipeline):
         assert self.next_command_tree_outside_pipeline is None
-        self.next_command_tree_in_pipeline = next_command_tree_in_pipeline
+        next_command_tree_in_pipeline.set_previous_command_tree_in_pipeline(self)
 
     def set_next_command_tree_outside_pipeline(self, next_command_tree_outside_pipeline):
         assert self.next_command_tree_in_pipeline is None
-        self.next_command_tree_outside_pipeline = next_command_tree_outside_pipeline
+        if self not in next_command_tree_outside_pipeline.awaited_command_trees:
+            next_command_tree_outside_pipeline.add_awaited_command_tree(self)
 
     def child_trees_with_dataframe(self):
         if self.previous_command_tree_in_pipeline:
@@ -104,7 +110,6 @@ class CommandTree(AbstractTree):
 
         for command_tree in self.awaited_command_trees:
             yield command_tree
-
 
     def set_computing_node_type(self, computing_node_type):
         self.computing_node_type = computing_node_type
