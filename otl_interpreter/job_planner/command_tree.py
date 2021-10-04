@@ -68,7 +68,10 @@ class CommandTree(AbstractTree):
             return None
 
     def __repr__(self):
-        return self.command
+        result = f'Command: {self.command.name}'
+        if self.previous_command_tree_in_pipeline:
+            result  = result + f',prev: {self.previous_command_tree_in_pipeline.command.name} '
+        return result
 
     def set_previous_command_tree_in_pipeline(self, previous_command_tree_in_pipeline):
         self.previous_command_tree_in_pipeline = previous_command_tree_in_pipeline
@@ -94,7 +97,13 @@ class CommandTree(AbstractTree):
         if self not in next_command_tree_outside_pipeline.awaited_command_trees:
             next_command_tree_outside_pipeline.add_awaited_command_tree(self)
 
+    def set_computing_node_type(self, computing_node_type):
+        self.computing_node_type = computing_node_type
+
     def child_trees_with_dataframe(self):
+        """
+        Generator. Traverse through previsous_command_tree in pipeline and all subsearch trees
+        """
         if self.previous_command_tree_in_pipeline:
             yield self.previous_command_tree_in_pipeline
 
@@ -102,6 +111,9 @@ class CommandTree(AbstractTree):
             yield command_tree
 
     def all_child_trees(self):
+        """
+        Generator. Traverse through all child trees
+        """
         if self.previous_command_tree_in_pipeline:
             yield self.previous_command_tree_in_pipeline
 
@@ -111,6 +123,15 @@ class CommandTree(AbstractTree):
         for command_tree in self.awaited_command_trees:
             yield command_tree
 
-    def set_computing_node_type(self, computing_node_type):
-        self.computing_node_type = computing_node_type
+    def through_pipeline_iterator(self):
+        """
+        Generator. Traverse from first command tree  in pipeline tree to current command tree
+        """
+        current_command_tree = self.first_command_tree_in_pipeline
+        yield current_command_tree
+        while current_command_tree.next_command_tree_in_pipeline:
+            current_command_tree = current_command_tree.next_command_tree_in_pipeline
+            yield current_command_tree
+
+
 
