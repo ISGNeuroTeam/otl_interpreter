@@ -13,10 +13,11 @@ def register_test_commands():
 
     node_commands_manager.register_required_commands(
         {
-            "join": [
+            "join": {"rules": [
+
                 {"type": "subsearch"},
-            ],
-            "async": [
+            ]},
+            "async": {"rules": [
                 {
                     "type": "kwarg", "key": "name", "required": True
                 },
@@ -24,54 +25,58 @@ def register_test_commands():
                 {
                     "type": "subsearch"
                 },
-            ],
-            "await": [
+            ]},
+            "await": {"rules": [
                 {"type": "kwarg", "key": "name"},
                 {
                     "type": "kwarg", "key": "override", "required": False
                 },
-            ],
-            "sys_write_result": [
+            ]},
+            "sys_write_result": {"rules": [
                 {
                     "type": "kwarg", "key": "address"
                 }
-            ]
+            ]}
         }
     )
     node_commands_manager.register_node_commands(
         spark_node_id1,
         {
-            'otstats':
+            'otstats': {
+                "rules":
                 [
                     {
                         "type": "kwarg",
                         "key": "index",
                         "required": True,
                     },
-                ],
-            'collect':
+                ]},
+            'collect': {
+                "rules":
                 [
                     {
                         "type": "kwarg",
                         "key": "index",
                         "required": True,
                     }
-                ],
-            "readfile": [{"type": "arg"}, {"type": "arg"}, {"type": "arg"}],
+                ]},
+            "readfile": {"rules": [{"type": "arg"}, {"type": "arg"}, {"type": "arg"}]},
         }
     )
 
     node_commands_manager.register_node_commands(
         eep_node_id1,
         {
-            'sum':
+            'sum': {
+                "rules":
                 [
                     {
                         "type": "arg",
                         "inf": True,
                     }
-                ],
-            'merge_dataframes':
+                ]},
+            'merge_dataframes': {
+                "rules":
                 [
                     {
                         "type": 'subsearch',
@@ -79,30 +84,34 @@ def register_test_commands():
                     }
 
                 ]
+            }
         }
     )
 
     node_commands_manager.register_node_commands(
         eep_node_id1,
         {
-            'table':
+            'table': {
+                "rules":
                 [
                     {"type": "arg"},
                     {"type": "arg"},
                     {"type": "arg"},
                     {"type": "kwarg"}
-                ],
+                ]},
         }
     )
 
     node_commands_manager.register_node_commands(
         post_processing_node_id1,
         {
-            'pp_command1':
+            'pp_command1': {
+                "rules":
                 [
                     {
                         "type": "arg",
                     },
                 ]
+            }
         }
     )

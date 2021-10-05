@@ -1,5 +1,6 @@
 from functools import partial
-from py_otl_parser import Parser
+
+from translate_otl import translate_otl
 
 
 from rest.test import TestCase
@@ -15,9 +16,6 @@ from register_test_commands import register_test_commands
 class TestNodeJobTree(TestCase):
     def setUp(self):
         register_test_commands()
-        self.command_syntax = node_commands_manager.get_commands_syntax()
-        self.parser = Parser()
-        self.parse = partial(self.parser.parse, syntax=self.command_syntax)
 
         self.computing_node_type_priority_list = ['SPARK', 'EEP', 'POST_PROCESSING']
         self.command_name_sets = {
@@ -27,7 +25,7 @@ class TestNodeJobTree(TestCase):
         }
 
     def get_command_tree_from_otl(self, otl):
-        translated_otl_commands = self.parse(otl)
+        translated_otl_commands = translate_otl(otl)
         return make_command_tree(translated_otl_commands)
 
     def test_node_job_tree_creation_for_several_otl_queries(self):

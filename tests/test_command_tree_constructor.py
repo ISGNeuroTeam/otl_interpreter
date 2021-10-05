@@ -1,5 +1,4 @@
-from functools import partial
-from py_otl_parser import Parser
+from translate_otl import translate_otl
 from rest.test import TestCase
 
 from otl_interpreter.job_planner.command_tree_constructor import (
@@ -72,13 +71,11 @@ class TestCommandPipelineState(TestCase):
 class TestCommandTreeConstructorInnerMethods(TestCase):
     def setUp(self):
         register_test_commands()
-        self.command_syntax = node_commands_manager.get_commands_syntax()
-        self.parser = Parser()
-        self.parse = partial(self.parser.parse, syntax=self.command_syntax)
+
 
     def test_get_kwarg_by_name(self):
         test_otl = "| async name=s3, [|readfile 1, 2, 3 ] | table a, b, c, key=val"
-        translated_otl_commands = self.parse(test_otl)
+        translated_otl_commands = translate_otl(test_otl)
         command_tree_constructor = CommandTreeConstructor()
         self.assertEqual(
             command_tree_constructor._get_kwarg_by_name(translated_otl_commands[0], 'name'),
@@ -95,7 +92,7 @@ class TestCommandTreeConstructorInnerMethods(TestCase):
     def test_get_subsearches(self):
         test_otl = "| readfile 1, 2, 3 | \
             merge_dataframes [| otstats index='test1' | sum 2,3,4,5], [| readfile 3,4,5], [| otstats index='test2']"
-        translated_otl_commands = self.parse(test_otl)
+        translated_otl_commands = translate_otl(test_otl)
         command_tree_constructor = CommandTreeConstructor()
         subsearches = command_tree_constructor._get_subsearches(translated_otl_commands[1])
         self.assertEqual(len(subsearches), 3)
@@ -105,21 +102,21 @@ class TestCommandTreeConstructorInnerMethods(TestCase):
 
     def test_get_await_name(self):
         test_otl = "| await name=\"test_name\" | readfile 4,5,3"
-        translated_otl_commands = self.parse(test_otl)
+        translated_otl_commands = translate_otl(test_otl)
         command_tree_constructor = CommandTreeConstructor()
 
         self.assertEqual(command_tree_constructor._get_await_name(translated_otl_commands[0]), "\"test_name\"")
 
     def test_get_async_name(self):
         test_otl = "| readfile 4,5,3 | async name=\"test_name\", [| otstats index='test']"
-        translated_otl_commands = self.parse(test_otl)
+        translated_otl_commands = translate_otl(test_otl)
         command_tree_constructor = CommandTreeConstructor()
 
         self.assertEqual(command_tree_constructor._get_await_name(translated_otl_commands[1]), "\"test_name\"")
 
     def test_is_async(self):
         test_otl = "| readfile 4,5,3 | async name=\"test_name\", [| otstats index='test']"
-        translated_otl_commands = self.parse(test_otl)
+        translated_otl_commands = translate_otl(test_otl)
         command_tree_constructor = CommandTreeConstructor()
         self.assertEqual(
             command_tree_constructor._is_async(translated_otl_commands[1]),
@@ -128,7 +125,7 @@ class TestCommandTreeConstructorInnerMethods(TestCase):
 
     def test_is_await(self):
         test_otl = "| await name=\"test_name\" | readfile 4,5,3"
-        translated_otl_commands = self.parse(test_otl)
+        translated_otl_commands = translate_otl(test_otl)
         command_tree_constructor = CommandTreeConstructor()
 
         self.assertEqual(
@@ -140,12 +137,10 @@ class TestCommandTreeConstructorInnerMethods(TestCase):
 class TestCommandTree(TestCase):
     def setUp(self):
         register_test_commands()
-        self.command_syntax = node_commands_manager.get_commands_syntax()
-        self.parser = Parser()
-        self.parse = partial(self.parser.parse, syntax=self.command_syntax)
+
 
     def get_command_tree_from_otl(self, otl):
-        translated_otl_commands = self.parse(otl)
+        translated_otl_commands = translate_otl(otl)
         command_tree, awaited_command_trees_list =\
             construct_command_tree_from_translated_otl_commands(translated_otl_commands)
         return command_tree, awaited_command_trees_list

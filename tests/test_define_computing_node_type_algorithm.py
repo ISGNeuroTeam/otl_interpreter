@@ -1,5 +1,4 @@
-from functools import partial
-from py_otl_parser import Parser
+from translate_otl import translate_otl
 from rest.test import TestCase
 from otl_interpreter.job_planner.define_computing_node_type_algorithm import (
     _find_next_min_weight_for_node_type,
@@ -10,7 +9,7 @@ from otl_interpreter.job_planner.define_computing_node_type_algorithm import (
 from otl_interpreter.settings import ini_config
 
 from otl_interpreter.interpreter_db import node_commands_manager
-from otl_interpreter.job_planner.command_tree_constructor import CommandTreeConstructor
+from otl_interpreter.job_planner.command_tree_constructor import CommandTreeConstructor, make_command_tree
 from otl_interpreter.job_planner import JobPlanner
 
 from register_test_commands import register_test_commands
@@ -19,9 +18,7 @@ from register_test_commands import register_test_commands
 class TestWeightTree(TestCase):
     def setUp(self):
         register_test_commands()
-        self.command_syntax = node_commands_manager.get_commands_syntax()
-        self.parser = Parser()
-        self.parse = partial(self.parser.parse, syntax=self.command_syntax)
+
         self.computing_node_type_priority_list = ini_config['job_planer']['computing_node_type_priority'].split()
         self.command_name_sets = {
             computing_node_type:
@@ -30,7 +27,7 @@ class TestWeightTree(TestCase):
         }
 
     def get_command_tree_from_otl(self, otl):
-        translated_otl_commands = self.parse(otl)
+        translated_otl_commands = translate_otl(otl)
         command_tree_constructor = CommandTreeConstructor()
         command_tree, awaited_command_trees_list = command_tree_constructor.create_command_tree(translated_otl_commands)
         return command_tree, awaited_command_trees_list
@@ -193,11 +190,7 @@ class TestWeightTree(TestCase):
                       ] \
                | table asdf,34,34,key=34 | await name=test_async, override=True |  merge_dataframes [ | readfile 1,2,3]"
 
-        command_tree, awaited_command_trees_list = self.get_command_tree_from_otl(test_otl)
-        job_planner = JobPlanner(self.computing_node_type_priority_list)
-        root_command_tree = job_planner._make_top_command_tree(
-            command_tree, awaited_command_trees_list
-        )
+        root_command_tree = make_command_tree(translate_otl(test_otl))
 
         define_computing_node_type_for_command_tree(
             root_command_tree, self.computing_node_type_priority_list, self.command_name_sets
