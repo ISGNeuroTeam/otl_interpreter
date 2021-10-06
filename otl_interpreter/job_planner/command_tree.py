@@ -74,9 +74,24 @@ class CommandTree(AbstractTree):
         return result
 
     def set_previous_command_tree_in_pipeline(self, previous_command_tree_in_pipeline):
+        if self.previous_command_tree_in_pipeline is not None:
+            self.previous_command_tree_in_pipeline.next_command_tree_in_pipeline = None
+
         self.previous_command_tree_in_pipeline = previous_command_tree_in_pipeline
-        self.first_command_tree_in_pipeline = previous_command_tree_in_pipeline.first_command_tree_in_pipeline
         self.previous_command_tree_in_pipeline.next_command_tree_in_pipeline = self
+
+        self.set_first_command_tree_in_pipeline(
+            previous_command_tree_in_pipeline.first_command_tree_in_pipeline
+        )
+
+    def set_first_command_tree_in_pipeline(self, command_tree):
+        self.first_command_tree_in_pipeline = command_tree
+
+        # change all first_command_tree_in_pipeline  attributes in pipeline
+        current_command_tree = self.next_command_tree_in_pipeline
+        while current_command_tree is not None:
+            current_command_tree.first_command_tree_in_pipeline = command_tree
+            current_command_tree = current_command_tree.next_command_tree_in_pipeline
 
     def add_subsearch_command_tree(self, subsearch_command_trees):
         self.subsearch_command_trees.append(subsearch_command_trees)
