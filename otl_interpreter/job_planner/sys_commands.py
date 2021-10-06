@@ -1,18 +1,16 @@
 from uuid import uuid4
-from .command import Command, Arg, ArgType
+from .command import Command
 
 
-def make_sys_write_result_command():
+def make_sys_write_result_command(address):
     return Command(
         name='sys_write_result',
         args=[
-            Arg(
-                arg_type=ArgType.NAMED,
-                arg_data_type='string',
-                arg_value=uuid4().hex,
-                arg_name='address',
-
-            )
+            {'value': {'value': address,
+                       'type': 'string',
+                       'leaf_type': 'simple'},
+             'type': 'arg',
+             'leaf_type': 'complex'}
         ]
     )
 
@@ -21,13 +19,11 @@ def make_sys_read_interproc(address):
     return Command(
         name='sys_read_interproc',
         args=[
-            Arg(
-                arg_type=ArgType.NAMED,
-                arg_data_type='string',
-                arg_value=address,
-                arg_name='address',
-
-            )
+            {'value': {'value': address,
+                       'type': 'string',
+                       'leaf_type': 'simple'},
+             'type': 'arg',
+             'leaf_type': 'complex'}
         ]
     )
 
@@ -36,12 +32,10 @@ def make_sys_write_interproc(address):
     return Command(
         name='sys_write_interproc',
         args=[
-            Arg(
-                arg_type=ArgType.NAMED,
-                arg_data_type='string',
-                arg_value=address,
-                arg_name='address',
-
-            )
+            {'value': {'value': address,
+                       'type': 'string',
+                       'leaf_type': 'simple'},
+             'type': 'arg',
+             'leaf_type': 'complex'}
         ]
     )
