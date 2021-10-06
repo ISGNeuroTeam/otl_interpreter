@@ -1,4 +1,4 @@
-from functools import partial
+from pprint import pp
 
 from translate_otl import translate_otl
 
@@ -39,28 +39,66 @@ class TestNodeJobTree(TestCase):
 
         top_command_tree = self.get_command_tree_from_otl(test_otl)
 
+        # for command_tree in top_command_tree.through_pipeline_iterator():
+        #     print(command_tree.command.name)
+
+        all_command_tree = [command_tree for command_tree in top_command_tree.parent_first_order_traverse_iterator('all_child_trees')]
+
+        # print('--all--command--trees')
+        # for command_tree in all_command_tree:
+        #     print(command_tree.command.name)
+
         define_computing_node_type_for_command_tree(
             top_command_tree, self.computing_node_type_priority_list, self.command_name_sets
+        )
+
+        # print('---defines--comp--nodes')
+        # for command_tree in top_command_tree.through_pipeline_iterator():
+        #     print(command_tree.command.name)
+        #     print(command_tree.computing_node_type)
+        #
+        # print('------------------------')
+        self.assertEqual(
+            top_command_tree.first_command_tree_in_pipeline.computing_node_type,
+            'SPARK'
+        )
+
+        self.assertEqual(
+            top_command_tree.first_command_tree_in_pipeline.command.name,
+            'otstats'
+        )
+
+        self.assertEqual(
+            top_command_tree.first_command_tree_in_pipeline.next_command_tree_in_pipeline.command.name,
+            'join'
         )
 
         top_node_job_tree = make_node_job_tree(top_command_tree)
 
         # check that command tree in one node_job_tree
-        command_tree_set = set()
+        node_job_command_tree_set = set()
 
         for node_job_tree in top_node_job_tree.parent_first_order_traverse_iterator():
             for command_tree in node_job_tree.command_tree.parent_first_order_traverse_iterator():
-                if command_tree in command_tree_set:
-                    self.assertNotIn(command_tree, command_tree_set)
-
-                command_tree_set.add(command_tree)
+                if command_tree in node_job_command_tree_set:
+                    self.assertNotIn(command_tree, node_job_command_tree_set)
+                node_job_command_tree_set.add(command_tree)
 
         # check that every command tree has node job tree
-        for command_tree in top_command_tree.parent_first_order_traverse_iterator('all_child_trees'):
-            self.assertIn(command_tree, command_tree_set)
+        for command_tree in all_command_tree:
+            self.assertIn(command_tree, node_job_command_tree_set)
+
+        # print('--all--command--trees--in node jobs')
+        # for command_tree in node_job_command_tree_set:
+        #     print(command_tree.command.name)
+        # print('------------------------------------')
 
         # for node_job_tree in top_node_job_tree.parent_first_order_traverse_iterator():
-        #     print(node_job_tree.command_tree.command.name)
+        #     print('-----NodeJob')
         #     print(node_job_tree.computing_node_type)
-        #     for command_tree in node_job_tree.command_tree.through_pipeline_iterator():
-        #         print('    ' + command_tree.command.name)
+        #     print('top command: ' + node_job_tree.command_tree.command.name)
+        #     print(
+        #         'first_command_in_pipeline: ' + node_job_tree.command_tree.first_command_tree_in_pipeline.command.name)
+        #     pp(node_job_tree.as_command_dict_list())
+        #     print('-----------------')
+

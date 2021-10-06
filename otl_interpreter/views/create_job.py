@@ -4,7 +4,6 @@ from rest.views import APIView
 from rest.response import Response, status, APIException
 from rest.permissions import IsAuthenticated, AllowAny
 
-from ..translator import translate
 
 from otl_interpreter.settings import ini_config
 log = logging.getLogger('otl_interpreter')

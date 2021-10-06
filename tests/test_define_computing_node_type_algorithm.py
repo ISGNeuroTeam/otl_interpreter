@@ -199,3 +199,8 @@ class TestWeightTree(TestCase):
         # make sure that all nodes in command tree have defined computing node type
         for command_tree in root_command_tree.parent_first_order_traverse_iterator('all_child_trees'):
             self.assertIsNotNone(command_tree.computing_node_type)
+
+        self.assertEqual(
+            root_command_tree.first_command_tree_in_pipeline.computing_node_type,
+            'SPARK'
+        )

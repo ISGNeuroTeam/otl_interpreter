@@ -14,7 +14,6 @@ class TestSimpleParsing(TestCase):
         otl_query = "| readfile arg1, arg2, arg3"
         expected_result = [{'command': {'value': 'readfile', 'type': 'term', 'leaf_type': 'simple'}, 'commandargs': [{'value': {'value': 'arg1', 'type': 'term', 'leaf_type': 'simple'}, 'type': 'arg', 'leaf_type': 'complex'}, {'value': {'value': 'arg2', 'type': 'term', 'leaf_type': 'simple'}, 'type': 'arg', 'leaf_type': 'complex'}, {'value': {'value': 'arg3', 'type': 'term', 'leaf_type': 'simple'}, 'type': 'arg', 'leaf_type': 'complex'}]}]
         parsed_otl = translate_otl(otl_query)
-        print(parsed_otl)
         self.assertEqual(expected_result, parsed_otl)
 
     def test_parse_with_syntax_error(self):
@@ -26,9 +25,9 @@ class TestSimpleParsing(TestCase):
 
     def test_print_subsearches(self):
         parsed_otl = translate_otl("| sum arg1, 3, 'asdf', 4.3434 ")
-        pp(parsed_otl)
+        # pp(parsed_otl)
         parsed_otl = translate_otl("| otstats index=asdf | otstats index='asdsdf' | otstats index=3 | otstats index=4.234")
-        pp(parsed_otl)
+        # pp(parsed_otl)
 
 
 

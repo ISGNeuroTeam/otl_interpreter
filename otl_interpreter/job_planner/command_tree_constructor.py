@@ -216,7 +216,8 @@ def make_command_tree(translated_otl_commands):
 
 
 def _make_top_command_tree(command_tree, awaited_command_trees):
-    sys_write_result_command = make_sys_write_result_command()
+    # todo make address generation
+    sys_write_result_command = make_sys_write_result_command('address')
 
     return CommandTree(
         sys_write_result_command,

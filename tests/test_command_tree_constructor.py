@@ -2,7 +2,7 @@ from translate_otl import translate_otl
 from rest.test import TestCase
 
 from otl_interpreter.job_planner.command_tree_constructor import (
-    construct_command_tree_from_translated_otl_commands, CommandPipelineState, CommandTreeConstructor
+    construct_command_tree_from_translated_otl_commands, CommandPipelineState, CommandTreeConstructor, make_command_tree
 )
 from otl_interpreter.job_planner.command import Command
 from otl_interpreter.job_planner.command_tree import CommandTree
@@ -279,6 +279,36 @@ class TestCommandTree(TestCase):
         test_otl = "otstats index='test_index' | async name=test, [readfile d,g,d | pp_command1 hello] "
         with self.assertRaises(JobPlanException):
             command_tree, awaited_command_trees_list = self.get_command_tree_from_otl(test_otl)
+
+    def test_through_pipline_iterator(self):
+        test_otl = "otstats index='test' | join [|readfile 1,2,3] | collect index='test2'"
+        parsed_otl = translate_otl(test_otl)
+        top_command_tree = make_command_tree(parsed_otl)
+        top_command_list = ['otstats', 'join', 'collect', 'sys_write_result']
+        self.assertListEqual(
+            top_command_list,
+            [command_tree.command.name for command_tree in top_command_tree.through_pipeline_iterator()]
+        )
+
+    def test_parent_first_iterator(self):
+        test_otl = "otstats index='test' | join [| readfile 1,2,3 | join [| readfile 1,2,3 | join [| readfile 1,2,3 | collect index='234']]] | collect index='test2'"
+        parsed_otl = translate_otl(test_otl)
+        top_command_tree = make_command_tree(parsed_otl)
+
+        counter = {}
+        for command_tree in top_command_tree.parent_first_order_traverse_iterator():
+            # to ensure that all command trees will be traversed even if tree modifies
+            counter.setdefault(command_tree.command.name, 0)
+            counter[command_tree.command.name] += 1
+
+            command_tree.subsearch_command_trees = []
+            command_tree.previous_command_tree_in_pipeline = None
+
+        self.assertEqual(counter['otstats'], 1)
+        self.assertEqual(counter['collect'], 2)
+        self.assertEqual(counter['join'], 3)
+        self.assertEqual(counter['readfile'], 3)
+
 
 
 
