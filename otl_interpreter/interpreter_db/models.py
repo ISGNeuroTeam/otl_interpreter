@@ -37,7 +37,6 @@ class ResourceType(models.TextChoices):
     RAM_MEMORY = 'RAM_MEMORY', _('RAM memory')
 
 
-
 class OtlQuery(TimeStampedModel):
     query = models.TextField(null=False)
     query_hash = models.BinaryField(
@@ -45,9 +44,8 @@ class OtlQuery(TimeStampedModel):
     )
     cache_ttl = models.DurationField()
     user_guid = models.UUIDField(
-        unique=True, editable=False, null=False
+        unique=True, null=False
     )
-    preview = models.BooleanField()
     status = models.CharField(
         max_length=255,
         choices=JobStatus.choices, default=JobStatus.NEW
@@ -60,7 +58,7 @@ class OtlQuery(TimeStampedModel):
     def _get_query_hash(self):
         query = self._remove_repeat_spaces(self.query)
         query_hash = hashlib.blake2b(query.encode())
-        return query_hash
+        return query_hash.digest()
 
     class Meta:
         app_label = 'otl_interpreter'
@@ -119,7 +117,8 @@ class NodeJob(TimeStampedModel):
         choices=NodeJobStatus.choices, default=NodeJobStatus.PLANNED
     )
     next_job = models.ForeignKey(
-        'otl_interpreter.NodeJob', null=True, on_delete=models.SET_NULL,
+        'otl_interpreter.NodeJob', null=True, blank=True,
+        on_delete=models.SET_NULL,
         related_name='awaited_jobs'
     )
 
