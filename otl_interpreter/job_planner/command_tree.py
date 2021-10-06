@@ -142,11 +142,17 @@ class CommandTree(AbstractTree):
         """
         Generator. Traverse from first command tree  in pipeline tree to current command tree
         """
-        current_command_tree = self.first_command_tree_in_pipeline
-        yield current_command_tree
-        while current_command_tree.next_command_tree_in_pipeline:
-            current_command_tree = current_command_tree.next_command_tree_in_pipeline
+        yield self.first_command_tree_in_pipeline
+        current_command_tree = self.first_command_tree_in_pipeline.next_command_tree_in_pipeline
+
+        while current_command_tree is not None:
             yield current_command_tree
+            current_command_tree = current_command_tree.next_command_tree_in_pipeline
 
-
+    def as_command_dict(self):
+        return {
+            'name': self.command.name,
+            'subsearches': [subsearch.as_command_dict() for subsearch in self.subsearch_command_trees],
+            'arguments': self.command.args,
+        }
 

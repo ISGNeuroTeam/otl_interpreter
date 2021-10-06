@@ -39,6 +39,9 @@ class NodeJobTree(AbstractTree):
         self.awaited_node_job_trees.append(node_job_tree)
         node_job_tree.parent_node_job_tree = self
 
+    def as_command_dict_list(self):
+        return [command_tree.as_command_dict() for command_tree in self.command_tree.through_pipeline_iterator()]
+
 
 class NodeJobTreeStorage:
     def __init__(self):
@@ -48,13 +51,7 @@ class NodeJobTreeStorage:
         self._node_job_tree_for_command_tree[id(command_tree)] = node_job_tree
 
     def get_node_job_tree_for_command_tree(self, command_tree):
-        try:
-            result =  self._node_job_tree_for_command_tree[id(command_tree)]
-        except KeyError as err:
-            print('!!!!!Not found node job for command')
-            print(command_tree.command.name)
-            raise err
-        return result
+        return self._node_job_tree_for_command_tree[id(command_tree)]
 
 
 def _make_address_for_interproc_dataframe():
