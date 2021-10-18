@@ -78,3 +78,7 @@ class NodeJobTree(AbstractTree):
     def set_result_address(self, address):
         address.add_command(self.command_tree.command)
         self.result_address = address
+
+    def set_path_for_result_address(self, path):
+        assert self.result_address is not None
+        self.result_address.set_path(path)

@@ -26,14 +26,17 @@ class NodeJobTreeStorage:
 
 def make_node_job_tree(top_command_tree, shared=True):
     """
-    :param top_command_tree: root command tree
+    :param top_command_tree: root command tree with defined computing node type
     :param shared:
-    for post processing, define result storage
+    for post processing, define result storage type
     """
     top_node_job = _construct_node_job_tree(top_command_tree)
 
+    # top node job don't have result_address object yet
+    # result address creation is individual case
     _make_address_for_result_node_job(top_node_job, shared)
 
+    # calculate result dataframe paths as hash of command tree json
     _set_read_write_commands_paths(top_node_job)
 
     return top_node_job
@@ -64,15 +67,14 @@ def _construct_node_job_tree(top_command_tree):
 
 
 def _set_read_write_commands_paths(top_node_job):
-    # make addresses for all node jobs
+    # set paths for all node jobs addresses
     for node_job in top_node_job.children_first_order_traverse_iterator():
         # calculate command tree json before path set
         node_job.make_command_tree_json()
-
         if isinstance(node_job.command_tree.command, SysReadWriteCommand):
             # make path as command tree json hash
             path = node_job.command_tree_hash
-            node_job.result_address.set_path(path)
+            node_job.set_path_for_result_address(path)
 
 
 def _make_address_for_result_node_job(top_node_job, shared):
