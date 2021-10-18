@@ -240,3 +240,12 @@ class TestNodeJobTree(TestCase):
             top_node_job1.result_address._path,
             top_node_job3.result_address._path,
         )
+
+    def test_shared_post_processing_result(self):
+        test_otl = "| otstats index='test_index2' | merge_dataframes [readfile 1,2,4] | pp_command1 hello"
+        top_node_job = self.get_node_job_tree_from_otl(test_otl, shared=True)
+        self.assertEqual(top_node_job.result_address._storage_type, 'SHARED_POST_PROCESSING')
+
+        top_node_job_local = self.get_node_job_tree_from_otl(test_otl, shared=False)
+        self.assertEqual(top_node_job_local.result_address._storage_type, 'LOCAL_POST_PROCESSING')
+
