@@ -208,3 +208,35 @@ class TestNodeJobTree(TestCase):
                     self.check_is_it_hash_string(command_tree.command.args[0]['value']['value'])
                     self.assertEqual(command_tree.command.args[1]['value']['value'], 'INTERPROC_STORAGE')
 
+    def test_read_and_write_has_same_address(self):
+        test_otl = "| otstats index='test_index2' | merge_dataframes [readfile 1,2,4]"
+        top_node_job = self.get_node_job_tree_from_otl(test_otl)
+
+        read_interproc_command = top_node_job.command_tree.first_command_tree_in_pipeline.command
+        write_interproc_command = top_node_job.awaited_node_job_trees[0].command_tree.command
+
+        self.assertEqual(
+            read_interproc_command.args[0]['value']['value'],
+            write_interproc_command.args[0]['value']['value']
+        )
+
+    def test_same_jobs_has_same_hash(self):
+        test_otl1 = "| otstats index='test_index2' | merge_dataframes [readfile 1,2,4]"
+        top_node_job1 = self.get_node_job_tree_from_otl(test_otl1)
+
+        test_otl2 = "| otstats      index='test_index2' | merge_dataframes     [   readfile 1, 2, 4  ]"
+        top_node_job2 = self.get_node_job_tree_from_otl(test_otl2)
+
+        test_otl3 = "| otstats     index='test_index3' | merge_dataframes     [   readfile 1, 2, 4  ]"
+
+        top_node_job3 = self.get_node_job_tree_from_otl(test_otl3)
+
+        self.assertEqual(
+            top_node_job1.result_address._path,
+            top_node_job2.result_address._path,
+        )
+
+        self.assertNotEqual(
+            top_node_job1.result_address._path,
+            top_node_job3.result_address._path,
+        )
