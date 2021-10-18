@@ -11,10 +11,10 @@ class ResultAddress:
         self._path = None
 
         if storage_type is None:
-            self.storage_type = ResultStorage.INTERPROCESSING.value
+            self._storage_type = ResultStorage.INTERPROCESSING.value
 
         else:
-            self.storage_type = storage_type
+            self._storage_type = storage_type
 
         # read or write commands that will be use the address
         self._commands = set()
@@ -38,8 +38,8 @@ class ResultAddress:
 
         self._path = path
         if storage_type is not None:
-            self.storage_type = storage_type
+            self._storage_type = storage_type
 
         # set path for every command in
         for command in self._commands:
-            command.set_path(self._path, self.storage_type)
+            command.set_path(self._path, self._storage_type)
