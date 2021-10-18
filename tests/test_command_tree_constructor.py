@@ -138,7 +138,6 @@ class TestCommandTree(TestCase):
     def setUp(self):
         register_test_commands()
 
-
     def get_command_tree_from_otl(self, otl):
         translated_otl_commands = translate_otl(otl)
         command_tree, awaited_command_trees_list =\
@@ -309,7 +308,22 @@ class TestCommandTree(TestCase):
         self.assertEqual(counter['join'], 3)
         self.assertEqual(counter['readfile'], 3)
 
+    def test_node_tree_construction_with_await_override(self):
+        test_otl = "| otstats index='test_index' \
+                        | join [\
+                                | readfile 23,3,4 | sum 4,3,4,3,3,3\
+                                | merge_dataframes [ | readfile 1,2,3]  \
+                                | async name=test_async, [readfile 23,5,4 | collect index='test'] \
+                               ] \
+                        | table asdf,34,34,key=34 | await name=test_async, override=True |  merge_dataframes [ | readfile 1,2,3]"
+        parsed_otl = translate_otl(test_otl)
+        top_command_tree = make_command_tree(parsed_otl)
 
+        merge_dataframes_command_tree = top_command_tree.previous_command_tree_in_pipeline
+        self.assertEqual(merge_dataframes_command_tree.command.name, 'merge_dataframes')
+
+        # check that pipeline changed
+        self.assertEqual(merge_dataframes_command_tree.previous_command_tree_in_pipeline.command.name, 'collect')
 
 
 

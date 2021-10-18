@@ -3,7 +3,7 @@ from otl_interpreter.interpreter_db import node_commands_manager
 from .command_tree_constructor import make_command_tree
 from .define_computing_node_type_algorithm import define_computing_node_type_for_command_tree
 
-from .node_job_tree import make_node_job_tree
+from .node_job_tree_constructor import make_node_job_tree
 
 
 class JobPlanner:

@@ -1,6 +1,6 @@
 from .command import Command
 from .command_tree import CommandTree
-from .sys_commands import make_sys_write_result_command
+from .sys_commands import SysWriteResultCommand
 
 from .exceptions import JobPlanException
 
@@ -216,8 +216,7 @@ def make_command_tree(translated_otl_commands):
 
 
 def _make_top_command_tree(command_tree, awaited_command_trees):
-    # todo make address generation
-    sys_write_result_command = make_sys_write_result_command('address')
+    sys_write_result_command = SysWriteResultCommand()
 
     return CommandTree(
         sys_write_result_command,

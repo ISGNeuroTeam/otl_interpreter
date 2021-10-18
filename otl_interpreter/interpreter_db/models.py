@@ -2,39 +2,9 @@ import re
 import hashlib
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from mptt.models import MPTTModel, TreeForeignKey
 from mixins.models import TimeStampedModel
-
-
-class JobStatus(models.TextChoices):
-    NEW = 'NEW', _('New')
-    TRANSLATED = 'TRANSLATED', _('Translated')
-    PLANNED = 'PLANNED', _('Planned')
-    RUNNING = 'RUNNING', _('Running')
-    FINISHED = 'FINISHED', _('Finished')
-    CANCELED = 'CANCELED', _('Canceled')
-    FAILED = 'FAILED', _('Failed')
-
-
-class NodeJobStatus(models.TextChoices):
-    PLANNED = 'PLANNED', _('Planned')
-    IN_QUEUE = 'IN_QUEUE', _('In queue')
-    TAKEN_FROM_QUEUE = 'TAKEN_FROM_QUEUE', _('Taken from queue')
-    RUNNING = 'RUNNING', _('Running')
-    FINISHED = 'FINISHED', _('Finished')
-    CANCELED = 'CANCELED', _('Canceled')
-    FAILED = 'FAILED', _('Failed')
-
-
-class CommandType(models.TextChoices):
-    REQUIRED_COMMAND = 'REQUIRED_COMMAND', _('Required command')
-    MACROS_COMMAND = 'MACROS_COMMAND', _('Command-macros')
-    NODE_COMMAND = 'NODE_COMMAND', _('Node command')
-
-
-class ResourceType(models.TextChoices):
-    JOB_CAPACITY = 'JOB_CAPACITY', _('Job capacity')
-    COMPUTING_RESOURCE = 'COMPUTING_RESOURCE', _('Computing resource')
-    RAM_MEMORY = 'RAM_MEMORY', _('RAM memory')
+from .enums import JobStatus, NodeJobStatus, CommandType, NodeType, ResultStorage
 
 
 class OtlQuery(TimeStampedModel):
@@ -42,7 +12,9 @@ class OtlQuery(TimeStampedModel):
     query_hash = models.BinaryField(
         max_length=255, db_index=True, null=False
     )
-    cache_ttl = models.DurationField()
+    ttl = models.DurationField(
+        'ttl', default=60
+    )
     user_guid = models.UUIDField(
         unique=True, null=False
     )
@@ -72,6 +44,7 @@ class ComputingNode(models.Model):
     # node type: EEP, Spark, PostProcessing.
     type = models.CharField(
         max_length=255,
+        choices=NodeType.choices,
         db_index=True,
     )
 
@@ -105,25 +78,55 @@ class NodeCommand(models.Model):
         unique_together = ('node', 'name')
 
 
-class NodeJob(TimeStampedModel):
+class NodeJobResult(models.Model):
+    storage = models.CharField(
+        'Result storage',
+        max_length=255,
+        choices=ResultStorage.choices
+    )
+    path = models.CharField(
+        'path',
+        max_length=255,
+    )
+    # flag to indicate that dataframe was read by client or next job
+    was_read = models.BooleanField(default=False)
+
+    calculated = models.BooleanField(default=False)
+
+    ttl = models.DurationField(
+        default=60
+    )
+
+    finish_datetime = models.DateTimeField(
+        verbose_name=_('Finish datetime'),
+        null=True
+    )
+
+
+class NodeJob(TimeStampedModel, MPTTModel):
     otl_query = models.ForeignKey(
         OtlQuery, on_delete=models.CASCADE
     )
 
+    node_type = models.CharField(
+        'Node type',
+        max_length=255,
+        choices=NodeType.choices
+    )
     # translated commands, json array of node commands
     commands = models.JSONField()
     status = models.CharField(
         max_length=255,
         choices=NodeJobStatus.choices, default=NodeJobStatus.PLANNED
     )
-    next_job = models.ForeignKey(
-        'otl_interpreter.NodeJob', null=True, blank=True,
+    next_job = TreeForeignKey(
+        'self', null=True, blank=True,
         on_delete=models.SET_NULL,
         related_name='awaited_jobs'
     )
 
-    result_address = models.CharField(
-        max_length=255
+    result = models.OneToOneField(
+        NodeJobResult, on_delete=models.CASCADE
     )
 
     class Meta:

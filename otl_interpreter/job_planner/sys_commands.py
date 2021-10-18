@@ -1,41 +1,26 @@
-from uuid import uuid4
 from .command import Command
 
 
-def make_sys_write_result_command(address):
-    return Command(
-        name='sys_write_result',
-        args=[
-            {'value': {'value': address,
-                       'type': 'string',
-                       'leaf_type': 'simple'},
-             'type': 'arg',
-             'leaf_type': 'complex'}
-        ]
-    )
+class SysReadWriteCommand(Command):
+    def set_path(self, path, storage_type=None):
+        self._add_positional_arg(path)
+        if storage_type is not None:
+            self._add_positional_arg(storage_type)
 
 
-def make_sys_read_interproc(address):
-    return Command(
-        name='sys_read_interproc',
-        args=[
-            {'value': {'value': address,
-                       'type': 'string',
-                       'leaf_type': 'simple'},
-             'type': 'arg',
-             'leaf_type': 'complex'}
-        ]
-    )
+class SysWriteResultCommand(SysReadWriteCommand):
+    def __init__(self):
+        super().__init__('sys_write_result')
 
 
-def make_sys_write_interproc(address):
-    return Command(
-        name='sys_write_interproc',
-        args=[
-            {'value': {'value': address,
-                       'type': 'string',
-                       'leaf_type': 'simple'},
-             'type': 'arg',
-             'leaf_type': 'complex'}
-        ]
-    )
+class SysReadInterprocCommand(SysReadWriteCommand):
+    def __init__(self):
+        super().__init__('sys_read_interproc')
+
+
+class SysWriteInterprocCommand(SysReadWriteCommand):
+    def __init__(self):
+        super().__init__('sys_write_interproc')
+
+
+
