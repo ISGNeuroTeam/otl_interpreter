@@ -171,24 +171,26 @@ class CommandTreeConstructor:
 
     @staticmethod
     def _get_kwarg_by_name(translated_otl_command, kwarg_name):
-        for arg in translated_otl_command['commandargs']:
-            if arg['type'] == 'kwarg' and arg['key']['value'] == kwarg_name:
-                return arg['value']['value']['value']
+        for arg_group in translated_otl_command['commandargs']:
+            for arg in arg_group:
+                if arg['type'] == 'kwarg' and arg['key']['value'] == kwarg_name:
+                    return arg['value']['value']['value']
         return None
 
     @staticmethod
     def _get_subsearches(translated_otl_command):
         subsearches = []
-        for arg in translated_otl_command['commandargs']:
-            if arg['type'] == 'subsearch':
-                subsearches.append(arg['value'])
+        for arg_group in translated_otl_command['commandargs']:
+            for arg in arg_group:
+                if arg['type'] == 'subsearch':
+                    subsearches.append(arg['value'])
         return subsearches
 
     @staticmethod
     def _make_command(translated_otl_command):
         # remove subsearches
         translated_otl_command['commandargs'] = list(filter(
-            lambda arg: arg['type'] != 'subsearch',
+            lambda arg: arg[0]['type'] != 'subsearch',
             translated_otl_command['commandargs']
         ))
         return Command.make_command_from_translated_otl(translated_otl_command)
