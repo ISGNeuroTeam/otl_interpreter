@@ -1,4 +1,7 @@
-from .models import NodeCommand, ComputingNode, CommandType
+from datetime import datetime
+from functools import wraps
+from otl_interpreter.settings import get_cache
+from otl_interpreter.interpreter_db.models import NodeCommand, ComputingNode, CommandType
 
 
 class NodeCommandsError(ValueError):
@@ -7,8 +10,44 @@ class NodeCommandsError(ValueError):
 
 class NodeCommandsManager:
 
-    @staticmethod
-    def register_node(node_type, node_guid):
+    def __init__(self, cache=None):
+        """
+        :param cache: cache object  wiht set and get methods for internal usage
+        """
+        if cache is None:
+            self._cache = get_cache()
+        else:
+            self._cache = cache
+
+    @property
+    def commands_updated_timestamp(self):
+        return self._cache.get('commands_updated_timestamp')
+
+    @commands_updated_timestamp.setter
+    def commands_updated_timestamp(self, value=None):
+        value = value or datetime.now()
+        self._cache.set('commands_updated_timestamp', value, timeout=None)
+
+    def _set_commands_updated_timestamp_decorator(f):
+        """
+        Decorator for inner methods
+        Sets  command_updated_timestamp property to now()
+        """
+        @wraps(f)
+        def wrap_function(self, *args, **kwargs):
+            result = f(self, *args, **kwargs)
+            self.commands_updated_timestamp = datetime.now()
+            return result
+
+        return wrap_function
+
+    def commands_were_updated(self, timestamp: datetime):
+        """
+        Returns true if command were updated after given timestamp
+        """
+        return self.commands_updated_timestamp > timestamp
+
+    def register_node(self, node_type, node_guid):
         """
         creates node if it doesn't exist
         :param node_type: type string, spark, eep or post_processing
@@ -22,8 +61,8 @@ class NodeCommandsManager:
         computing_node.active = True
         computing_node.save()
 
-    @staticmethod
-    def node_deactivate(node_guid):
+    @_set_commands_updated_timestamp_decorator
+    def node_deactivate(self, node_guid):
         """
         make node and all node commands inactive
         :param node_guid:
@@ -32,9 +71,10 @@ class NodeCommandsManager:
         computing_node = ComputingNode.objects.get(guid=node_guid)
         computing_node.active = False
         computing_node.save()
+        computing_node.node_commands.update(active=False)
 
-    @staticmethod
-    def node_activate(node_guid):
+    @_set_commands_updated_timestamp_decorator
+    def node_activate(self, node_guid):
         """
         make node and all node commands active
         :param node_guid:
@@ -43,11 +83,12 @@ class NodeCommandsManager:
         computing_node = ComputingNode.objects.get(guid=node_guid)
         computing_node.active = True
         computing_node.save()
+        computing_node.node_commands.update(active=True)
 
     @staticmethod
     def register_required_commands(commands):
         """
-        Register required commands. All computing nodes must have those commands. Rases NodeCommandsError if get invalid command syntax
+        Register required commands. All computing nodes must have those commands.
         :param commands: json array with field 'command name':  command syntax
         """
         node_commands = [
@@ -57,15 +98,14 @@ class NodeCommandsManager:
 
         NodeCommand.objects.bulk_create(node_commands)
 
-    @staticmethod
-    def register_node_commands(node_guid, commands):
+    @_set_commands_updated_timestamp_decorator
+    def register_node_commands(self, node_guid, commands):
 
         """
         Register new commands on node. Rases NodeCommandsError if get invalid command syntax
         :param node_guid: node guid. If node_guid
         :param commands: json array with field 'command name':  command syntax
         """
-
 
         try:
             computin_node = ComputingNode.objects.get(guid=node_guid)
@@ -89,7 +129,6 @@ class NodeCommandsManager:
         Returns node types set
         """
         return set(ComputingNode.objects.values_list('type', flat=True).distinct())
-
 
     @staticmethod
     def get_command_name_set_for_node_type(node_type):
@@ -118,6 +157,3 @@ class NodeCommandsManager:
         Returns all commands as dictionary. keys - commands names, value - syntax
         """
         return dict(NodeCommand.objects.filter(active=True).values_list('name', 'syntax'))
-
-
-
