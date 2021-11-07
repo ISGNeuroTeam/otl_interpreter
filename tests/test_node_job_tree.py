@@ -38,7 +38,7 @@ class TestNodeJobTree(TestCase):
         define_computing_node_type_for_command_tree(
             top_command_tree, self.computing_node_type_priority_list, self.command_name_sets
         )
-        return make_node_job_tree(top_command_tree, shared)
+        return make_node_job_tree(top_command_tree, 0, 0, shared)
 
     def check_is_it_hash_string(self, s):
         char_set = set('0123456789abcdef')
@@ -143,7 +143,7 @@ class TestNodeJobTree(TestCase):
             top_command_tree, self.computing_node_type_priority_list, self.command_name_sets
         )
 
-        top_node_job_tree = _construct_node_job_tree(top_command_tree)
+        top_node_job_tree = _construct_node_job_tree(top_command_tree, 0, 0)
 
         self.check_one_command_tree_in_one_node_job(all_command_trees, top_node_job_tree)
 
@@ -181,7 +181,7 @@ class TestNodeJobTree(TestCase):
             top_command_tree, self.computing_node_type_priority_list, self.command_name_sets
         )
 
-        top_node_job_tree = _construct_node_job_tree(top_command_tree)
+        top_node_job_tree = _construct_node_job_tree(top_command_tree, 0, 0)
 
         self.check_one_command_tree_in_one_node_job(all_command_trees, top_node_job_tree)
 
@@ -201,7 +201,7 @@ class TestNodeJobTree(TestCase):
             top_command_tree, self.computing_node_type_priority_list, self.command_name_sets
         )
 
-        top_node_job = make_node_job_tree(top_command_tree)
+        top_node_job = make_node_job_tree(top_command_tree, 0, 0)
 
         sys_write_result_command_tree = top_node_job.command_tree
         self.assertEqual(sys_write_result_command_tree.command.name, 'sys_write_result')

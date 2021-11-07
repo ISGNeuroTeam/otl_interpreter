@@ -11,8 +11,17 @@ class NodeJobTree(AbstractTree):
 
     """
 
-    def __init__(self, command_tree, parent_node_job_tree=None):
+    def __init__(self, command_tree, tws=0, twf=0, parent_node_job_tree=None):
+        """
+        :param command_tree: command_tree
+        :param tws: time window start
+        :param twf: time window finish
+        :param parent_node_job_tree:
+        """
         self.command_tree = command_tree
+        self.tws = tws
+        self.twf = twf
+
         self.parent_node_job_tree = None
         self.awaited_node_job_trees = []
         self.computing_node_type = command_tree.computing_node_type
@@ -42,7 +51,7 @@ class NodeJobTree(AbstractTree):
     @property
     def command_tree_json(self):
         """
-        Returns command tree as json. Command tree may change. Invoke make_command_tree_json to rebuild json.
+        Returns command tree as json. Command tree may change. Invokes make_command_tree_json to rebuild json.
         """
         if self._command_tree_json is None:
             return self.make_command_tree_json()
@@ -54,7 +63,11 @@ class NodeJobTree(AbstractTree):
         :return:
         """
         command_tree_json = self.make_command_tree_json()
-        command_tree_hash = hashlib.blake2b(command_tree_json.encode())
+
+        # command_tree + time window -> hash
+        command_tree_hash = hashlib.blake2b(
+            (command_tree_json + str(self.tws) + str(self.twf)).encode()
+        )
         self._command_tree_hash = command_tree_hash.digest().hex()
         return self._command_tree_hash
 

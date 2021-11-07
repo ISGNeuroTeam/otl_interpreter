@@ -24,17 +24,19 @@ class NodeJobTreeStorage:
         return self._node_job_tree_for_command_tree[id(command_tree)]
 
 
-def make_node_job_tree(top_command_tree, shared=True):
+def make_node_job_tree(top_command_tree, tws=0, twf=0, shared_post_processing=True, subsearch_is_node_job=False):
     """
     :param top_command_tree: root command tree with defined computing node type
-    :param shared:
-    for post processing, define result storage type
+    :param tws: time window start
+    :param twf: time window finish
+    :param shared_post_processing: for post processing, define result storage type (shared or local)
+    :param subsearch_is_node_job: flag, make node job for each subsearch
     """
-    top_node_job = _construct_node_job_tree(top_command_tree)
+    top_node_job = _construct_node_job_tree(top_command_tree, tws, twf, subsearch_is_node_job)
 
     # top node job don't have result_address object yet
     # result address creation is individual case
-    _make_address_for_result_node_job(top_node_job, shared)
+    _make_address_for_result_node_job(top_node_job, shared_post_processing)
 
     # calculate result dataframe paths as hash of command tree json
     _set_read_write_commands_paths(top_node_job)
@@ -42,7 +44,7 @@ def make_node_job_tree(top_command_tree, shared=True):
     return top_node_job
 
 
-def _construct_node_job_tree(top_command_tree):
+def _construct_node_job_tree(top_command_tree, tws=0, twf=0, subsearch_is_node_job=False):
     """
     Group command trees in node jobs trees by computing_node_type
     :param top_command_tree:
@@ -50,7 +52,7 @@ def _construct_node_job_tree(top_command_tree):
     :return:
     NodeJobTree
     """
-    top_node_job = NodeJobTree(top_command_tree)
+    top_node_job = NodeJobTree(top_command_tree, tws, twf)
 
     node_job_tree_storage = NodeJobTreeStorage()
 
@@ -59,9 +61,9 @@ def _construct_node_job_tree(top_command_tree):
     )
 
     for command_tree in top_command_tree.parent_first_order_traverse_iterator():
-        _define_node_job_tree_for_previous_command_tree_in_pipeline(command_tree, node_job_tree_storage)
-        _define_node_job_tree_for_subsearch_command_trees(command_tree, node_job_tree_storage)
-        _define_node_job_tree_for_awaited_command_trees(command_tree, node_job_tree_storage)
+        _define_node_job_tree_for_previous_command_tree_in_pipeline(command_tree, tws, twf, node_job_tree_storage)
+        _define_node_job_tree_for_subsearch_command_trees(command_tree, tws, twf, node_job_tree_storage, subsearch_is_node_job)
+        _define_node_job_tree_for_awaited_command_trees(command_tree, tws, twf, node_job_tree_storage)
 
     return top_node_job
 
@@ -77,10 +79,10 @@ def _set_read_write_commands_paths(top_node_job):
             node_job.set_path_for_result_address(path)
 
 
-def _make_address_for_result_node_job(top_node_job, shared):
+def _make_address_for_result_node_job(top_node_job, shared_post_processing):
     result_storage_type = None
     if top_node_job.computing_node_type == NodeType.POST_PROCESSING.value:
-        if shared:
+        if shared_post_processing:
             result_storage_type = ResultStorage.SHARED_POST_PROCESSING.value
         else:
             result_storage_type = ResultStorage.LOCAL_POST_PROCESSING
@@ -91,7 +93,7 @@ def _make_address_for_result_node_job(top_node_job, shared):
     top_node_job.set_result_address(ResultAddress(top_node_job, result_storage_type))
 
 
-def _create_new_node_job_for_child_command_tree(command_tree, child_command_tree, node_job_tree_storage):
+def _create_new_node_job_for_child_command_tree(command_tree, tws, twf, child_command_tree, node_job_tree_storage):
     """
     Split commandre in two parts, creates node_job_tree for child_command_tree
     command_tree gets sys_read_interproc command as a child command
@@ -118,7 +120,7 @@ def _create_new_node_job_for_child_command_tree(command_tree, child_command_tree
 
     # put write command on the top of child command tree and create new node job
     write_sys_command_tree.set_previous_command_tree_in_pipeline(child_command_tree)
-    new_node_job_tree = NodeJobTree(write_sys_command_tree, parent_node_job_tree=node_job_tree)
+    new_node_job_tree = NodeJobTree(write_sys_command_tree, tws, twf, parent_node_job_tree=node_job_tree)
 
     # child command tree creates dataframe for command tree
     # create address object for result, path to result will be generated later
@@ -150,7 +152,7 @@ def _create_new_node_job_for_child_command_tree(command_tree, child_command_tree
     return read_sys_command_tree
 
 
-def _define_node_job_tree_for_previous_command_tree_in_pipeline(command_tree, node_job_tree_storage):
+def _define_node_job_tree_for_previous_command_tree_in_pipeline(command_tree, tws, twf, node_job_tree_storage):
     if command_tree.previous_command_tree_in_pipeline is None:
         return
 
@@ -160,7 +162,7 @@ def _define_node_job_tree_for_previous_command_tree_in_pipeline(command_tree, no
             command_tree.computing_node_type:
 
         read_sys_command_tree = _create_new_node_job_for_child_command_tree(
-            command_tree, command_tree.previous_command_tree_in_pipeline, node_job_tree_storage
+            command_tree, tws, twf, command_tree.previous_command_tree_in_pipeline, node_job_tree_storage,
         )
 
         command_tree.set_previous_command_tree_in_pipeline(read_sys_command_tree)
@@ -171,16 +173,16 @@ def _define_node_job_tree_for_previous_command_tree_in_pipeline(command_tree, no
         )
 
 
-def _define_node_job_tree_for_subsearch_command_trees(command_tree, node_job_tree_storage):
+def _define_node_job_tree_for_subsearch_command_trees(command_tree, tws, twf, node_job_tree_storage, subsearch_is_node_job):
     node_job_tree = node_job_tree_storage.get_node_job_tree_for_command_tree(command_tree)
 
     new_command_trees_for_subsearches = {}
 
     for index, subsearch_command_tree in enumerate(command_tree.subsearch_command_trees):
 
-        if subsearch_command_tree.computing_node_type != command_tree.computing_node_type:
+        if subsearch_is_node_job or (subsearch_command_tree.computing_node_type != command_tree.computing_node_type):
             read_sys_command_tree = _create_new_node_job_for_child_command_tree(
-                command_tree, subsearch_command_tree, node_job_tree_storage
+                command_tree, tws, twf, subsearch_command_tree, node_job_tree_storage
             )
             new_command_trees_for_subsearches[index] = read_sys_command_tree
 
@@ -195,12 +197,12 @@ def _define_node_job_tree_for_subsearch_command_trees(command_tree, node_job_tre
         command_tree.replace_subsearch_command_tree(new_subsearch_command_tree, index)
 
 
-def _define_node_job_tree_for_awaited_command_trees(command_tree, node_job_tree_storage):
+def _define_node_job_tree_for_awaited_command_trees(command_tree, tws, twf, node_job_tree_storage):
 
     node_job_tree = node_job_tree_storage.get_node_job_tree_for_command_tree(command_tree)
 
     for awaited_command_tree in command_tree.awaited_command_trees:
-        awaited_node_job = _construct_node_job_tree(awaited_command_tree)
+        awaited_node_job = _construct_node_job_tree(awaited_command_tree, tws, twf)
 
         node_job_tree.add_awaited_node_job_tree(
             awaited_node_job
