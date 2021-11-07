@@ -1,6 +1,5 @@
 from pprint import pp
 
-from translate_otl import translate_otl
 
 
 from rest.test import TestCase
@@ -16,6 +15,11 @@ from register_test_commands import register_test_commands
 
 class TestNodeJobTree(TestCase):
     def setUp(self):
+        # database created after import
+        # so we need import translate_otl after test database creations
+        from otl_interpreter.translator import translate_otl
+        self.translate_otl = translate_otl
+
         register_test_commands()
 
         self.computing_node_type_priority_list = ['SPARK', 'EEP', 'POST_PROCESSING']
@@ -26,7 +30,7 @@ class TestNodeJobTree(TestCase):
         }
 
     def get_command_tree_from_otl(self, otl):
-        translated_otl_commands = translate_otl(otl)
+        translated_otl_commands = self.translate_otl(otl)
         return make_command_tree(translated_otl_commands)
 
     def get_node_job_tree_from_otl(self, otl, shared=True):
