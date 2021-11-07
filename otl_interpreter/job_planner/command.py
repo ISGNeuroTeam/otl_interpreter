@@ -19,14 +19,14 @@ class Command:
         return translated_command['commandargs']
 
     def _add_positional_arg(self, arg_value):
-        self.args.append(
+        self.args.append([
             {
                 'value': {'value': arg_value,
                        'type': 'string',
                        'leaf_type': 'simple'},
              'type': 'arg',
              'leaf_type': 'complex'
-             }
+             }, ]
         )
 
 

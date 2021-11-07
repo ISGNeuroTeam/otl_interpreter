@@ -12,7 +12,8 @@ class TestSimpleParsing(TestCase):
 
     def test_simple_parse(self):
         otl_query = "| readfile arg1, arg2, arg3"
-        expected_result = [{'command': {'value': 'readfile', 'type': 'term', 'leaf_type': 'simple'}, 'commandargs': [{'value': {'value': 'arg1', 'type': 'term', 'leaf_type': 'simple'}, 'type': 'arg', 'leaf_type': 'complex'}, {'value': {'value': 'arg2', 'type': 'term', 'leaf_type': 'simple'}, 'type': 'arg', 'leaf_type': 'complex'}, {'value': {'value': 'arg3', 'type': 'term', 'leaf_type': 'simple'}, 'type': 'arg', 'leaf_type': 'complex'}]}]
+        expected_result = [{'command': {'value': 'readfile', 'type': 'term', 'leaf_type': 'simple'}, 'commandargs': [[{'value': {'value': 'arg1', 'type': 'term', 'leaf_type': 'simple'}, 'type': 'arg', 'leaf_type': 'complex'}], [{'value': {'value': 'arg2', 'type': 'term', 'leaf_type': 'simple'}, 'type': 'arg', 'leaf_type': 'complex'}], [{'value': {'value': 'arg3', 'type': 'term', 'leaf_type': 'simple'}, 'type': 'arg', 'leaf_type': 'complex'}]]}]
+
         parsed_otl = translate_otl(otl_query)
         self.assertEqual(expected_result, parsed_otl)
 

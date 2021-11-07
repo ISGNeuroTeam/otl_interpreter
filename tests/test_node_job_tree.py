@@ -205,8 +205,8 @@ class TestNodeJobTree(TestCase):
         for node_job in top_node_job.parent_first_order_traverse_iterator():
             for command_tree in node_job.command_tree.parent_first_order_traverse_iterator():
                 if isinstance(command_tree.command, SysReadWriteCommand):
-                    self.check_is_it_hash_string(command_tree.command.args[0]['value']['value'])
-                    self.assertEqual(command_tree.command.args[1]['value']['value'], 'INTERPROC_STORAGE')
+                    self.check_is_it_hash_string(command_tree.command.args[0][0]['value']['value'])
+                    self.assertEqual(command_tree.command.args[1][0]['value']['value'], 'INTERPROC_STORAGE')
 
     def test_read_and_write_has_same_address(self):
         test_otl = "| otstats index='test_index2' | merge_dataframes [readfile 1,2,4]"
@@ -216,8 +216,8 @@ class TestNodeJobTree(TestCase):
         write_interproc_command = top_node_job.awaited_node_job_trees[0].command_tree.command
 
         self.assertEqual(
-            read_interproc_command.args[0]['value']['value'],
-            write_interproc_command.args[0]['value']['value']
+            read_interproc_command.args[0][0]['value']['value'],
+            write_interproc_command.args[0][0]['value']['value']
         )
 
     def test_same_jobs_has_same_hash(self):
