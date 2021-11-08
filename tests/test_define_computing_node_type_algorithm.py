@@ -10,17 +10,13 @@ from otl_interpreter.settings import ini_config
 from otl_interpreter.interpreter_db import node_commands_manager
 from otl_interpreter.job_planner.command_tree_constructor import CommandTreeConstructor, make_command_tree
 from otl_interpreter.job_planner import JobPlanner
+from otl_interpreter.translator import translate_otl
 
 from register_test_commands import register_test_commands
 
 
 class TestWeightTree(TestCase):
     def setUp(self):
-
-        # database created after import
-        # so we need import translate_otl after test database creations
-        from otl_interpreter.translator import translate_otl
-        self.translate_otl = translate_otl
         register_test_commands()
 
         self.computing_node_type_priority_list = ini_config['job_planer']['computing_node_type_priority'].split()
@@ -31,7 +27,7 @@ class TestWeightTree(TestCase):
         }
 
     def get_command_tree_from_otl(self, otl):
-        translated_otl_commands = self.translate_otl(otl)
+        translated_otl_commands = translate_otl(otl)
         command_tree_constructor = CommandTreeConstructor()
         command_tree, awaited_command_trees_list = command_tree_constructor.create_command_tree(translated_otl_commands)
         return command_tree, awaited_command_trees_list
@@ -194,7 +190,7 @@ class TestWeightTree(TestCase):
                       ] \
                | table asdf,34,34,key=34 | await name=test_async, override=True |  merge_dataframes [ | readfile 1,2,3]"
 
-        root_command_tree = make_command_tree(self.translate_otl(test_otl))
+        root_command_tree = make_command_tree(translate_otl(test_otl))
 
         define_computing_node_type_for_command_tree(
             root_command_tree, self.computing_node_type_priority_list, self.command_name_sets

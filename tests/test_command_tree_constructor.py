@@ -6,6 +6,7 @@ from otl_interpreter.job_planner.command_tree_constructor import (
 from otl_interpreter.job_planner.command import Command
 from otl_interpreter.job_planner.command_tree import CommandTree
 from otl_interpreter.job_planner.exceptions import JobPlanException
+from otl_interpreter.translator import translate_otl
 
 from register_test_commands import register_test_commands
 from otl_interpreter.interpreter_db import node_commands_manager
@@ -13,11 +14,6 @@ from otl_interpreter.interpreter_db import node_commands_manager
 
 class TestCommandPipelineState(TestCase):
     def setUp(self):
-
-        # database created after import
-        # so we need import translate_otl after test database creations
-        from otl_interpreter.translator import translate_otl
-        self.translate_otl = translate_otl
 
         self.command_pipeline_state = CommandPipelineState()
 
@@ -75,17 +71,11 @@ class TestCommandPipelineState(TestCase):
 
 class TestCommandTreeConstructorInnerMethods(TestCase):
     def setUp(self):
-        # database created after import
-        # so we need import translate_otl after test database creations
-        from otl_interpreter.translator import translate_otl
-        self.translate_otl = translate_otl
-
         register_test_commands()
-
 
     def test_get_kwarg_by_name(self):
         test_otl = "| async name=s3, [|readfile 1, 2, 3 ] | table a, b, c, key=val"
-        translated_otl_commands = self.translate_otl(test_otl)
+        translated_otl_commands = translate_otl(test_otl)
         command_tree_constructor = CommandTreeConstructor()
         self.assertEqual(
             command_tree_constructor._get_kwarg_by_name(translated_otl_commands[0], 'name'),
@@ -102,7 +92,7 @@ class TestCommandTreeConstructorInnerMethods(TestCase):
     def test_get_subsearches(self):
         test_otl = "| readfile 1, 2, 3 | \
             merge_dataframes [| otstats index='test1' | sum 2,3,4,5], [| readfile 3,4,5], [| otstats index='test2']"
-        translated_otl_commands = self.translate_otl(test_otl)
+        translated_otl_commands = translate_otl(test_otl)
         command_tree_constructor = CommandTreeConstructor()
         subsearches = command_tree_constructor._get_subsearches(translated_otl_commands[1])
         self.assertEqual(len(subsearches), 3)
@@ -112,21 +102,21 @@ class TestCommandTreeConstructorInnerMethods(TestCase):
 
     def test_get_await_name(self):
         test_otl = "| await name=\"test_name\" | readfile 4,5,3"
-        translated_otl_commands = self.translate_otl(test_otl)
+        translated_otl_commands = translate_otl(test_otl)
         command_tree_constructor = CommandTreeConstructor()
 
         self.assertEqual(command_tree_constructor._get_await_name(translated_otl_commands[0]), "\"test_name\"")
 
     def test_get_async_name(self):
         test_otl = "| readfile 4,5,3 | async name=\"test_name\", [| otstats index='test']"
-        translated_otl_commands = self.translate_otl(test_otl)
+        translated_otl_commands = translate_otl(test_otl)
         command_tree_constructor = CommandTreeConstructor()
 
         self.assertEqual(command_tree_constructor._get_await_name(translated_otl_commands[1]), "\"test_name\"")
 
     def test_is_async(self):
         test_otl = "| readfile 4,5,3 | async name=\"test_name\", [| otstats index='test']"
-        translated_otl_commands = self.translate_otl(test_otl)
+        translated_otl_commands = translate_otl(test_otl)
         command_tree_constructor = CommandTreeConstructor()
         self.assertEqual(
             command_tree_constructor._is_async(translated_otl_commands[1]),
@@ -135,7 +125,7 @@ class TestCommandTreeConstructorInnerMethods(TestCase):
 
     def test_is_await(self):
         test_otl = "| await name=\"test_name\" | readfile 4,5,3"
-        translated_otl_commands = self.translate_otl(test_otl)
+        translated_otl_commands = translate_otl(test_otl)
         command_tree_constructor = CommandTreeConstructor()
 
         self.assertEqual(
@@ -146,15 +136,10 @@ class TestCommandTreeConstructorInnerMethods(TestCase):
 
 class TestCommandTree(TestCase):
     def setUp(self):
-        # database created after import
-        # so we need import translate_otl after test database creations
-        from otl_interpreter.translator import translate_otl
-        self.translate_otl = translate_otl
-
         register_test_commands()
 
     def get_command_tree_from_otl(self, otl):
-        translated_otl_commands = self.translate_otl(otl)
+        translated_otl_commands = translate_otl(otl)
         command_tree, awaited_command_trees_list =\
             construct_command_tree_from_translated_otl_commands(translated_otl_commands)
         return command_tree, awaited_command_trees_list
@@ -296,7 +281,7 @@ class TestCommandTree(TestCase):
 
     def test_through_pipline_iterator(self):
         test_otl = "otstats index='test' | join [|readfile 1,2,3] | collect index='test2'"
-        parsed_otl = self.translate_otl(test_otl)
+        parsed_otl = translate_otl(test_otl)
         top_command_tree = make_command_tree(parsed_otl)
         top_command_list = ['otstats', 'join', 'collect', 'sys_write_result']
         self.assertListEqual(
@@ -306,7 +291,7 @@ class TestCommandTree(TestCase):
 
     def test_parent_first_iterator(self):
         test_otl = "otstats index='test' | join [| readfile 1,2,3 | join [| readfile 1,2,3 | join [| readfile 1,2,3 | collect index='234']]] | collect index='test2'"
-        parsed_otl = self.translate_otl(test_otl)
+        parsed_otl = translate_otl(test_otl)
         top_command_tree = make_command_tree(parsed_otl)
 
         counter = {}
@@ -331,7 +316,7 @@ class TestCommandTree(TestCase):
                                 | async name=test_async, [readfile 23,5,4 | collect index='test'] \
                                ] \
                         | table asdf,34,34,key=34 | await name=test_async, override=True |  merge_dataframes [ | readfile 1,2,3]"
-        parsed_otl = self.translate_otl(test_otl)
+        parsed_otl = translate_otl(test_otl)
         top_command_tree = make_command_tree(parsed_otl)
 
         merge_dataframes_command_tree = top_command_tree.previous_command_tree_in_pipeline

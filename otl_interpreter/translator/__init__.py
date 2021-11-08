@@ -7,8 +7,6 @@ class Translator:
     def __init__(self):
         self._commands_updated_timestamp = datetime(1, 1, 1, 0, 0)
         self.o = None
-        self._init_translator_with_macroses()
-        self._init_translator_with_commands()
 
     def _init_translator_with_commands(self):
         commands = node_commands_manager.get_commands_syntax()
