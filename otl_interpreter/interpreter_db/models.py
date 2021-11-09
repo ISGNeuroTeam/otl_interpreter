@@ -1,5 +1,6 @@
 import re
 import hashlib
+import uuid
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from mptt.models import MPTTModel, TreeForeignKey
@@ -11,6 +12,9 @@ class OtlJob(TimeStampedModel):
     query = models.TextField(null=False)
     query_hash = models.BinaryField(
         max_length=255, db_index=True, null=False
+    )
+    uuid = models.UUIDField(
+        default=uuid.uuid4, unique=True, editable=False
     )
     tws = models.DateTimeField()
     twf = models.DateTimeField()

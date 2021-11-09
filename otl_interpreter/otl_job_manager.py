@@ -56,9 +56,10 @@ class OtlJobManager:
             log.info(f'Query: {otl_query}\n Job planer error: {str(err)}')
             raise QueryError(err.args[0]) from err
 
-        otl_job_id = db_otl_job_manager.make_otl_job(otl_query, user_guid, tws, twf, cache_ttl)
-        db_node_job_manager.create_node_jobs(node_job_tree, otl_job_id, cache_ttl)
+        otl_job_uuid = db_otl_job_manager.make_otl_job(otl_query, user_guid, tws, twf, cache_ttl)
+        db_node_job_manager.create_node_jobs(node_job_tree, otl_job_uuid, cache_ttl)
         # todo signal to dispatcher
+        return otl_job_uuid
 
 
 otl_job_manager = OtlJobManager(

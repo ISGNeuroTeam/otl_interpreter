@@ -7,9 +7,9 @@ class NodeJobManager:
     def __init__(self, default_cache_ttl):
         self.default_cache_ttl = default_cache_ttl
 
-    def create_node_jobs(self, root_job_tree, otl_job_id, cache_ttl=None):
+    def create_node_jobs(self, root_job_tree, otl_job_uuid, cache_ttl=None):
         cache_ttl = cache_ttl or self.default_cache_ttl
-
+        otl_job = OtlJob.objects.get(uuid=otl_job_uuid)
         node_job_for_job_tree = {}
 
         for node_job_tree in root_job_tree.parent_first_order_traverse_iterator():
@@ -31,9 +31,8 @@ class NodeJobManager:
                 node_job_result = None
                 print(node_job_tree.command_tree.command.name)
 
-
             node_job = NodeJob(
-                otl_job_id=otl_job_id,
+                otl_job=otl_job,
                 computing_node_type=node_job_tree.computing_node_type,
                 commands=node_job_tree.as_command_dict_list(),
                 next_job=parent_node_job,

@@ -14,7 +14,7 @@ class OtlJobManager:
             tws=tws, twf=twf, ttl=datetime.timedelta(ttl), status=JobStatus.NEW
         )
         otl_job.save()
-        return otl_job.id
+        return otl_job.uuid
 
     def check_job(self, otl_job_hash):
         pass
