@@ -6,7 +6,7 @@ from .exceptions import JobPlanException
 
 job_planer = JobPlanner(
     job_planer_config['computing_node_type_priority'].split(),
-    job_planer_config['subsearch_is_node_job']
+    job_planer_config['subsearch_is_node_job'] == 'True'
 )
 
 
