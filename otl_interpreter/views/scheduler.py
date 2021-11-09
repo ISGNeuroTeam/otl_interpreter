@@ -1,23 +1,25 @@
 import logging
 
+from django_celery_beat.models import CrontabSchedule
+
 from rest.views import APIView
 from rest.response import Response, status, APIException
 from rest.permissions import IsAuthenticated, AllowAny
+
 
 
 from otl_interpreter.settings import ini_config
 log = logging.getLogger('otl_interpreter')
 
 
-class CreateJobView(APIView):
-    permission_classes = (AllowAny, )
+class ScheduleJob(APIView):
+    permission_classes = (IsAuthenticated, )
     http_method_names = ['post', ]
 
     def post(self, request):
-        if 'otl_query' not in request.data:
-            raise APIException('otl_query field required', code=status.HTTP_400_BAD_REQUEST)
 
-        log.info('Make job to otl_interpreter')
+        log.debug('Otl query scheduled')
+
         return Response(
             {
                 'status': 'ok',

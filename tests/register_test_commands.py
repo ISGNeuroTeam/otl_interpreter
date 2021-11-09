@@ -4,10 +4,14 @@ from otl_interpreter.interpreter_db import node_commands_manager
 
 def register_test_commands():
     spark_node_id1 = uuid.uuid4().hex
+    spark_node_id2 = uuid.uuid4().hex
+
     eep_node_id1 = uuid.uuid4().hex
     post_processing_node_id1 = uuid.uuid4().hex
 
     node_commands_manager.register_node('SPARK', spark_node_id1)
+    node_commands_manager.register_node('SPARK', spark_node_id2)
+
     node_commands_manager.register_node('EEP', eep_node_id1)
     node_commands_manager.register_node('POST_PROCESSING', post_processing_node_id1)
 
@@ -41,6 +45,31 @@ def register_test_commands():
     )
     node_commands_manager.register_node_commands(
         spark_node_id1,
+        {
+            'otstats': {
+                "rules":
+                [
+                    {
+                        "type": "kwarg",
+                        "key": "index",
+                        "required": True,
+                    },
+                ]},
+            'collect': {
+                "rules":
+                [
+                    {
+                        "type": "kwarg",
+                        "key": "index",
+                        "required": True,
+                    }
+                ]},
+            "readfile": {"rules": [{"type": "arg"}, {"type": "arg"}, {"type": "arg"}]},
+        }
+    )
+
+    node_commands_manager.register_node_commands(
+        spark_node_id2,
         {
             'otstats': {
                 "rules":

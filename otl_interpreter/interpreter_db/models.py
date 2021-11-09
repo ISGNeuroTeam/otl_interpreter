@@ -7,16 +7,19 @@ from mixins.models import TimeStampedModel
 from .enums import JobStatus, NodeJobStatus, CommandType, NodeType, ResultStorage
 
 
-class OtlQuery(TimeStampedModel):
+class OtlJob(TimeStampedModel):
     query = models.TextField(null=False)
     query_hash = models.BinaryField(
         max_length=255, db_index=True, null=False
     )
+    tws = models.DateTimeField()
+    twf = models.DateTimeField()
+
     ttl = models.DurationField(
         'ttl', default=60
     )
     user_guid = models.UUIDField(
-        unique=True, null=False
+         null=False
     )
     status = models.CharField(
         max_length=255,
@@ -39,6 +42,9 @@ class OtlQuery(TimeStampedModel):
     def _remove_repeat_spaces(query):
         return re.sub(r'\s+', ' ', query)
 
+    class Meta:
+        app_label = 'otl_interpreter'
+
 
 class ComputingNode(models.Model):
     # node type: EEP, Spark, PostProcessing.
@@ -52,6 +58,12 @@ class ComputingNode(models.Model):
     guid = models.UUIDField(unique=True)
 
     active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f'{self.type}: {self.guid}'
+
+    class Meta:
+        app_label = 'otl_interpreter'
 
 
 class NodeCommand(models.Model):
@@ -74,8 +86,12 @@ class NodeCommand(models.Model):
     )
     active = models.BooleanField(default=True)
 
+    def __str__(self):
+        return f'{self.type} {self.node.guid} {self.name}'
+
     class Meta:
         unique_together = ('node', 'name')
+        app_label = 'otl_interpreter'
 
 
 class NodeJobResult(models.Model):
@@ -84,31 +100,43 @@ class NodeJobResult(models.Model):
         max_length=255,
         choices=ResultStorage.choices
     )
+
+    # hash of nodejob command tree
     path = models.CharField(
         'path',
         max_length=255,
     )
+
     # flag to indicate that dataframe was read by client or next job
     was_read = models.BooleanField(default=False)
 
+    # job was finished and calculated
     calculated = models.BooleanField(default=False)
 
     ttl = models.DurationField(
         default=60
     )
-
-    finish_datetime = models.DateTimeField(
-        verbose_name=_('Finish datetime'),
+    # last timestamp when nodejob result was read by anyone
+    last_touched_timestamp = models.DateTimeField(
+        verbose_name=_('Last touched'),
         null=True
     )
 
-
-class NodeJob(TimeStampedModel, MPTTModel):
-    otl_query = models.ForeignKey(
-        OtlQuery, on_delete=models.CASCADE
+    finish_timestamp = models.DateTimeField(
+        verbose_name=_('Finish timestamp'),
+        null=True
     )
 
-    node_type = models.CharField(
+    class Meta:
+        app_label = 'otl_interpreter'
+
+
+class NodeJob(TimeStampedModel, MPTTModel):
+    otl_job = models.ForeignKey(
+        OtlJob, on_delete=models.CASCADE
+    )
+
+    computing_node_type = models.CharField(
         'Node type',
         max_length=255,
         choices=NodeType.choices
@@ -126,9 +154,13 @@ class NodeJob(TimeStampedModel, MPTTModel):
     )
 
     result = models.OneToOneField(
-        NodeJobResult, on_delete=models.CASCADE
+        NodeJobResult, on_delete=models.CASCADE, null=True
     )
 
     class Meta:
         app_label = 'otl_interpreter'
+
+    class MPTTMeta:
+        parent_attr = 'next_job'
+
 

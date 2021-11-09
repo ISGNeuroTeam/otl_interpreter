@@ -108,20 +108,20 @@ class NodeCommandsManager:
         """
 
         try:
-            computin_node = ComputingNode.objects.get(guid=node_guid)
+            computing_node = ComputingNode.objects.get(guid=node_guid)
         except ComputingNode.DoesNotExist:
             raise NodeCommandsError(f'Node with guid {node_guid} was not registered')
 
-        node_commands = [
-            NodeCommand(node=computin_node, name=command_name, syntax=command_syntax)
-            for command_name, command_syntax in commands.items()
-        ]
+        for command_name, command_syntax in commands.items():
+            NodeCommand.objects.update_or_create(
+                defaults={
+                    'syntax': command_syntax,
+                    'active': True,
+                },
+                node=computing_node,
+                name=command_name,
+            )
 
-        # todo check command syntax
-        # if command with name already exist syntax must be the same
-        # todo check commands set of node type all nodes with save type must have the same command set
-
-        NodeCommand.objects.bulk_create(node_commands)
 
     @staticmethod
     def get_node_types():

@@ -8,5 +8,19 @@ database = otl_interpreter
 user = otl_interpreter
 password = otl_interpreter
 
+[node_job]
+cache_ttl = 60
+
 [job_planer]
 computing_node_type_priority = SPARK EEP POST_PROCESSING
+subsearch_is_node_job = True
+
+
+[otl_job_defaults]
+cache_ttl = 60
+
+;0 = infinity
+timeout = 0
+
+; if the results will be available for all authenticated users
+shared_post_processing = True

@@ -24,7 +24,7 @@ class NodeJobTreeStorage:
         return self._node_job_tree_for_command_tree[id(command_tree)]
 
 
-def make_node_job_tree(top_command_tree, tws=0, twf=0, shared_post_processing=True, subsearch_is_node_job=False):
+def make_node_job_tree(top_command_tree, tws=None, twf=None, shared_post_processing=True, subsearch_is_node_job=False):
     """
     :param top_command_tree: root command tree with defined computing node type
     :param tws: time window start
@@ -44,7 +44,7 @@ def make_node_job_tree(top_command_tree, tws=0, twf=0, shared_post_processing=Tr
     return top_node_job
 
 
-def _construct_node_job_tree(top_command_tree, tws=0, twf=0, subsearch_is_node_job=False):
+def _construct_node_job_tree(top_command_tree, tws=None, twf=None, subsearch_is_node_job=False):
     """
     Group command trees in node jobs trees by computing_node_type
     :param top_command_tree:

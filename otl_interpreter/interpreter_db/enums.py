@@ -24,7 +24,6 @@ class NodeJobStatus(models.TextChoices):
 
 class CommandType(models.TextChoices):
     REQUIRED_COMMAND = 'REQUIRED_COMMAND', _('Required command')
-    MACROS_COMMAND = 'MACROS_COMMAND', _('Command-macros')
     NODE_COMMAND = 'NODE_COMMAND', _('Node command')
 
 

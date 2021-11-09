@@ -5,23 +5,27 @@ class ResultAddress:
     def __init__(self, node_job_tree, storage_type=None):
         """
         :param node_job_tree: node_job_tree which creates result dataframe
-        :param storage_type: interproc, post processing storage, indexes
+        :param storage_type: interproc, post processing locale storage or postprocessing shared storage
         """
         self.node_job_tree = node_job_tree
         self._path = None
 
         if storage_type is None:
-            self._storage_type = ResultStorage.INTERPROCESSING.value
+            self.storage_type = ResultStorage.INTERPROCESSING.value
 
         else:
-            self._storage_type = storage_type
+            self.storage_type = storage_type
 
         # read or write commands that will be use the address
         self._commands = set()
 
+    @property
+    def path(self):
+        return self._path
+
     def add_command(self, command):
         """
-        add command for uding the address
+        add command for using the address
         :param command:
         :return:
         """
@@ -38,8 +42,8 @@ class ResultAddress:
 
         self._path = path
         if storage_type is not None:
-            self._storage_type = storage_type
+            self.storage_type = storage_type
 
         # set path for every command in
         for command in self._commands:
-            command.set_path(self._path, self._storage_type)
+            command.set_path(self._path, self.storage_type)
