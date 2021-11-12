@@ -10,6 +10,16 @@ class Command:
         command = Command(name, args)
         return command
 
+    def set_timewindow(self, tws, twf):
+        """
+        Appends two named argument 'earliest' and 'latest' to the command args
+        :param tws: timewindow start timestamp
+        :param twf: timewindow finish timestamp
+        :return:
+        """
+        self._add_named_arg('earliest', int(tws.timestamp()))
+        self._add_named_arg('latest', int(twf.timestamp()))
+
     @staticmethod
     def _get_name_from_translated_otl(translated_command):
         return translated_command['command']['value']
@@ -29,6 +39,29 @@ class Command:
              }, ]
         )
 
+    def _add_named_arg(self, arg_name, arg_value):
+        self.args.append(
+            [
+                {
+                    "key": {
+                        "type": "term",
+                        "value": arg_name,
+                        "leaf_type": "simple"
+                    },
+                    "type": "kwarg",
+                    "value": {
+                        "type": "arg",
+                        "value": {
+                            "type": "term",
+                            "value": arg_value,
+                            "leaf_type": "simple"
+                        },
+                        "leaf_type": "complex"
+                    },
+                    "leaf_type": "complex"
+                },
+            ]
+        )
 
 
 

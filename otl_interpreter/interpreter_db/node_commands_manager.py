@@ -122,6 +122,16 @@ class NodeCommandsManager:
                 name=command_name,
             )
 
+    @staticmethod
+    def is_command_need_timewindow(command_name):
+        """
+        Returns true if command need earliest and latest timestpaps arguments to be added
+        """
+        # todo optimize this, without database
+        command = NodeCommand.objects.filter(name=command_name).first()
+        if command:
+            return command.syntax.get('use_timewindow', False)
+        return False
 
     @staticmethod
     def get_node_types():

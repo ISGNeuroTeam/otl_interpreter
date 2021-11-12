@@ -11,7 +11,7 @@ class NodeJobTree(AbstractTree):
 
     """
 
-    def __init__(self, command_tree, tws=0, twf=0, parent_node_job_tree=None):
+    def __init__(self, command_tree, parent_node_job_tree=None):
         """
         :param command_tree: command_tree
         :param tws: time window start
@@ -19,8 +19,6 @@ class NodeJobTree(AbstractTree):
         :param parent_node_job_tree:
         """
         self.command_tree = command_tree
-        self.tws = tws
-        self.twf = twf
 
         self.parent_node_job_tree = None
         self.awaited_node_job_trees = []
@@ -66,7 +64,7 @@ class NodeJobTree(AbstractTree):
 
         # command_tree + time window -> hash
         command_tree_hash = hashlib.blake2b(
-            (command_tree_json + str(self.tws) + str(self.twf)).encode()
+            command_tree_json.encode()
         )
         self._command_tree_hash = command_tree_hash.digest().hex()
         return self._command_tree_hash
@@ -95,3 +93,12 @@ class NodeJobTree(AbstractTree):
     def set_path_for_result_address(self, path):
         assert self.result_address is not None
         self.result_address.set_path(path)
+
+    def command_iterator(self):
+        """
+        Iterates through all commands in node job
+        :return:
+        """
+        for command_tree  in self.command_tree.parent_first_order_traverse_iterator('all_child_trees'):
+            yield command_tree.command
+

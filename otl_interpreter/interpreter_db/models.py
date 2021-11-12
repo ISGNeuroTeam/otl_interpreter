@@ -72,7 +72,6 @@ class ComputingNode(models.Model):
 
 class NodeCommand(models.Model):
     # if node is null then command is required must be implemented on every node
-    # or it is macros command
     node = models.ForeignKey(
         ComputingNode, on_delete=models.CASCADE, related_name='node_commands', null=True
     )

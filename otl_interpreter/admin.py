@@ -21,7 +21,7 @@ class ComputingNodeAdmin(ModelAdmin):
 
 @register(NodeCommand)
 class NodeCommandAdmin(ModelAdmin):
-    list_display = ['node', 'name']
+    list_display = ['name', 'node', ]
 
 
 @register(NodeJobResult)

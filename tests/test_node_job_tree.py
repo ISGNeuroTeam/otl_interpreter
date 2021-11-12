@@ -139,7 +139,7 @@ class TestNodeJobTree(TestCase):
             top_command_tree, self.computing_node_type_priority_list, self.command_name_sets
         )
 
-        top_node_job_tree = _construct_node_job_tree(top_command_tree, 0, 0)
+        top_node_job_tree = _construct_node_job_tree(top_command_tree)
 
         self.check_one_command_tree_in_one_node_job(all_command_trees, top_node_job_tree)
 
@@ -177,7 +177,7 @@ class TestNodeJobTree(TestCase):
             top_command_tree, self.computing_node_type_priority_list, self.command_name_sets
         )
 
-        top_node_job_tree = _construct_node_job_tree(top_command_tree, 0, 0)
+        top_node_job_tree = _construct_node_job_tree(top_command_tree)
 
         self.check_one_command_tree_in_one_node_job(all_command_trees, top_node_job_tree)
 
