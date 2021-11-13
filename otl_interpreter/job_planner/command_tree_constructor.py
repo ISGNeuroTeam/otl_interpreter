@@ -206,7 +206,9 @@ def construct_command_tree_from_translated_otl_commands(translated_otl_commands)
     command_tree, awaited_command_trees = constructor.create_command_tree(translated_otl_commands)
 
     if constructor.async_subsearches:
-        raise JobPlanException(f"Async subsearches with names {' '.join(constructor.async_subsearches.keys())}")
+        raise JobPlanException(
+            f"Async subsearches with names: {', '.join(constructor.async_subsearches.keys())} was never awaited"
+        )
 
     return command_tree, awaited_command_trees
 
