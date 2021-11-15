@@ -63,3 +63,23 @@ class AbstractTree(ABC):
             stack.extend(reversed(list(children)))
 
             yield tree
+
+    def leaf_iterator(self, children_attribute=None):
+        """
+        Generator. Traverse through leaves from left to right
+        :param children_attribut:
+        """
+        children_attribute = children_attribute or 'children'
+        stack = deque()
+        stack.append(self)
+        while stack:
+            tree = stack.pop()
+
+            children = getattr(tree, children_attribute)
+            if callable(children):
+                children = children()
+
+            if children:
+                stack.extend(reversed(children))
+            else:
+                yield tree
