@@ -11,7 +11,7 @@ class OtlQueryAdmin(ModelAdmin):
 
 @register(NodeJob)
 class NodeJobAdmin(MPTTModelAdmin):
-    list_display = ['id', 'computing_node_type', 'status']
+    list_display = ['computing_node_type', 'uuid', 'status']
 
 
 @register(ComputingNode)

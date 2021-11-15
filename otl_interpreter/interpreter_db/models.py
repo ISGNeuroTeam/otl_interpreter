@@ -29,6 +29,7 @@ class OtlJob(TimeStampedModel):
         max_length=255,
         choices=JobStatus.choices, default=JobStatus.NEW
     )
+    status_text = models.TextField(null=True)
 
     def save(self, *args, **kwargs):
         self.query_hash = self._get_query_hash()
@@ -135,6 +136,10 @@ class NodeJobResult(models.Model):
 
 
 class NodeJob(TimeStampedModel, MPTTModel):
+    uuid = models.UUIDField(
+        default=uuid.uuid4, unique=True, editable=False
+    )
+
     otl_job = models.ForeignKey(
         OtlJob, on_delete=models.CASCADE
     )

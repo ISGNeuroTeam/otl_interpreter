@@ -33,6 +33,7 @@ class NodeJobManager:
 
             node_job = NodeJob(
                 otl_job=otl_job,
+                uuid=node_job_tree.uuid,
                 computing_node_type=node_job_tree.computing_node_type,
                 commands=node_job_tree.as_command_dict_list(),
                 next_job=parent_node_job,

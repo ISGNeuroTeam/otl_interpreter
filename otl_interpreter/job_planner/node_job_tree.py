@@ -1,5 +1,6 @@
 import hashlib
 import json
+import uuid
 
 from .abstract_tree import AbstractTree
 
@@ -27,6 +28,7 @@ class NodeJobTree(AbstractTree):
         if parent_node_job_tree is not None:
             self.set_parent_node_job_tree(parent_node_job_tree)
 
+        self.uuid = uuid.uuid4()
         self.result_address = None
 
         self._command_tree_hash = None
