@@ -19,7 +19,7 @@ class MakeJobView(APIView):
         make_job_serializer = MakeJobSerislizer(data=request.data)
         make_job_serializer.is_valid(raise_exception=True)
         try:
-            job_id = otl_job_manager.makejob(
+            job_id, storage_type, path = otl_job_manager.makejob(
                 make_job_serializer.validated_data['otl_query'],
                 request.user.guid,
                 tws=make_job_serializer.validated_data['tws'],
@@ -36,6 +36,8 @@ class MakeJobView(APIView):
 
         return SuccessResponse(
             {
-                'job_id': job_id
+                'job_id': job_id.hex,
+                'storage_type': storage_type,
+                'path': path,
             }
         )

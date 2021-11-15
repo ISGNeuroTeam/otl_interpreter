@@ -1,7 +1,11 @@
 import json
+from uuid import UUID
 from datetime import datetime
 
 from rest.test import TestCase, APIClient
+
+from otl_interpreter.interpreter_db.enums import ResultStorage
+
 from create_test_users import create_test_users
 from register_test_commands import register_test_commands
 
@@ -37,13 +41,24 @@ class TestMakeJob(TestCase):
         }
         response = self.client.post(
             self._full_url('/makejob/'),
-            data=data
+            data=data,
+            format='json'
         )
 
         # checking status code
         self.assertEqual(response.status_code, 200)
 
         self.assertEqual(response.data['status'], 'success')
+
+        self.assertEqual(len(response.data['job_id']), 32)
+
+        # hash string 128 character
+        self.assertEqual(len(response.data['path']), 128)
+
+        self.assertEqual(
+            response.data['storage_type'],
+            ResultStorage.INTERPROCESSING.value
+        )
 
     def test_makejob_with_syntax_error(self):
         data = {
