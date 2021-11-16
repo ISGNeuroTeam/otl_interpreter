@@ -23,7 +23,9 @@ class JobPlanner:
         :param shared_post_processing: flag, shared result or local for post processing
         :param subsearch_is_node_job: if true each subsearch is separate node job
         """
-        subsearch_is_node_job = subsearch_is_node_job or self.subsearch_is_node_job
+        if subsearch_is_node_job is None:
+            subsearch_is_node_job = self.subsearch_is_node_job
+
         # create command tree
         top_command_tree = make_command_tree(
             translated_otl_commands

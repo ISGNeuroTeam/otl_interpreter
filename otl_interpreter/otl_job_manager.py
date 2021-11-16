@@ -47,7 +47,8 @@ class OtlJobManager:
         # TODO create check of timeouts
         timeout = timeout or self.default_timeout
 
-        shared_post_processing = shared_post_processing or self.default_shared_post_processing
+        if shared_post_processing is None:
+            shared_post_processing = self.default_shared_post_processing
 
         try:
             translated_query = translate_otl(otl_query)
