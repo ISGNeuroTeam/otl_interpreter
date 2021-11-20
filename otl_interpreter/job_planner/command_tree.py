@@ -27,9 +27,6 @@ class CommandTree(AbstractTree):
         # next command tree that awaiting current command tree
         self.next_command_tree_outside_pipeline = None
 
-        # if previous command tree in pipeline is None then current command tree is first command tree in pipeline
-        self.first_command_tree_in_pipeline = self
-
         self.computing_node_type = None
 
         if previous_command_tree_in_pipeline is not None:
@@ -48,6 +45,13 @@ class CommandTree(AbstractTree):
 
         if next_command_tree_outside_pipeline is not None:
             self.set_next_command_tree_outside_pipeline(next_command_tree_outside_pipeline)
+
+    @property
+    def first_command_tree_in_pipeline(self):
+        cur_command_tree = self
+        while cur_command_tree.previous_command_tree_in_pipeline is not None:
+            cur_command_tree = cur_command_tree.previous_command_tree_in_pipeline
+        return cur_command_tree
 
     @property
     def children(self):
@@ -81,19 +85,6 @@ class CommandTree(AbstractTree):
 
         self.previous_command_tree_in_pipeline = previous_command_tree_in_pipeline
         self.previous_command_tree_in_pipeline.next_command_tree_in_pipeline = self
-
-        self.set_first_command_tree_in_pipeline(
-            previous_command_tree_in_pipeline.first_command_tree_in_pipeline
-        )
-
-    def set_first_command_tree_in_pipeline(self, command_tree):
-        self.first_command_tree_in_pipeline = command_tree
-
-        # change all first_command_tree_in_pipeline  attributes in pipeline
-        current_command_tree = self.next_command_tree_in_pipeline
-        while current_command_tree is not None:
-            current_command_tree.first_command_tree_in_pipeline = command_tree
-            current_command_tree = current_command_tree.next_command_tree_in_pipeline
 
     def add_subsearch_command_tree(self, subsearch_command_trees):
         self.subsearch_command_trees.append(subsearch_command_trees)
@@ -144,8 +135,9 @@ class CommandTree(AbstractTree):
         """
         Generator. Traverse from first command tree  in pipeline tree to current command tree
         """
-        yield self.first_command_tree_in_pipeline
-        current_command_tree = self.first_command_tree_in_pipeline.next_command_tree_in_pipeline
+        first_command_tree_in_pipeline = self.first_command_tree_in_pipeline
+        yield first_command_tree_in_pipeline
+        current_command_tree = first_command_tree_in_pipeline.next_command_tree_in_pipeline
 
         while current_command_tree is not None:
             yield current_command_tree
