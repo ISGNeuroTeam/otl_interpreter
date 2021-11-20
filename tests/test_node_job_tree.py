@@ -249,3 +249,23 @@ class TestNodeJobTree(TestCase):
         top_node_job_local = self.get_node_job_tree_from_otl(test_otl, shared=False)
         self.assertEqual(top_node_job_local.result_address.storage_type, 'LOCAL_POST_PROCESSING')
 
+    def test_read_write_interproc(self):
+        test_otl = "| readfile 23,3,4 | sum 4,3,4,3,3,3"
+        top_node_job = self.get_node_job_tree_from_otl(test_otl)
+        read_file_node_job = top_node_job.children[0]
+
+        read_file_command_tree = read_file_node_job.command_tree.first_command_tree_in_pipeline
+
+
+        write_interproc_command_tree = read_file_command_tree.next_command_tree_in_pipeline
+        # check that first node job has write interproc command
+        self.assertEqual(
+            read_file_command_tree.command.name,
+            'readfile'
+        )
+
+        self.assertEqual(
+            write_interproc_command_tree.command.name,
+            'sys_write_interproc'
+        )
+

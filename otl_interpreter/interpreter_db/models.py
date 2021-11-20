@@ -131,6 +131,9 @@ class NodeJobResult(models.Model):
         null=True
     )
 
+    def __str__(self):
+        return f'{self.storage}: {self.path}'
+
     class Meta:
         app_label = 'otl_interpreter'
 

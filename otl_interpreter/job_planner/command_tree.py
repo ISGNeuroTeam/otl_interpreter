@@ -74,7 +74,9 @@ class CommandTree(AbstractTree):
         return result
 
     def set_previous_command_tree_in_pipeline(self, previous_command_tree_in_pipeline):
-        if self.previous_command_tree_in_pipeline is not None:
+        # remove next command tree property from previous command if it refers to current command
+        if self.previous_command_tree_in_pipeline is not None and \
+                self.previous_command_tree_in_pipeline.next_command_tree_in_pipeline is self:
             self.previous_command_tree_in_pipeline.next_command_tree_in_pipeline = None
 
         self.previous_command_tree_in_pipeline = previous_command_tree_in_pipeline
