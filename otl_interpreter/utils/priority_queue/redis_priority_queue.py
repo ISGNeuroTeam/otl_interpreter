@@ -2,8 +2,10 @@ import redis
 
 from typing import List, Tuple, Union
 
+from .abstract_priority_queue import AbstractPriorityQueue
 
-class RedisPriorityQueue(object):
+
+class RedisPriorityQueue(AbstractPriorityQueue):
     def __init__(self, queue_name: str, redis_config: dict) -> None:
         self.queue_name = queue_name
         self._r = redis.Redis(
@@ -16,11 +18,15 @@ class RedisPriorityQueue(object):
     def __del__(self):
         self._r.delete(self.queue_name)
 
-    def push(self, score: float, *elements: Union[str, bytes]) -> None:
+    def __len__(self):
+        return self._r.zcard(self.queue_name)
+
+
+    def add(self, score: float, *elements: Union[str, bytes]) -> None:
         """
         Push in queue elements with score
         :param score: score
-        :param element: element to push to queue
+        :param elements: elements to push to queue
         :return:
         """
         mapping = {element: score for element in elements}
@@ -29,7 +35,7 @@ class RedisPriorityQueue(object):
 
     def pop(self, count: int = 1, min_score=False) -> List[Tuple[bytes, float]]:
         """
-        Returns <count> elements from queue with highest score
+        Returns <count> elements from queue with highest score as list of tuples ( binary, score )
         if min_score is True returns <count> elements from queue with lowest score
         """
         if min_score:
