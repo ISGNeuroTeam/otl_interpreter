@@ -8,6 +8,13 @@ class NodeJobManager:
         self.default_cache_ttl = default_cache_ttl
 
     def create_node_jobs(self, root_job_tree, otl_job_uuid, cache_ttl=None):
+        """
+        Creates in database NodeJob tree
+        :param root_job_tree: job planer NodeJobTree
+        :param otl_job_uuid: otl job uuid
+        :param cache_ttl: time to store node job results
+        :return:
+        """
         cache_ttl = cache_ttl or self.default_cache_ttl
         otl_job = OtlJob.objects.get(uuid=otl_job_uuid)
         node_job_for_job_tree = {}
@@ -29,7 +36,6 @@ class NodeJobManager:
                 node_job_result.save()
             else:
                 node_job_result = None
-                print(node_job_tree.command_tree.command.name)
 
             node_job = NodeJob(
                 otl_job=otl_job,

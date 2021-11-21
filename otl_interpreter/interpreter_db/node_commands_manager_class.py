@@ -138,7 +138,7 @@ class NodeCommandsManager:
         """
         Returns node types set
         """
-        return set(ComputingNode.objects.values_list('type', flat=True).distinct())
+        return set(ComputingNode.objects.filter(active=True).values_list('type', flat=True).distinct())
 
     @staticmethod
     def get_command_name_set_for_node_type(node_type):
@@ -149,7 +149,7 @@ class NodeCommandsManager:
         Set of command names
         """
         return set(
-            NodeCommand.objects.filter(node__type__exact=node_type).values_list('name', flat=True)
+            NodeCommand.objects.filter(node__type__exact=node_type, active=True).values_list('name', flat=True)
         ).union(
            NodeCommandsManager.get_command_name_set_available_on_all_nodes()
         )

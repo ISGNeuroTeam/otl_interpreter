@@ -1,1 +1,1 @@
-from .interpreter_db.models import *
+from otl_interpreter.interpreter_db.models import *
