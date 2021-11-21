@@ -1,9 +1,15 @@
 import random
 import string
+import uuid
+import datetime
 
 from rest.test import TestCase
 from otl_interpreter.utils.priority_queue import RedisPriorityQueue
 from otl_interpreter.utils.priority_queue import PriorityQueue
+
+from otl_interpreter.dispatcher.node_job_queue import NodeJobQueue
+
+from register_test_commands import register_test_commands
 
 
 class BaseTestCases:
@@ -116,3 +122,41 @@ class TestPriorityQueue(BaseTestCases.TestPriorityQueue):
     def setUp(self) -> None:
         self.queue = PriorityQueue()
 
+
+class BaseNodeJobQueueTestCases:
+
+    class TestNodeJobQueue(TestCase):
+        def setUp(self) -> None:
+            self.node_job_queue = None
+
+        def test_queue_class_choice(self):
+            node_job_queue = NodeJobQueue(standalone=True)
+            self.assertEqual(type(node_job_queue.queues['SPARK']), PriorityQueue)
+            node_job_queue = NodeJobQueue()
+            self.assertEqual(type(node_job_queue.queues['SPARK']), RedisPriorityQueue)
+
+        def test_simple_add_pop(self):
+            test_uuid1 = uuid.uuid4()
+            test_uuid2 = uuid.uuid4()
+            score = datetime.datetime.now().timestamp()
+            self.node_job_queue.add('SPARK', test_uuid1.bytes, score)
+            score2 = datetime.datetime.now().timestamp() + 1
+            self.node_job_queue.add('SPARK', test_uuid2.bytes, score2)
+
+            node_job_guid_binary, priority_score = self.node_job_queue.pop('SPARK')[0]
+            self.assertEqual(node_job_guid_binary, test_uuid1.bytes)
+
+            node_job_guid_binary, priority_score = self.node_job_queue.pop('SPARK')[0]
+            self.assertEqual(node_job_guid_binary, test_uuid2.bytes)
+
+
+class TestNodeJobQueueOnRedis(BaseNodeJobQueueTestCases.TestNodeJobQueue):
+    def setUp(self) -> None:
+        register_test_commands()
+        self.node_job_queue = NodeJobQueue(standalone=False)
+
+
+class TestNodeJobQueueOnOrdinaryPriorityQueue(BaseNodeJobQueueTestCases.TestNodeJobQueue):
+    def setUp(self) -> None:
+        register_test_commands()
+        self.node_job_queue = NodeJobQueue(standalone=True)

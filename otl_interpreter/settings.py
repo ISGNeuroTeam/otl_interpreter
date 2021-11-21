@@ -22,6 +22,9 @@ default_ini_config = {
         'computing_node_type_priority': 'SPARK EEP POST_PROCESSING',
         'subsearch_is_node_job': True
     },
+    'dispatcher': {
+        'standalone': False
+    },
     'otl_job_defaults': {
         'cache_ttl': 60,
         'timeout': 0,
