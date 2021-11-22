@@ -190,7 +190,7 @@ class CommandTreeConstructor:
     def _make_command(translated_otl_command):
         # remove subsearches
         translated_otl_command['commandargs'] = list(filter(
-            lambda arg: arg[0]['type'] != 'subsearch',
+            lambda arg: len(arg) > 0 and arg[0]['type'] != 'subsearch',
             translated_otl_command['commandargs']
         ))
         return Command.make_command_from_translated_otl(translated_otl_command)

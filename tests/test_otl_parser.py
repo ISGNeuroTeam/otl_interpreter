@@ -43,4 +43,7 @@ class TestSimpleParsing(TestCase):
                     {"type3": "asdf"},
                 ]}, })
 
-
+    def test_command_without_arguments(self):
+        test_otl = '| pp_command1 | pp_command1 1'
+        with self.assertRaises(SyntaxError):
+            parsed_otl = self.translate_otl(test_otl)

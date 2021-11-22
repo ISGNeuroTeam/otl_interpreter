@@ -1,7 +1,5 @@
 from pprint import pp
 
-
-
 from rest.test import TestCase
 
 from otl_interpreter.interpreter_db import node_commands_manager
