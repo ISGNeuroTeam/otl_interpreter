@@ -139,6 +139,7 @@ def register_test_commands():
                 [
                     {
                         "type": "arg",
+                        "required": True,
                     },
                 ]
             }
