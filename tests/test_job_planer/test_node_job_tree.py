@@ -1,3 +1,4 @@
+import datetime
 from pprint import pp
 
 from rest.test import TestCase
@@ -22,6 +23,8 @@ class TestNodeJobTree(TestCase):
                 node_commands_manager.get_command_name_set_for_node_type(computing_node_type)
             for computing_node_type in self.computing_node_type_priority_list
         }
+        self.default_tws = datetime.datetime.now() - datetime.timedelta(days=1)
+        self.default_twf = datetime.datetime.now()
 
     def get_command_tree_from_otl(self, otl):
         translated_otl_commands = translate_otl(otl)
@@ -32,7 +35,7 @@ class TestNodeJobTree(TestCase):
         define_computing_node_type_for_command_tree(
             top_command_tree, self.computing_node_type_priority_list, self.command_name_sets
         )
-        return make_node_job_tree(top_command_tree, 0, 0, shared)
+        return make_node_job_tree(top_command_tree, self.default_tws, self.default_twf, shared)
 
     def check_is_it_hash_string(self, s):
         char_set = set('0123456789abcdef')
@@ -195,7 +198,7 @@ class TestNodeJobTree(TestCase):
             top_command_tree, self.computing_node_type_priority_list, self.command_name_sets
         )
 
-        top_node_job = make_node_job_tree(top_command_tree, 0, 0)
+        top_node_job = make_node_job_tree(top_command_tree, self.default_tws, self.default_twf)
 
         sys_write_result_command_tree = top_node_job.command_tree
         self.assertEqual(sys_write_result_command_tree.command.name, 'sys_write_result')
