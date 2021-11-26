@@ -2,7 +2,7 @@ from .node_job_tree import NodeJobTree
 from .command_tree import CommandTree
 from .result_address import ResultAddress
 
-from otl_interpreter.interpreter_db.enums import ResultStorage, NodeType
+from otl_interpreter.interpreter_db.enums import ResultStorage, ComputingNodeType
 from otl_interpreter.interpreter_db import node_commands_manager
 
 from .sys_commands import SysReadInterprocCommand, SysWriteInterprocCommand, SysReadWriteCommand
@@ -95,7 +95,7 @@ def set_timewindow_to_commands(top_node_job, tws, twf):
 
 def _make_address_for_result_node_job(top_node_job, shared_post_processing):
     result_storage_type = None
-    if top_node_job.computing_node_type == NodeType.POST_PROCESSING.value:
+    if top_node_job.computing_node_type == ComputingNodeType.POST_PROCESSING.value:
         if shared_post_processing:
             result_storage_type = ResultStorage.SHARED_POST_PROCESSING.value
         else:

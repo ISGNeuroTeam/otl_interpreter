@@ -1,0 +1,34 @@
+{
+    "otstats": {
+        "rules": [
+            {
+                "type": "kwarg",
+                "key": "index",
+                "required": true
+            }
+        ],
+        "use_timewindow": true
+    },
+    "collect": {
+        "rules": [
+            {
+                "type": "kwarg",
+                "key": "index",
+                "required": true
+            }
+        ]
+    },
+    "readfile": {
+        "rules": [
+            {
+                "type": "arg"
+            },
+            {
+                "type": "arg"
+            },
+            {
+                "type": "arg"
+            }
+        ]
+    }
+}

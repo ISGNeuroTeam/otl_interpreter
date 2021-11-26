@@ -1,0 +1,7 @@
+{
+  "uuid": "5fd61302c1654124986aa1f3d0bf309d",
+  "computing_node_type": "POST_PROCESSING",
+  "resources": {
+    "job_capacity": 4
+  }
+}

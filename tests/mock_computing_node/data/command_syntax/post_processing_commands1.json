@@ -1,0 +1,18 @@
+{
+    "pp_command1": {
+        "rules": [
+            {
+                "type": "arg",
+                "required": true
+            }
+        ]
+    },
+    "pp_command2": {
+        "rules": [
+            {
+                "type": "arg",
+                "required": false
+            }
+        ]
+    }
+}

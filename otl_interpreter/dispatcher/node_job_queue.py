@@ -2,7 +2,7 @@ from typing import Union, Dict, Tuple
 from core.settings import REDIS_CONFIG
 
 from otl_interpreter.settings import ini_config
-from otl_interpreter.interpreter_db.enums import NodeType
+from otl_interpreter.interpreter_db.enums import ComputingNodeType
 from otl_interpreter.utils.priority_queue import RedisPriorityQueue, PriorityQueue
 
 
@@ -15,13 +15,14 @@ class NodeJobQueue:
             computing_node_type: self._create_queue_for_computing_node(
                 computing_node_type, standalone
             )
-            for computing_node_type in NodeType.values
+            for computing_node_type in ComputingNodeType.values
         }
 
     @staticmethod
     def _create_queue_for_computing_node(
             computing_node: str, standalone: bool
     ) -> Union[RedisPriorityQueue, PriorityQueue]:
+
         if standalone:
             return PriorityQueue()
         else:

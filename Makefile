@@ -80,7 +80,7 @@ clean: clean_build clean_venv clean_pack clean_test clean_complex_rest
 
 test: venv complex_rest
 	@echo "Testing..."
-	./complex_rest/venv/bin/python ./complex_rest/complex_rest/manage.py test ./tests --settings=core.settings.test
+	PYTHONPATH=$PYTHONPATH:`pwd`/tests; ./complex_rest/venv/bin/python ./complex_rest/complex_rest/manage.py test ./tests --settings=core.settings.test --noinput
 
 clean_test: clean_complex_rest
 	@echo "Clean tests"

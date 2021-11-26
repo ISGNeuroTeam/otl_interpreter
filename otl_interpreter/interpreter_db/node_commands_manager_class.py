@@ -86,6 +86,19 @@ class NodeCommandsManager:
         computing_node.node_commands.update(active=True)
 
     @staticmethod
+    def get_active_nodes_guids(computing_node_type=None):
+        if computing_node_type is None:
+            return list(
+                ComputingNode.objects.filter(active=True).values_list('guid', flat=True)
+            )
+        else:
+            return list(
+                ComputingNode.objects.filter(
+                    active=True, type=computing_node_type
+                ).value_list('guid', flat=True)
+            )
+
+    @staticmethod
     def register_required_commands(commands):
         """
         Register required commands. All computing nodes must have those commands.

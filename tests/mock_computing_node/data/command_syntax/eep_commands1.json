@@ -1,0 +1,34 @@
+{
+    "sum": {
+        "rules": [
+            {
+                "type": "arg",
+                "inf": true
+            }
+        ]
+    },
+    "merge_dataframes": {
+        "rules": [
+            {
+                "type": "subsearch",
+                "inf": true
+            }
+        ]
+    },
+    "table": {
+        "rules": [
+            {
+                "type": "arg"
+            },
+            {
+                "type": "arg"
+            },
+            {
+                "type": "arg"
+            },
+            {
+                "type": "kwarg"
+            }
+        ]
+    }
+}

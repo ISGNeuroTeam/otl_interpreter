@@ -33,7 +33,7 @@ class ResourceType(models.TextChoices):
     RAM_MEMORY = 'RAM_MEMORY', _('RAM memory')
 
 
-class NodeType(models.TextChoices):
+class ComputingNodeType(models.TextChoices):
     SPARK = 'SPARK', _('Spark')
     EEP = 'EEP', _('EEP')
     POST_PROCESSING = 'POST_PROCESSING', _('Post processing')
