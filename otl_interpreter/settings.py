@@ -23,7 +23,7 @@ default_ini_config = {
         'subsearch_is_node_job': True
     },
     'dispatcher': {
-        'standalone': False
+        'one_process_mode': False
     },
     'otl_job_defaults': {
         'cache_ttl': 60,

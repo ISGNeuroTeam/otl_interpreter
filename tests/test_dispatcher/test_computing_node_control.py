@@ -44,6 +44,7 @@ class TestCoumputingNodeRegister(TestCase):
 
     def test_simple_register(self):
         guids_list = node_commands_manager.get_active_nodes_guids()
+        self.assertEqual(len(guids_list), 1)
         node_conf = read_computing_node_config('spark1.json')
         self.assertEqual(guids_list[0].hex, node_conf['uuid'])
 

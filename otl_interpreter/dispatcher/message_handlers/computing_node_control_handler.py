@@ -83,8 +83,6 @@ class ComputingNodeControlHandler(MessageHandler):
                 register_command.validated_data['otl_command_syntax']
             )
 
-            nodes = await get_active_nodes()
-
         except NodeCommandsError as err:
             log.error(f'Fail to register computing node {computing_node_uuid}: {str(err)}')
 

@@ -1,1 +1,1 @@
-
+from .test_computing_node_control import TestCoumputingNodeRegister

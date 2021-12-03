@@ -7,23 +7,23 @@ from otl_interpreter.utils.priority_queue import RedisPriorityQueue, PriorityQue
 
 
 class NodeJobQueue:
-    def __init__(self, standalone=False):
+    def __init__(self, one_process_mode=False):
 
         self.queues: Dict[str, Union[RedisPriorityQueue, PriorityQueue]]
 
         self.queues = {
             computing_node_type: self._create_queue_for_computing_node(
-                computing_node_type, standalone
+                computing_node_type, one_process_mode
             )
             for computing_node_type in ComputingNodeType.values
         }
 
     @staticmethod
     def _create_queue_for_computing_node(
-            computing_node: str, standalone: bool
+            computing_node: str, one_process_mode: bool
     ) -> Union[RedisPriorityQueue, PriorityQueue]:
 
-        if standalone:
+        if one_process_mode:
             return PriorityQueue()
         else:
             return RedisPriorityQueue(computing_node, REDIS_CONFIG)
@@ -48,6 +48,6 @@ class NodeJobQueue:
 dispatcher_config = ini_config['dispatcher']
 
 node_job_queue = NodeJobQueue(
-    standalone=(dispatcher_config['standalone'].lower() == 'true')
+    one_process_mode=(dispatcher_config['one_process_mode'].lower() == 'true')
 )
 

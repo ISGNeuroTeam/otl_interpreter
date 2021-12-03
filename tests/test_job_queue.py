@@ -130,7 +130,7 @@ class BaseNodeJobQueueTestCases:
             self.node_job_queue = None
 
         def test_queue_class_choice(self):
-            node_job_queue = NodeJobQueue(standalone=True)
+            node_job_queue = NodeJobQueue(one_process_mode=True)
             self.assertEqual(type(node_job_queue.queues['SPARK']), PriorityQueue)
             node_job_queue = NodeJobQueue()
             self.assertEqual(type(node_job_queue.queues['SPARK']), RedisPriorityQueue)
@@ -153,10 +153,10 @@ class BaseNodeJobQueueTestCases:
 class TestNodeJobQueueOnRedis(BaseNodeJobQueueTestCases.TestNodeJobQueue):
     def setUp(self) -> None:
         register_test_commands()
-        self.node_job_queue = NodeJobQueue(standalone=False)
+        self.node_job_queue = NodeJobQueue(one_process_mode=False)
 
 
 class TestNodeJobQueueOnOrdinaryPriorityQueue(BaseNodeJobQueueTestCases.TestNodeJobQueue):
     def setUp(self) -> None:
         register_test_commands()
-        self.node_job_queue = NodeJobQueue(standalone=True)
+        self.node_job_queue = NodeJobQueue(one_process_mode=True)
