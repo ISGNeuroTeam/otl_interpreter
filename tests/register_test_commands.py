@@ -9,11 +9,14 @@ def register_test_commands():
     eep_node_id1 = uuid.uuid4().hex
     post_processing_node_id1 = uuid.uuid4().hex
 
-    node_commands_manager.register_node('SPARK', spark_node_id1)
-    node_commands_manager.register_node('SPARK', spark_node_id2)
+    default_resources = {
+        'job_capacity': 1000000
+    }
+    node_commands_manager.register_node('SPARK', spark_node_id1, default_resources)
+    node_commands_manager.register_node('SPARK', spark_node_id2, default_resources)
 
-    node_commands_manager.register_node('EEP', eep_node_id1)
-    node_commands_manager.register_node('POST_PROCESSING', post_processing_node_id1)
+    node_commands_manager.register_node('EEP', eep_node_id1, default_resources)
+    node_commands_manager.register_node('POST_PROCESSING', post_processing_node_id1, default_resources)
 
     node_commands_manager.register_required_commands(
         {

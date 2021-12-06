@@ -7,6 +7,9 @@ from message_serializers.computing_node_control_command import (
     ComputingNodeControlCommand, ControlNodeCommandName,
     RegisterComputingNodeCommand, UnregisterComputingNodeCommand, ErrorOccuredCommand, ResourceStatusCommand
 )
+from lock import Lock
+from computing_node_pool import computing_node_pool
+
 from .abstract_message_handler import MessageHandler, Message
 
 log = getLogger('otl_interpreter.dispatcher')
@@ -73,20 +76,31 @@ class ComputingNodeControlHandler(MessageHandler):
 
     @staticmethod
     async def process_register(computing_node_uuid, register_command: RegisterComputingNodeCommand):
-        try:
-            await register_node(
-                register_command.validated_data['computing_node_type'],
-                computing_node_uuid
-            )
-            await register_node_commands(
-                computing_node_uuid,
-                register_command.validated_data['otl_command_syntax']
-            )
 
-        except NodeCommandsError as err:
-            log.error(f'Fail to register computing node {computing_node_uuid}: {str(err)}')
+        # only one instance of dispatcher put node information in database
+        register_node_lock = Lock(
+            key=f'register_computing_node_{computing_node_uuid}'
+        )
+        if register_node_lock.acquire(blocking=False):
+            try:
+                await register_node(
+                    register_command.validated_data['computing_node_type'],
+                    computing_node_uuid,
+                    register_command.validated_data['resources']
+                )
+                await register_node_commands(
+                    computing_node_uuid,
+                    register_command.validated_data['otl_command_syntax']
+                )
+                register_node_lock.release()
+            except NodeCommandsError as err:
+                log.error(f'Fail to register computing node {computing_node_uuid}: {str(err)}')
 
-        # todo register resources
+        # add compuging node information in computing node pool
+        computing_node_pool.add_computing_node(
+            computing_node_uuid, register_command.validated_data['computing_node_type'],
+            register_command.validated_data['resources'].keys()
+        )
 
     async def process_error_occured(self, computing_node_uuid, error_occured_command: ErrorOccuredCommand):
         pass

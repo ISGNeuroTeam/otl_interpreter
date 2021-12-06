@@ -1,5 +1,7 @@
 from datetime import datetime
 from functools import wraps
+from cache import CacheForFunctionDecorator
+
 from otl_interpreter.settings import get_cache
 from otl_interpreter.interpreter_db.models import NodeCommand, ComputingNode, CommandType
 
@@ -47,17 +49,25 @@ class NodeCommandsManager:
         """
         return self.commands_updated_timestamp > timestamp
 
-    def register_node(self, node_type, node_guid):
+    @CacheForFunctionDecorator()
+    def register_node(self, node_type, node_guid, resources=None):
         """
         creates node if it doesn't exist
         :param node_type: type string, spark, eep or post_processing
         :param node_guid: node global id, hex string
+        :param resources: dictionary with node resources,
+        keys - arbituarary string
+        value - any positive integer
         :return:
         """
+        if resources is None:
+            resources = dict()
         try:
             computing_node = ComputingNode.objects.get(guid=node_guid)
         except ComputingNode.DoesNotExist:
-            computing_node = ComputingNode(type=node_type, guid=node_guid)
+            computing_node = ComputingNode(
+                type=node_type, guid=node_guid, resources=resources
+            )
         computing_node.active = True
         computing_node.save()
 
@@ -111,6 +121,7 @@ class NodeCommandsManager:
 
         NodeCommand.objects.bulk_create(node_commands)
 
+    @CacheForFunctionDecorator()
     @_set_commands_updated_timestamp_decorator
     def register_node_commands(self, node_guid, commands):
 

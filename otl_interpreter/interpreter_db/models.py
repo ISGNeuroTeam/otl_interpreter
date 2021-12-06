@@ -64,6 +64,9 @@ class ComputingNode(models.Model):
 
     active = models.BooleanField(default=True)
 
+    # computing node resuources as dictionary
+    resources = models.JSONField(default=dict)
+
     def __str__(self):
         return f'{self.type}: {self.guid}'
 
@@ -173,5 +176,3 @@ class NodeJob(TimeStampedModel, MPTTModel):
 
     class MPTTMeta:
         parent_attr = 'next_job'
-
-
