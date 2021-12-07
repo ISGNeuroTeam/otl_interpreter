@@ -3,7 +3,9 @@ from functools import wraps
 from cache import CacheForFunctionDecorator
 
 from otl_interpreter.settings import get_cache
-from otl_interpreter.interpreter_db.models import NodeCommand, ComputingNode, CommandType
+from otl_interpreter.interpreter_db.models import NodeCommand, ComputingNode
+
+from otl_interpreter.core_commands import job_planer_commands, sys_computing_node_commands
 
 
 class NodeCommandsError(ValueError):
@@ -108,19 +110,6 @@ class NodeCommandsManager:
                 ).value_list('guid', flat=True)
             )
 
-    @staticmethod
-    def register_required_commands(commands):
-        """
-        Register required commands. All computing nodes must have those commands.
-        :param commands: json array with field 'command name':  command syntax
-        """
-        node_commands = [
-            NodeCommand(node=None, name=command_name, syntax=command_syntax, type=CommandType.REQUIRED_COMMAND)
-            for command_name, command_syntax in commands.items()
-        ]
-
-        NodeCommand.objects.bulk_create(node_commands)
-
     @CacheForFunctionDecorator()
     @_set_commands_updated_timestamp_decorator
     def register_node_commands(self, node_guid, commands):
@@ -183,11 +172,19 @@ class NodeCommandsManager:
         """
         Returns set of commands available for all computing nodes
         """
-        return set(NodeCommand.objects.filter(node__type=None).values_list('name', flat=True))
+        return set(
+            NodeCommand.objects.filter(node__type=None).values_list('name', flat=True)
+        ).union(
+            set(sys_computing_node_commands.keys())
+        )
 
     @staticmethod
     def get_commands_syntax():
         """
         Returns all commands as dictionary. keys - commands names, value - syntax
         """
-        return dict(NodeCommand.objects.filter(active=True).values_list('name', 'syntax'))
+        result =  dict(
+            NodeCommand.objects.filter(active=True).values_list('name', 'syntax')
+        )
+        result.update(job_planer_commands)
+        return result

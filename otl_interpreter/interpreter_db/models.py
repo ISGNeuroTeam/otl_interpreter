@@ -5,7 +5,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from mptt.models import MPTTModel, TreeForeignKey
 from mixins.models import TimeStampedModel
-from .enums import JobStatus, NodeJobStatus, CommandType, ComputingNodeType, ResultStorage
+from .enums import JobStatus, NodeJobStatus, ComputingNodeType, ResultStorage
 
 
 class OtlJob(TimeStampedModel):
@@ -84,17 +84,13 @@ class NodeCommand(models.Model):
     )
     syntax = models.JSONField()
 
-    type = models.CharField(
-        max_length=255,
-        choices=CommandType.choices, default=CommandType.NODE_COMMAND
-    )
     resource_necessity = models.JSONField(
         null=True
     )
     active = models.BooleanField(default=True)
 
     def __str__(self):
-        return f'{self.type} {self.node.guid} {self.name}'
+        return f'{self.node.guid} {self.name}'
 
     class Meta:
         unique_together = ('node', 'name')

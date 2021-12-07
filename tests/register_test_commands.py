@@ -18,34 +18,6 @@ def register_test_commands():
     node_commands_manager.register_node('EEP', eep_node_id1, default_resources)
     node_commands_manager.register_node('POST_PROCESSING', post_processing_node_id1, default_resources)
 
-    node_commands_manager.register_required_commands(
-        {
-            "join": {"rules": [
-
-                {"type": "subsearch"},
-            ]},
-            "async": {"rules": [
-                {
-                    "type": "kwarg", "key": "name", "required": True
-                },
-
-                {
-                    "type": "subsearch"
-                },
-            ]},
-            "await": {"rules": [
-                {"type": "kwarg", "key": "name"},
-                {
-                    "type": "kwarg", "key": "override", "required": False
-                },
-            ]},
-            "sys_write_result": {"rules": [
-                {
-                    "type": "kwarg", "key": "address"
-                }
-            ]}
-        }
-    )
     node_commands_manager.register_node_commands(
         spark_node_id1,
         {
@@ -68,6 +40,13 @@ def register_test_commands():
                     }
                 ]},
             "readfile": {"rules": [{"type": "arg"}, {"type": "arg"}, {"type": "arg"}]},
+            "join": {"rules": [
+
+                {
+                    "type": "subsearch",
+                    "required": True
+                },
+            ]},
         }
     )
 
@@ -93,6 +72,13 @@ def register_test_commands():
                     }
                 ]},
             "readfile": {"rules": [{"type": "arg"}, {"type": "arg"}, {"type": "arg"}]},
+            "join": {"rules": [
+
+                {
+                    "type": "subsearch",
+                    "required": True
+                },
+            ]},
         }
     )
 
@@ -116,7 +102,14 @@ def register_test_commands():
                     }
 
                 ]
-            }
+            },
+            "join": {"rules": [
+
+                {
+                    "type": "subsearch",
+                    "required": True
+                },
+            ]}
         }
     )
 
@@ -145,6 +138,13 @@ def register_test_commands():
                         "required": True,
                     },
                 ]
-            }
+            },
+            "join": {"rules": [
+
+                {
+                    "type": "subsearch",
+                    "required": True
+                },
+            ]}
         }
     )

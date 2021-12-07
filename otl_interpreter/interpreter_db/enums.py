@@ -21,12 +21,6 @@ class NodeJobStatus(models.TextChoices):
     CANCELED = 'CANCELED', _('Canceled')
     FAILED = 'FAILED', _('Failed')
 
-
-class CommandType(models.TextChoices):
-    REQUIRED_COMMAND = 'REQUIRED_COMMAND', _('Required command')
-    NODE_COMMAND = 'NODE_COMMAND', _('Node command')
-
-
 class ResourceType(models.TextChoices):
     JOB_CAPACITY = 'JOB_CAPACITY', _('Job capacity')
     COMPUTING_RESOURCE = 'COMPUTING_RESOURCE', _('Computing resource')
