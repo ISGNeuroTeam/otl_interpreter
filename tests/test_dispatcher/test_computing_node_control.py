@@ -43,7 +43,7 @@ class TestCoumputingNodeRegister(TestCase):
         time.sleep(5)
 
     def test_simple_register(self):
-        guids_list = node_commands_manager.get_active_nodes_guids()
+        guids_list = node_commands_manager.get_active_nodes_uuids()
         self.assertEqual(len(guids_list), 1)
         node_conf = read_computing_node_config('spark1.json')
         self.assertEqual(guids_list[0].hex, node_conf['uuid'])

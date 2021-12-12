@@ -4,6 +4,9 @@
 import sys
 import os
 import django
+import logging
+
+log = logging.getLogger('otl_interpreter.dispatcher')
 
 
 def init_django(settings_module=None):
@@ -22,7 +25,7 @@ def init_django(settings_module=None):
     else:
         settings_module = 'core.settings'
 
+    log.debug(f'Getting django settings: {settings_module}')
 
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', settings_module)
     django.setup()
-

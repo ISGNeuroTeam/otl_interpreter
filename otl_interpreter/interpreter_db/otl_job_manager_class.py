@@ -1,9 +1,12 @@
+import logging
 import datetime
 
 from uuid import UUID
 
 from .models import OtlJob
 from .enums import JobStatus
+
+log = logging.getLogger('otl_interpreter.interpreter_db')
 
 
 class OtlJobManager:
@@ -27,6 +30,17 @@ class OtlJobManager:
         otl_job.status = JobStatus.CANCELED
         otl_job.save()
         return otl_job.status
+
+    @staticmethod
+    def change_otl_job_status(otl_job_uuid, status, status_text=None):
+        try:
+            otl_job = OtlJob.objects.get(otl_job_uuid)
+            otl_job.status = status
+            otl_job.status_text = status_text
+            otl_job.save()
+        except OtlJob.DoesNotExist:
+            log.error(f'Otl job with uuid: {otl_job_uuid} doesn\'t exist')
+
 
 
 

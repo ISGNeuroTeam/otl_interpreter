@@ -16,15 +16,12 @@ class NodeJobStatus(models.TextChoices):
     PLANNED = 'PLANNED', _('Planned')
     IN_QUEUE = 'IN_QUEUE', _('In queue')
     TAKEN_FROM_QUEUE = 'TAKEN_FROM_QUEUE', _('Taken from queue')
+    SENT_TO_COMPUTING_NODE = 'SENT_TO_COMPUTING_NODE', _('Sent to computing node')
+    DECLINED_BY_COMPUTING_NODE = 'DECLINED_BY_COMPUTING_NODE', _('Declined by computing node')
     RUNNING = 'RUNNING', _('Running')
     FINISHED = 'FINISHED', _('Finished')
     CANCELED = 'CANCELED', _('Canceled')
     FAILED = 'FAILED', _('Failed')
-
-class ResourceType(models.TextChoices):
-    JOB_CAPACITY = 'JOB_CAPACITY', _('Job capacity')
-    COMPUTING_RESOURCE = 'COMPUTING_RESOURCE', _('Computing resource')
-    RAM_MEMORY = 'RAM_MEMORY', _('RAM memory')
 
 
 class ComputingNodeType(models.TextChoices):

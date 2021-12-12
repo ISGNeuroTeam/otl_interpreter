@@ -1,6 +1,8 @@
 import sys
+import signal
 import asyncio
 
+from asgiref.sync import sync_to_async
 from logging import getLogger
 from json import loads
 
@@ -18,14 +20,14 @@ log = getLogger('otl_interpreter.dispatcher')
 
 
 async def consume_messages(topic, handler_class, consumer_extra_config=None):
-    async with Consumer(topic, value_deserializer=loads, extra_config=consumer_extra_config) as consumer:
-        async for message in consumer:
-            handler_obj = handler_class()
-            await handler_obj.process_message(message)
+    async with handler_class() as message_handler:
+        async with Consumer(topic, value_deserializer=loads, extra_config=consumer_extra_config) as consumer:
+            async for message in consumer:
+                await message_handler.process_message(message)
 
 
 async def main():
-    consume_message_tasks = [
+    tasks = [
         asyncio.create_task(
             consume_messages('computing_node_control', ComputingNodeControlHandler, {'broadcast': True})
         ),
@@ -34,13 +36,20 @@ async def main():
         ),
         asyncio.create_task(
             consume_messages('otl_job', OtlJobHandler)
-        )
+        ),
     ]
-    await asyncio.gather(*consume_message_tasks)
+    await asyncio.gather(*tasks)
+
+
+# to ensure that try / finaly block will be executed and __exit__ methods of contex manager
+def terminate_handler(signum, frame):
+    log.info('Dispatcher shutdown')
+    sys.exit(0)
+
+
+signal.signal(signal.SIGTERM, terminate_handler)
 
 
 if __name__ == "__main__":
     log.info('Dispatcher starting')
     asyncio.run(main())
-
-

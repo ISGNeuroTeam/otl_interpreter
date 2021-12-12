@@ -59,8 +59,8 @@ class ComputingNode(models.Model):
         db_index=True,
     )
 
-    # node guid
-    guid = models.UUIDField(unique=True)
+    # node uuid
+    uuid = models.UUIDField(unique=True)
 
     active = models.BooleanField(default=True)
 
@@ -68,7 +68,7 @@ class ComputingNode(models.Model):
     resources = models.JSONField(default=dict)
 
     def __str__(self):
-        return f'{self.type}: {self.guid}'
+        return f'{self.type}: {self.uuid}'
 
     class Meta:
         app_label = 'otl_interpreter'
@@ -90,7 +90,7 @@ class NodeCommand(models.Model):
     active = models.BooleanField(default=True)
 
     def __str__(self):
-        return f'{self.node.guid} {self.name}'
+        return f'{self.node.uuid} {self.name}'
 
     class Meta:
         unique_together = ('node', 'name')
@@ -143,7 +143,7 @@ class NodeJob(TimeStampedModel, MPTTModel):
     )
 
     otl_job = models.ForeignKey(
-        OtlJob, on_delete=models.CASCADE
+        OtlJob, on_delete=models.CASCADE, related_name='nodejobs'
     )
 
     computing_node_type = models.CharField(
@@ -151,12 +151,20 @@ class NodeJob(TimeStampedModel, MPTTModel):
         max_length=255,
         choices=ComputingNodeType.choices
     )
+
+    computing_node = models.ForeignKey(
+        ComputingNode, on_delete=models.SET_NULL,
+        null=True, blank=True
+    )
     # translated commands, json array of node commands
     commands = models.JSONField()
     status = models.CharField(
         max_length=255,
         choices=NodeJobStatus.choices, default=NodeJobStatus.PLANNED
     )
+
+    status_text = models.TextField(null=True)
+
     next_job = TreeForeignKey(
         'self', null=True, blank=True,
         on_delete=models.SET_NULL,

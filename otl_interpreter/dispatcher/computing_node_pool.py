@@ -1,3 +1,4 @@
+from message_broker import AsyncProducer
 from otl_interpreter.interpreter_db.enums import ComputingNodeType
 
 

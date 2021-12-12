@@ -52,11 +52,11 @@ class NodeCommandsManager:
         return self.commands_updated_timestamp > timestamp
 
     @CacheForFunctionDecorator()
-    def register_node(self, node_type, node_guid, resources=None):
+    def register_node(self, node_type, node_uuid, resources=None):
         """
         creates node if it doesn't exist
         :param node_type: type string, spark, eep or post_processing
-        :param node_guid: node global id, hex string
+        :param node_uuid: node global id, hex string
         :param resources: dictionary with node resources,
         keys - arbituarary string
         value - any positive integer
@@ -65,65 +65,65 @@ class NodeCommandsManager:
         if resources is None:
             resources = dict()
         try:
-            computing_node = ComputingNode.objects.get(guid=node_guid)
+            computing_node = ComputingNode.objects.get(uuid=node_uuid)
         except ComputingNode.DoesNotExist:
             computing_node = ComputingNode(
-                type=node_type, guid=node_guid, resources=resources
+                type=node_type, uuid=node_uuid, resources=resources
             )
         computing_node.active = True
         computing_node.save()
 
     @_set_commands_updated_timestamp_decorator
-    def node_deactivate(self, node_guid):
+    def node_deactivate(self, node_uuid):
         """
         make node and all node commands inactive
-        :param node_guid:
+        :param node_uuid:
         :return:
         """
-        computing_node = ComputingNode.objects.get(guid=node_guid)
+        computing_node = ComputingNode.objects.get(uuid=node_uuid)
         computing_node.active = False
         computing_node.save()
         computing_node.node_commands.update(active=False)
 
     @_set_commands_updated_timestamp_decorator
-    def node_activate(self, node_guid):
+    def node_activate(self, node_uuid):
         """
         make node and all node commands active
-        :param node_guid:
+        :param node_uuid:
         :return:
         """
-        computing_node = ComputingNode.objects.get(guid=node_guid)
+        computing_node = ComputingNode.objects.get(uuid=node_uuid)
         computing_node.active = True
         computing_node.save()
         computing_node.node_commands.update(active=True)
 
     @staticmethod
-    def get_active_nodes_guids(computing_node_type=None):
+    def get_active_nodes_uuids(computing_node_type=None):
         if computing_node_type is None:
             return list(
-                ComputingNode.objects.filter(active=True).values_list('guid', flat=True)
+                ComputingNode.objects.filter(active=True).values_list('uuid', flat=True)
             )
         else:
             return list(
                 ComputingNode.objects.filter(
                     active=True, type=computing_node_type
-                ).value_list('guid', flat=True)
+                ).value_list('uuid', flat=True)
             )
 
     @CacheForFunctionDecorator()
     @_set_commands_updated_timestamp_decorator
-    def register_node_commands(self, node_guid, commands):
+    def register_node_commands(self, node_uuid, commands):
 
         """
         Register new commands on node. Rases NodeCommandsError if get invalid command syntax
-        :param node_guid: node guid. If node_guid
+        :param node_uuid: node uuid. If node_uuid
         :param commands: json array with field 'command name':  command syntax
         """
 
         try:
-            computing_node = ComputingNode.objects.get(guid=node_guid)
+            computing_node = ComputingNode.objects.get(uuid=node_uuid)
         except ComputingNode.DoesNotExist:
-            raise NodeCommandsError(f'Node with guid {node_guid} was not registered')
+            raise NodeCommandsError(f'Node with uuid {node_uuid} was not registered')
 
         for command_name, command_syntax in commands.items():
             NodeCommand.objects.update_or_create(

@@ -1,4 +1,5 @@
 import json
+import time
 
 from logging import getLogger
 from uuid import UUID
@@ -14,7 +15,6 @@ from otl_interpreter.interpreter_db import (
     otl_job_manager as db_otl_job_manager, node_job_manager as db_node_job_manager
 )
 
-from otl_interpreter.serializers import NodeJobSerializer
 
 log = getLogger('otl_interpreter')
 
@@ -80,17 +80,21 @@ class OtlJobManager:
         independent_node_job_trees = top_node_job_tree.leaf_iterator()
 
         # form message for message broker
-        message = json.dumps([
-            NodeJobSerializer({
-                'uuid': node_job_tree.uuid,
-                'computing_node_type': node_job_tree.computing_node_type,
-                'commands': node_job_tree.as_command_dict_list()
-            }).data
-            for node_job_tree in independent_node_job_trees
-        ])
-
+        message = json.dumps({
+            'command_name': 'NEW_OTL_JOB',
+            'command': {
+                'node_jobs': [
+                    {
+                        'uuid': node_job_tree.uuid.hex,
+                        'computing_node_type': node_job_tree.computing_node_type,
+                        'commands': node_job_tree.as_command_dict_list()
+                    }
+                    for node_job_tree in independent_node_job_trees
+                ]
+            }
+        })
         with Producer() as producer:
-            message_id = producer.send('new_job', message)
+            message_id = producer.send('otl_job', message)
 
         return message_id
 
@@ -101,9 +105,16 @@ class OtlJobManager:
     @staticmethod
     def cancel_job(job_id: UUID):
         # send message to dispatcher to cancel node jobs
-        message = json.dumps({'job_id': job_id.hex})
+        message = json.dumps(
+            {
+                'command_name': 'NEW_OTL_JOB',
+                'command': {
+                    'uuid': job_id.hex
+                }
+            }
+        )
         with Producer() as producer:
-            message_id = producer.send('cancel_job', message)
+            message_id = producer.send('otl_job', message)
         return db_otl_job_manager.cancel_job(job_id)
 
 

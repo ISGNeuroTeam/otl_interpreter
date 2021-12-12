@@ -134,59 +134,96 @@ class TestComputingNodePool(TestCase):
         )
 
     def test_get_least_loaded_node_with_two_resource(self):
-        def test_get_least_loaded_node_with_one_resource(self):
-            computing_node_pool = ComputingNodePool()
-            computing_node_pool.add_computing_node(
-                'test1',
-                ComputingNodeType.SPARK.value,
-                {
-                    'first_resource': 100,
-                    'second_resource': 100
-                }
-            )
-            computing_node_pool.update_node_resources(
-                'test1',
-                {
-                    'first_resource': 9,
-                    'second_resource': 9
-                }
-            )
+        computing_node_pool = ComputingNodePool()
+        computing_node_pool.add_computing_node(
+            'test1',
+            ComputingNodeType.SPARK.value,
+            {
+                'first_resource': 100,
+                'second_resource': 100
+            }
+        )
+        computing_node_pool.update_node_resources(
+            'test1',
+            {
+                'first_resource': 9,
+                'second_resource': 9
+            }
+        )
 
-            computing_node_pool.add_computing_node(
-                'test2',
-                ComputingNodeType.SPARK.value,
-                {
-                    'first_resource': 100,
-                    'second_resource': 100
-                }
-            )
-            computing_node_pool.update_node_resources(
-                'test2',
-                {
-                    'first_resource': 9,
-                    'second_resource': 7
-                }
-            )
+        computing_node_pool.add_computing_node(
+            'test2',
+            ComputingNodeType.SPARK.value,
+            {
+                'first_resource': 100,
+                'second_resource': 100
+            }
+        )
+        computing_node_pool.update_node_resources(
+            'test2',
+            {
+                'first_resource': 9,
+                'second_resource': 7
+            }
+        )
 
-            computing_node_pool.add_computing_node(
-                'test3',
-                ComputingNodeType.SPARK.value,
-                {
-                    'first_resource': 100,
-                    'second_resource': 100
-                }
-            )
+        computing_node_pool.add_computing_node(
+            'test3',
+            ComputingNodeType.SPARK.value,
+            {
+                'first_resource': 100,
+                'second_resource': 100
+            }
+        )
 
-            computing_node_pool.update_node_resources(
-                'test3',
-                {
-                    'first_resource': 10,
-                    'second_resource': 10
-                }
-            )
+        computing_node_pool.update_node_resources(
+            'test3',
+            {
+                'first_resource': 10,
+                'second_resource': 10
+            }
+        )
 
-            least_loaded_node_uuid = computing_node_pool.get_least_loaded_node('SPARK')
-            self.assertEqual(
-                least_loaded_node_uuid,
-                'test2'
-            )
+        least_loaded_node_uuid = computing_node_pool.get_least_loaded_node('SPARK')
+        self.assertEqual(
+            least_loaded_node_uuid,
+            'test2'
+        )
+
+    def test_get_least_loaded_equal_nodes(self):
+        computing_node_pool = ComputingNodePool()
+        computing_node_pool.add_computing_node(
+            'test1',
+            ComputingNodeType.SPARK.value,
+            {
+                'first_resource': 100,
+                'second_resource': 100
+            }
+        )
+        computing_node_pool.update_node_resources(
+            'test1',
+            {
+                'first_resource': 10,
+                'second_resource': 10
+            }
+        )
+
+        computing_node_pool.add_computing_node(
+            'test2',
+            ComputingNodeType.SPARK.value,
+            {
+                'first_resource': 100,
+                'second_resource': 100
+            }
+        )
+        computing_node_pool.update_node_resources(
+            'test2',
+            {
+                'first_resource': 10,
+                'second_resource': 10
+            }
+        )
+        node_uuid = computing_node_pool.get_least_loaded_node('SPARK')
+        self.assertEqual(node_uuid, 'test1')
+
+

@@ -41,7 +41,7 @@ class ComputingNode:
     async def _start_job_consuming(self):
         async with Consumer(self.job_topic, value_deserializer=json.loads) as job_consumer:
             async for job_message in job_consumer:
-                pp(job_message)
+                pp(job_message.value)
 
 
 async def main():

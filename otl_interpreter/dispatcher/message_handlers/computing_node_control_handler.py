@@ -18,10 +18,15 @@ log = getLogger('otl_interpreter.dispatcher')
 # django funcions are not allowed to be used in async mode
 register_node = sync_to_async(node_commands_manager.register_node)
 register_node_commands = sync_to_async(node_commands_manager.register_node_commands)
-get_active_nodes = sync_to_async(node_commands_manager.get_active_nodes_guids)
+get_active_nodes = sync_to_async(node_commands_manager.get_active_nodes_uuids)
 
 
 class ComputingNodeControlHandler(MessageHandler):
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, exc_traceback):
+        pass
 
     async def process_message(self, message: Message) -> None:
         log.debug(f'computing_node_control recieved message: {message.value}')
@@ -99,7 +104,7 @@ class ComputingNodeControlHandler(MessageHandler):
         # add compuging node information in computing node pool
         computing_node_pool.add_computing_node(
             computing_node_uuid, register_command.validated_data['computing_node_type'],
-            register_command.validated_data['resources'].keys()
+            register_command.validated_data['resources']
         )
 
     async def process_error_occured(self, computing_node_uuid, error_occured_command: ErrorOccuredCommand):

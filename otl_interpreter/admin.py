@@ -40,7 +40,7 @@ class NodeJobAdmin(MPTTModelAdmin, JsonAdmin):
 
 @register(ComputingNode)
 class ComputingNodeAdmin(ModelAdmin):
-    list_display = ['type', 'guid']
+    list_display = ['type', 'uuid']
 
 
 @register(NodeCommand)
