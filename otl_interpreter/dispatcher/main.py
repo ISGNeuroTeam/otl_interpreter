@@ -1,6 +1,7 @@
 import sys
 import signal
 import asyncio
+import traceback
 
 from asgiref.sync import sync_to_async
 from logging import getLogger
@@ -23,7 +24,13 @@ async def consume_messages(topic, handler_class, consumer_extra_config=None):
     async with handler_class() as message_handler:
         async with Consumer(topic, value_deserializer=loads, extra_config=consumer_extra_config) as consumer:
             async for message in consumer:
-                await message_handler.process_message(message)
+                try:
+                    await message_handler.process_message(message)
+                except Exception as err:
+                    log.error(f'Error occured while process message {message.value}')
+                    tb = traceback.format_exc()
+                    log.error(tb)
+                    print(tb)
 
 
 async def main():

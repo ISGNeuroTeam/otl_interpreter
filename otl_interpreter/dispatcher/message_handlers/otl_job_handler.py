@@ -11,6 +11,8 @@ from otl_interpreter.interpreter_db import node_job_manager
 from otl_interpreter.interpreter_db.enums import NodeJobStatus
 
 from computing_node_pool import computing_node_pool
+from node_job_status_manager import NodeJobStatusManager
+
 from message_serializers.otl_job import OtlJobCommand, OtlJobCommandName, NewOtlJobCommand
 
 from .abstract_message_handler import MessageHandler, Message
@@ -24,6 +26,7 @@ change_node_job_status = sync_to_async(node_job_manager.change_node_job_status)
 class OtlJobHandler(MessageHandler):
     def __init__(self):
         self.producer = AsyncProducer()
+        self.node_job_status_manager = NodeJobStatusManager()
 
     async def __aenter__(self):
         await self.producer.start()
@@ -54,11 +57,11 @@ class OtlJobHandler(MessageHandler):
             return
 
         for node_job in new_otl_job_command_serializer.validated_data['node_jobs']:
-            computing_node_uuid = computing_node_pool.get_least_loaded_node(node_job['computing_node_type'])
-            await set_computing_node_for_node_job(node_job['uuid'].hex, computing_node_uuid)
-            await self.producer.send(f"{computing_node_uuid.hex}_job", JSONRenderer().render(node_job))
-            await change_node_job_status(node_job['uuid'].hex, NodeJobStatus.SENT_TO_COMPUTING_NODE)
-            log.debug('node job sended')
+            await self.node_job_status_manager.change_node_job_status(
+                node_job['uuid'], NodeJobStatus.READY_TO_EXECUTE,
+                'One of the first node job in otl query',
+                node_job
+            )
 
     async def cancel_otl_job(self, otl_job_uuid):
         pass

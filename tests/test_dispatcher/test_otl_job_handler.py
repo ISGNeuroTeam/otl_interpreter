@@ -40,7 +40,7 @@ class TestOtlJobHandler(TransactionTestCase):
             [sys.executable, '-u', dispatcher_main, 'core.settings.test'],
             env={
                 'PYTHONPATH': f'{base_rest_dir}:{plugins_dir}'
-            }
+            },
         )
 
         # wait until dispatcher start
@@ -82,7 +82,7 @@ class TestOtlJobHandler(TransactionTestCase):
 
         # send request for olt
         data = {
-            'otl_query': "| otstats index='test_index'",
+            'otl_query': "| otstats index='test_index'| sum 1,2,3 | pp_command1 test",
             'tws': now_timestamp,
             'twf': yesterday_timestamp
         }
@@ -91,15 +91,23 @@ class TestOtlJobHandler(TransactionTestCase):
             data=data,
             format='json'
         )
-        time.sleep(4)
+
+        time.sleep(10)
         # checking status code
         self.assertEqual(response.status_code, 200)
 
-        node_job = NodeJob.objects.all().first()
-        self.assertEqual(node_job.status, NodeJobStatus.SENT_TO_COMPUTING_NODE)
+        node_jobs = NodeJob.objects.all()
+        self.assertEqual(len(node_jobs), 3)
+        for node_job in node_jobs:
+            self.assertEqual(
+                node_job.result.calculated, True
+            )
+            self.assertEqual(node_job.status, NodeJobStatus.FINISHED)
 
     def tearDown(self):
-        self.spark_computing_node.kill()
-        self.eep_computing_node.kill()
-        self.pp_computing_node.kill()
-        self.dispatcher_process.kill()
+        self.spark_computing_node.terminate()
+        self.eep_computing_node.terminate()
+        self.pp_computing_node.terminate()
+        self.dispatcher_process.terminate()
+
+

@@ -3,5 +3,6 @@
   "computing_node_type": "SPARK",
   "resources": {
     "job_capacity": 4
-  }
+  },
+  "time_on_command": 0.3
 }

@@ -107,7 +107,7 @@ class OtlJobManager:
         # send message to dispatcher to cancel node jobs
         message = json.dumps(
             {
-                'command_name': 'NEW_OTL_JOB',
+                'command_name': 'CANCEL_JOB',
                 'command': {
                     'uuid': job_id.hex
                 }
@@ -115,7 +115,6 @@ class OtlJobManager:
         )
         with Producer() as producer:
             message_id = producer.send('otl_job', message)
-        return db_otl_job_manager.cancel_job(job_id)
 
 
 otl_job_manager = OtlJobManager(

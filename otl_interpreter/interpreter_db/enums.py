@@ -14,6 +14,7 @@ class JobStatus(models.TextChoices):
 
 class NodeJobStatus(models.TextChoices):
     PLANNED = 'PLANNED', _('Planned')
+    READY_TO_EXECUTE = 'READУ_TO_EXECUTE', _('Ready to execute')  # when all children jobs are done
     IN_QUEUE = 'IN_QUEUE', _('In queue')
     TAKEN_FROM_QUEUE = 'TAKEN_FROM_QUEUE', _('Taken from queue')
     SENT_TO_COMPUTING_NODE = 'SENT_TO_COMPUTING_NODE', _('Sent to computing node')

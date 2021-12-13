@@ -1,3 +1,4 @@
+import asyncio
 import sys
 import json
 from pprint import pp
@@ -42,6 +43,38 @@ class ComputingNode:
         async with Consumer(self.job_topic, value_deserializer=json.loads) as job_consumer:
             async for job_message in job_consumer:
                 pp(job_message.value)
+                asyncio.create_task(self._run_job(job_message.value))
+
+    async def _run_job(self, job):
+        # send status job running
+        for command in job['commands']:
+            await asyncio.sleep(self.config['time_on_command'])
+            # send status command
+
+            await self._send_node_job_status(
+                job['uuid'],
+                'RUNNING',
+                f"command {command['name']} finished",
+                command['name']
+            )
+        # send status job done
+        await self._send_node_job_status(
+            job['uuid'],
+            'FINISHED',
+            f"Node job {job['uuid']} successfully finished",
+            job['commands'][-1]['name']
+        )
+
+    async def _send_node_job_status(
+        self, node_job_uuid, status, status_text=None, last_finished_command=None
+    ):
+        message = {
+            'uuid': node_job_uuid,
+            'status': status,
+            'status_text': status_text,
+            'last_finished_command': last_finished_command,
+        }
+        await self.producer.send('nodejob_status', json.dumps(message))
 
 
 async def main():
