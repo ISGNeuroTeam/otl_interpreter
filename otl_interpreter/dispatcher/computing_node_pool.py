@@ -1,3 +1,5 @@
+import random
+
 from message_broker import AsyncProducer
 from otl_interpreter.interpreter_db.enums import ComputingNodeType
 
@@ -63,11 +65,28 @@ class ComputingNodePool:
         """
         Returns uuid of node with lowest resource usage or None
         """
-        if self.nodes_by_types[node_type]:
-            node = min(self.nodes_by_types[node_type].values())
-            return node.uuid
-        else:
+        nodes = tuple(self.nodes_by_types[node_type].values())
+        if len(nodes) == 1:
+            return nodes[0]
+        if len(nodes) == 0:
             return None
+
+        min_resources_computing_nodes_uuids = {nodes[0].uuid, }
+        min_computing_node = nodes[0]
+
+        for i in range(1, len(nodes)):
+            if nodes[i] < min_computing_node:
+                min_resources_computing_nodes_uuids.clear()
+                min_resources_computing_nodes_uuids.add(nodes[i].uuid)
+                min_computing_node = nodes[i]
+            elif nodes[i] == min_computing_node:
+                min_resources_computing_nodes_uuids.add(nodes[i].uuid)
+
+        if len(min_resources_computing_nodes_uuids) == 1:
+            return min_resources_computing_nodes_uuids.pop()
+        else:
+            # if two equals nodes return random
+            return random.choice(tuple(min_resources_computing_nodes_uuids))
 
     def update_node_resources(self, node_uuid, resources):
         self.nodes[node_uuid].update_used_resources(

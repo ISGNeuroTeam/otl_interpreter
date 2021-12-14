@@ -24,6 +24,23 @@ class TestComputingNodePool(TestCase):
             testUUID
         )
 
+    def test_zero_compuging_nodes(self):
+        computing_node_pool = ComputingNodePool()
+        node = computing_node_pool.get_least_loaded_node('SPARK')
+        self.assertIsNone(node)
+
+    def test_one_computing_node(self):
+        computing_node_pool = ComputingNodePool()
+        computing_node_pool.add_computing_node(
+            'test1',
+            'SPARK',
+            {
+                'test_resource': 20
+            }
+        )
+        node = computing_node_pool.get_least_loaded_node('SPARK')
+        self.assertEqual(node.uuid, 'test1')
+
     def test_computing_node_comparison_one_resourse(self):
         node1 = ComputingNode(
             'test1',
@@ -135,6 +152,34 @@ class TestComputingNodePool(TestCase):
 
     def test_get_least_loaded_node_with_two_resource(self):
         computing_node_pool = ComputingNodePool()
+
+        computing_node_pool.add_computing_node(
+            'test0',
+            ComputingNodeType.SPARK.value,
+            {
+                'first_resource': 100
+            }
+        )
+        computing_node_pool.update_node_resources(
+            'test0',
+            {
+                'first_resource': 15
+            }
+        )
+        computing_node_pool.add_computing_node(
+            'test-1',
+            ComputingNodeType.SPARK.value,
+            {
+                'first_resource': 100
+            }
+        )
+        computing_node_pool.update_node_resources(
+            'test-1',
+            {
+                'first_resource': 15
+            }
+        )
+
         computing_node_pool.add_computing_node(
             'test1',
             ComputingNodeType.SPARK.value,
@@ -219,11 +264,51 @@ class TestComputingNodePool(TestCase):
         computing_node_pool.update_node_resources(
             'test2',
             {
+                'first_resource': 15,
+                'second_resource': 15
+            }
+        )
+
+        computing_node_pool.add_computing_node(
+            'test3',
+            ComputingNodeType.SPARK.value,
+            {
+                'first_resource': 100,
+                'second_resource': 100
+            }
+        )
+        computing_node_pool.update_node_resources(
+            'test3',
+            {
                 'first_resource': 10,
                 'second_resource': 10
             }
         )
-        node_uuid = computing_node_pool.get_least_loaded_node('SPARK')
-        self.assertEqual(node_uuid, 'test1')
+        computing_node_pool.add_computing_node(
+            'test4',
+            ComputingNodeType.SPARK.value,
+            {
+                'first_resource': 100,
+                'second_resource': 100
+            }
+        )
+        computing_node_pool.update_node_resources(
+            'test4',
+            {
+                'first_resource': 15,
+                'second_resource': 15
+            }
+        )
+
+        # must return test1 or test3
+        node_uuids = set()
+        for i in range(20):
+            node_uuid = computing_node_pool.get_least_loaded_node('SPARK')
+            node_uuids.add(node_uuid)
+            self.assertIn(node_uuid, ('test1', 'test3'))
+
+        self.assertIn('test1', node_uuids)
+        self.assertIn('test3', node_uuids)
+
 
 
