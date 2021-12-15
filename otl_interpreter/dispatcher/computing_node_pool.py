@@ -61,13 +61,22 @@ class ComputingNodePool:
         self.nodes_by_types[node_type][uuid] = computing_node
         self.nodes[uuid] = computing_node
 
+    def del_computing_node(self, uuid):
+        """
+        ;:param uuid: node uuid
+        :return:
+        """
+        node_type = self.nodes[uuid].type
+        del self.nodes_by_types[node_type][uuid]
+        del self.nodes[uuid]
+
     def get_least_loaded_node(self, node_type):
         """
         Returns uuid of node with lowest resource usage or None
         """
         nodes = tuple(self.nodes_by_types[node_type].values())
         if len(nodes) == 1:
-            return nodes[0]
+            return nodes[0].uuid
         if len(nodes) == 0:
             return None
 

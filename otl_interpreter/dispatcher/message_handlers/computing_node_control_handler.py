@@ -19,6 +19,7 @@ log = getLogger('otl_interpreter.dispatcher')
 register_node = sync_to_async(node_commands_manager.register_node)
 register_node_commands = sync_to_async(node_commands_manager.register_node_commands)
 get_active_nodes = sync_to_async(node_commands_manager.get_active_nodes_uuids)
+node_deactivate = sync_to_async(node_commands_manager.node_deactivate)
 
 
 class ComputingNodeControlHandler(MessageHandler):
@@ -113,6 +114,14 @@ class ComputingNodeControlHandler(MessageHandler):
     async def process_resource_status(self, computing_node_uuid, resource_status_command: ResourceStatusCommand):
         pass
 
-    def process_unregister(self, computing_node_uuid, unregister_command: UnregisterComputingNodeCommand):
-        pass
+    @staticmethod
+    async def process_unregister(computing_node_uuid, unregister_command: UnregisterComputingNodeCommand):
+        # only one instance of dispatcher put node information in database
+        unregister_node_lock = Lock(
+            key=f'unregister_computing_node_{computing_node_uuid}'
+        )
+        if unregister_node_lock.acquire(blocking=False):
+            await node_deactivate(computing_node_uuid)
+            unregister_node_lock.release()
 
+        computing_node_pool.del_computing_node(computing_node_uuid)

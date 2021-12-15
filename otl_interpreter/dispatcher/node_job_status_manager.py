@@ -88,6 +88,8 @@ class NodeJobStatusManager:
         # TODO
 
         # send node job to computing node
+        node_job_dict['uuid'] = node_job_dict['uuid'].hex
+        node_job_dict['status'] = NodeJobStatus.READY_TO_EXECUTE
         self.producer.send(f"{computing_node_uuid.hex}_job", JSONRenderer().render(node_job_dict))
         self._change_node_job_status(
             node_job_dict['uuid'],
