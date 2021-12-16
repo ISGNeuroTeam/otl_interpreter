@@ -32,9 +32,9 @@ class OtlJobManager:
         return otl_job.status
 
     @staticmethod
-    def change_otl_job_status(otl_job_uuid, status, status_text=None):
+    def change_otl_job_status(otl_job_uuid: UUID, status, status_text=None):
         try:
-            otl_job = OtlJob.objects.get(otl_job_uuid)
+            otl_job = OtlJob.objects.get(uuid=otl_job_uuid)
             otl_job.status = status
             otl_job.status_text = status_text
             otl_job.save()

@@ -1,13 +1,14 @@
 import logging
+import json
 
 from uuid import UUID
 from asgiref.sync import sync_to_async
-from rest_framework.renderers import JSONRenderer
+
 
 from message_broker import Producer
 
-from otl_interpreter.interpreter_db.enums import NodeJobStatus
-from otl_interpreter.interpreter_db import node_job_manager
+from otl_interpreter.interpreter_db.enums import NodeJobStatus, JobStatus
+from otl_interpreter.interpreter_db import node_job_manager, otl_job_manager
 
 from computing_node_pool import computing_node_pool
 
@@ -17,7 +18,7 @@ log = logging.getLogger('otl_interpreter.dispatcher')
 # sets of allowed next states
 allowed_state_transfer_table = {
     NodeJobStatus.PLANNED: {
-        NodeJobStatus.READY_TO_EXECUTE
+        NodeJobStatus.READY_TO_EXECUTE, NodeJobStatus.CANCELED
     },
     NodeJobStatus.READY_TO_EXECUTE: {
         NodeJobStatus.IN_QUEUE, NodeJobStatus.SENT_TO_COMPUTING_NODE, NodeJobStatus.FINISHED, NodeJobStatus.CANCELED
@@ -29,7 +30,7 @@ allowed_state_transfer_table = {
         NodeJobStatus.SENT_TO_COMPUTING_NODE, NodeJobStatus.IN_QUEUE, NodeJobStatus.CANCELED
     },
     NodeJobStatus.SENT_TO_COMPUTING_NODE: {
-        NodeJobStatus.RUNNING, NodeJobStatus.DECLINED_BY_COMPUTING_NODE, NodeJobStatus.CANCELED
+        NodeJobStatus.RUNNING, NodeJobStatus.FAILED, NodeJobStatus.FINISHED, NodeJobStatus.DECLINED_BY_COMPUTING_NODE, NodeJobStatus.CANCELED
     },
     NodeJobStatus.DECLINED_BY_COMPUTING_NODE: {
         NodeJobStatus.IN_QUEUE, NodeJobStatus.SENT_TO_COMPUTING_NODE, NodeJobStatus.CANCELED
@@ -90,7 +91,9 @@ class NodeJobStatusManager:
         # send node job to computing node
         node_job_dict['uuid'] = node_job_dict['uuid'].hex
         node_job_dict['status'] = NodeJobStatus.READY_TO_EXECUTE
-        self.producer.send(f"{computing_node_uuid.hex}_job", JSONRenderer().render(node_job_dict))
+
+        self._send_message_to_computing_node(computing_node_uuid, json.dumps(node_job_dict))
+
         self._change_node_job_status(
             node_job_dict['uuid'],
             NodeJobStatus.SENT_TO_COMPUTING_NODE,
@@ -114,19 +117,45 @@ class NodeJobStatusManager:
 
     def _on_finished(self, node_job_uuid, node_job_dict):
         log.debug(f'node_job_finished {node_job_uuid}')
-        next_node_job_dict = node_job_manager.get_next_node_job_to_execute_or_finish_otl(node_job_uuid)
+        # TODO check job queue fot that node type
+        next_node_job_dict = node_job_manager.get_next_node_job_to_execute(node_job_uuid)
+
         if next_node_job_dict:
             self._change_node_job_status(
                 next_node_job_dict['uuid'], NodeJobStatus.READY_TO_EXECUTE,
                 f'Children node jobs are finished',
                 next_node_job_dict
             )
+        else:
+            otl_job_uuid = node_job_manager.get_otl_job_uuid(node_job_uuid)
+            otl_job_manager.change_otl_job_status(
+                otl_job_uuid, JobStatus.FINISHED,
+                f'All node jobs successfully finished'
+            )
 
     def _on_canceled(self, node_job_uuid, node_job_dict):
-        pass
+        node_job_status = node_job_manager.get_node_job_status(node_job_uuid)
+        if node_job_status == NodeJobStatus.RUNNING:
+            self._cancel_running_node_job(node_job_uuid)
 
     def _on_failed(self, node_job_uuid, node_job_dict):
-        pass
+
+        otl_job_uuid = node_job_manager.get_otl_job_uuid(node_job_uuid)
+        otl_job_manager.change_otl_job_status(
+            otl_job_uuid,
+            JobStatus.FAILED,
+            f'Failed because of node job: {str(node_job_manager.get_node_job_dict(node_job_uuid))}'
+        )
+        # find other running jobs and cancel them
+        running_jobs_uuids = node_job_manager.get_node_jobs_for_cancelling(node_job_uuid)
+
+        log.debug(f'Running jobs for canceling: {str(running_jobs_uuids)}')
+
+        for job_uuid in running_jobs_uuids:
+            self._change_node_job_status(
+                job_uuid, NodeJobStatus.CANCELED,
+                f'Cancelled because of node job fail: {str(node_job_manager.get_node_job_dict(node_job_uuid))}'
+            )
 
     @sync_to_async
     def change_node_job_status(
@@ -138,6 +167,7 @@ class NodeJobStatusManager:
     ):
         """
         Changes node job status if changing is allowed by status transfer table
+        Makes necessary actions on status change
         :param node_job_uuid:
         :param status:
         :param status_text:
@@ -157,6 +187,7 @@ class NodeJobStatusManager:
         node_job_dict = node_job_dict or {}
         cur_status = node_job_manager.get_node_job_status(node_job_uuid)
 
+        # if status the same do nothing
         if cur_status == status and status_text is not None:
             # just refresh status text
             log.debug(f'Refresh node job status, node job uuid {node_job_uuid}, status: {status_text}')
@@ -175,4 +206,24 @@ class NodeJobStatusManager:
 
         # make actions on state change
         self.status_action_table[status](node_job_uuid, node_job_dict)
+
+    def _cancel_running_node_job(self, node_job_uuid):
+        computing_node_uuid = node_job_manager.get_computing_node_for_node_job(node_job_uuid)
+        message_dict = {
+            'uuid': node_job_uuid.hex,
+            'status': NodeJobStatus.CANCELED
+        }
+        self._send_message_to_computing_node(computing_node_uuid, json.dumps(message_dict))
+
+    def _send_message_to_computing_node(self, computing_node_uuid, message):
+        """
+        Sends message to topic for computing node
+        :param computing_node_uuid: compurtingg node uuid
+        :param message: message, str or bytes
+        :return:
+        """
+        self.producer.send(f"{computing_node_uuid.hex}_job", message)
+
+
+
 

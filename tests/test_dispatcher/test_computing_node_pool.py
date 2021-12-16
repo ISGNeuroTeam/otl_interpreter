@@ -39,7 +39,7 @@ class TestComputingNodePool(TestCase):
             }
         )
         node = computing_node_pool.get_least_loaded_node('SPARK')
-        self.assertEqual(node.uuid, 'test1')
+        self.assertEqual(node, 'test1')
 
     def test_computing_node_comparison_one_resourse(self):
         node1 = ComputingNode(

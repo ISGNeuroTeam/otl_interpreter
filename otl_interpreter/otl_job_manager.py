@@ -40,7 +40,7 @@ class OtlJobManager:
         :param twf: time windw finish
         :param cache_ttl: number of seconds to keep node job results
         :param timeout: timeout for otl job
-        :param shared: result will be in shared storage or local
+        :param shared_post_processing: result will be in shared storage or local
         :param subsearch_is_node_job: create new node job for each subsearch or not
         """
         cache_ttl = cache_ttl or self.default_cache_ttl

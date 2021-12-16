@@ -3,8 +3,9 @@ import logging
 
 from datetime import timedelta
 
-from otl_interpreter.interpreter_db.models import NodeJob, NodeJobResult, OtlJob, ComputingNode
-from otl_interpreter.interpreter_db.enums import NodeJobStatus, JobStatus
+from .models import NodeJob, NodeJobResult, OtlJob, ComputingNode
+from .enums import NodeJobStatus, JobStatus
+
 
 
 log = logging.getLogger('otl_interpreter.interpreter_db')
@@ -68,6 +69,18 @@ class NodeJobManager:
             log.error(f'Setting unexisting computing node for nodejob: {computing_node_uuid}')
 
     @staticmethod
+    def get_computing_node_for_node_job(node_job):
+        """
+        Returns computing node uuid for node job
+        :param node_job: node job uuid or NodeJob instance
+        :return:
+        """
+        if not isinstance(node_job, NodeJob):
+            node_job = NodeJob.objects.get(uuid=node_job)
+
+        return node_job.computing_node.uuid
+
+    @staticmethod
     def get_node_job_status(node_job_uuid):
         """
         Returns computing node job status
@@ -77,7 +90,7 @@ class NodeJobManager:
             node_job = NodeJob.objects.get(uuid=node_job_uuid)
             return node_job.status
         except NodeJob.DoesNotExist:
-            log.error(f'Get node job status for unexisting nodejob: {node_job_uuid} {str(err)}')
+            log.error(f'Get node job status for unexisting nodejob: {node_job_uuid}')
         return None
 
     @staticmethod
@@ -105,12 +118,9 @@ class NodeJobManager:
         """
         pass
 
-    @staticmethod
-    def get_next_node_job_to_execute_or_finish_otl(finished_node_uuid):
+    def get_next_node_job_to_execute(self, finished_node_uuid):
         """
         Returns serialized node_job ready to be executed or None
-        Checks if all node jobs finished. If true finish otl job
-
         :param finished_node_uuid: recently finished node job uuid
         :return:
         If next node job exists and ready to be executed returns dictionary representing node job
@@ -118,7 +128,6 @@ class NodeJobManager:
         """
         finished_node_job = NodeJob.objects.get(uuid=finished_node_uuid)
         next_node_job = finished_node_job.next_job
-
         if next_node_job:
             # check that doesn't exist unfinished node jobs
             if NodeJob.objects.filter(
@@ -127,26 +136,52 @@ class NodeJobManager:
             ).exists():
                 return None
             else:
-                return {
-                    'uuid': next_node_job.uuid,
-                    'computing_node_type': next_node_job.computing_node_type,
-                    'commands': next_node_job.commands
-                }
-        else:
-            otl_job = finished_node_job.otl_job
-            otl_job.status = 'FINISHED'
-            otl_job.save()
-
+                return self.get_node_job_dict(node_job=next_node_job)
         return None
 
     @staticmethod
-    def get_node_job_dict(node_job_uuid):
-        node_job = NodeJob.objects.get(uuid=node_job_uuid)
+    def get_otl_job_uuid(node_job):
+        if not isinstance(node_job, NodeJob):
+            node_job = NodeJob.objects.get(uuid=node_job)
+        return node_job.otl_job.uuid
+
+    @staticmethod
+    def get_node_job_dict(node_job):
+        """
+        returns node job dictionary representation
+        :param node_job: NodeJob instance or node job uuid
+        :param node_job: NodeJob instance
+        :return:
+        """
+
+        if not isinstance(node_job, NodeJob):
+            node_job = NodeJob.objects.get(uuid=node_job)
+
         return {
             'uuid': node_job.uuid,
-            'computing_node_type': node_job.computin_node_type,
+            'status': node_job.status,
+            'computing_node_type': node_job.computing_node_type,
             'commands': node_job.commands
         }
+
+    @staticmethod
+    def get_node_jobs_for_cancelling(failed_node_job):
+        """
+        Get running node jobs uuid that must be cancel
+        :failed_node_job_uuid: failed node job
+        :return:
+        list of node jobs uuids that in running state
+        """
+        if not isinstance(failed_node_job, NodeJob):
+            failed_node_job = NodeJob.objects.get(uuid=failed_node_job)
+
+        done_statuses = {NodeJobStatus.CANCELED, NodeJobStatus.FAILED, NodeJobStatus.FINISHED}
+        running_node_jobs = NodeJob.objects.filter(
+            otl_job=failed_node_job.otl_job
+        ).exclude(status__in=done_statuses)
+
+        return list(running_node_jobs.values_list('uuid', flat=True))
+
 
 
 
