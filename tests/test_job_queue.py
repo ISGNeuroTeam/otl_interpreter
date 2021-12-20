@@ -136,18 +136,24 @@ class BaseNodeJobQueueTestCases:
             self.assertEqual(type(node_job_queue.queues['SPARK']), RedisPriorityQueue)
 
         def test_simple_add_pop(self):
-            test_uuid1 = uuid.uuid4()
-            test_uuid2 = uuid.uuid4()
+            node_job_dict1 = {
+                'uuid': uuid.uuid4(),
+                'computing_node_type': 'SPARK'
+            }
+            node_job_dict2 = {
+                'uuid': uuid.uuid4(),
+                'computing_node_type': 'SPARK'
+            }
             score = datetime.datetime.now().timestamp()
-            self.node_job_queue.add('SPARK', test_uuid1.bytes, score)
+            self.node_job_queue.add(node_job_dict1, score)
             score2 = datetime.datetime.now().timestamp() + 1
-            self.node_job_queue.add('SPARK', test_uuid2.bytes, score2)
+            self.node_job_queue.add(node_job_dict2, score2)
 
-            node_job_guid_binary, priority_score = self.node_job_queue.pop('SPARK')[0]
-            self.assertEqual(node_job_guid_binary, test_uuid1.bytes)
+            node_job_dict, priority_score = self.node_job_queue.pop('SPARK')
+            self.assertDictEqual(node_job_dict, node_job_dict1)
 
-            node_job_guid_binary, priority_score = self.node_job_queue.pop('SPARK')[0]
-            self.assertEqual(node_job_guid_binary, test_uuid2.bytes)
+            node_job_dict, priority_score = self.node_job_queue.pop('SPARK')
+            self.assertDictEqual(node_job_dict, node_job_dict2)
 
 
 class TestNodeJobQueueOnRedis(BaseNodeJobQueueTestCases.TestNodeJobQueue):

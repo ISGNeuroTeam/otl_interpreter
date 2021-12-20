@@ -107,7 +107,7 @@ class NodeJobManager:
             node_job.save()
 
         except NodeJob.DoesNotExist:
-            log.error(f'Setting node job status for unexisting nodejob: {uuid}')
+            log.error(f'Setting node job status for unexisting nodejob: {node_job_uuid}')
 
     @staticmethod
     def get_computing_nodes_and_node_jobs_uuids_for_cancel(failed_node_job_uuid):

@@ -1,0 +1,9 @@
+{
+  "uuid": "bfa640a228e246c4ae005400b069564e",
+  "computing_node_type": "EEP",
+  "resources": {
+    "job_capacity": 4
+  },
+  "time_on_command": 0.3,
+  "decline_rate": 1
+}

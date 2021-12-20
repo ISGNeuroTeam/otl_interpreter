@@ -15,6 +15,7 @@ from otl_interpreter.interpreter_db import (
     otl_job_manager as db_otl_job_manager, node_job_manager as db_node_job_manager
 )
 
+from otl_interpreter.interpreter_db.enums import NodeJobStatus
 
 log = getLogger('otl_interpreter')
 
@@ -86,6 +87,7 @@ class OtlJobManager:
                 'node_jobs': [
                     {
                         'uuid': node_job_tree.uuid.hex,
+                        'status': NodeJobStatus.PLANNED,
                         'computing_node_type': node_job_tree.computing_node_type,
                         'commands': node_job_tree.as_command_dict_list()
                     }

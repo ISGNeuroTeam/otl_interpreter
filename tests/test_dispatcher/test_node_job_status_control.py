@@ -6,11 +6,11 @@ import subprocess
 from pathlib import Path
 
 from django.conf import settings
-from rest.test import TransactionTestCase, APIClient
+from rest.test import TransactionTestCase
 from otl_interpreter.interpreter_db.models import NodeJob
 from otl_interpreter.interpreter_db.enums import NodeJobStatus
 
-from create_test_users import create_test_users
+from base_api_test_class import BaseApiTest
 
 from rest_auth.models import User
 
@@ -27,16 +27,12 @@ now_timestamp = int(datetime.now().timestamp())
 yesterday_timestamp = int(datetime.now().timestamp()) - 60*60*24
 
 
-class TestNodeJobError(TransactionTestCase):
+class TestNodeJobError(TransactionTestCase, BaseApiTest):
     def setUp(self) -> None:
-        create_test_users()
-        self.base_url = '/otl_interpreter/v1'
-        self.client = APIClient()
-        self.user_token = self._get_user_token()
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + str(self.user_token))
+        BaseApiTest.setUp(self)
 
         self.dispatcher_process = subprocess.Popen(
-            [sys.executable, '-u', dispatcher_main, 'core.settings.test'],
+            [sys.executable, '-u', dispatcher_main, 'core.settings.test', 'use_test_database'],
             env={
                 'PYTHONPATH': f'{base_rest_dir}:{plugins_dir}'
             },
@@ -66,17 +62,6 @@ class TestNodeJobError(TransactionTestCase):
         # wait until node register
         time.sleep(5)
 
-    def _get_user_token(self):
-        data = {
-            "login": "ordinary_user1",
-            "password": "ordinary_user1"
-        }
-        response = self.client.post('/auth/login/', data=data)
-        return response.data['token']
-
-    def _full_url(self, url):
-        return self.base_url + url
-
     def test_job_in_the_middle_failed(self):
 
         # send request for olt
@@ -86,7 +71,7 @@ class TestNodeJobError(TransactionTestCase):
             'twf': yesterday_timestamp
         }
         response = self.client.post(
-            self._full_url('/makejob/'),
+            self.full_url('/makejob/'),
             data=data,
             format='json'
         )
@@ -121,11 +106,90 @@ class TestNodeJobError(TransactionTestCase):
         )
         self.assertEqual(len(canceled_pp_node_jobs), 1)
 
-
     def tearDown(self):
         self.spark_computing_node.terminate()
         self.eep_computing_node.terminate()
         self.pp_computing_node.terminate()
         self.dispatcher_process.terminate()
 
+
+class TestNodeJobDecline(TransactionTestCase, BaseApiTest):
+    def setUp(self) -> None:
+        BaseApiTest.setUp(self)
+
+        self.dispatcher_process = subprocess.Popen(
+            [sys.executable, '-u', dispatcher_main, 'core.settings.test', 'use_test_database'],
+            env={
+                'PYTHONPATH': f'{base_rest_dir}:{plugins_dir}'
+            },
+        )
+
+        # wait until dispatcher start
+        time.sleep(5)
+
+        self.spark_computing_node = subprocess.Popen(
+            [sys.executable, '-m', 'mock_computing_node', 'spark_decline_every_second_job.json', 'spark_commands1.json'],
+            env={
+                'PYTHONPATH': f'{base_rest_dir}:{plugins_dir}:{str(test_dir)}'
+            }
+        )
+        self.eep_computing_node = subprocess.Popen(
+            [sys.executable, '-m', 'mock_computing_node', 'eep_decline_every_job.json', 'eep_commands1.json'],
+            env={
+                'PYTHONPATH': f'{base_rest_dir}:{plugins_dir}:{str(test_dir)}'
+            }
+        )
+        self.pp_computing_node = subprocess.Popen(
+            [sys.executable, '-m', 'mock_computing_node', 'post_processing1.json', 'post_processing_commands1.json'],
+            env={
+                'PYTHONPATH': f'{base_rest_dir}:{plugins_dir}:{str(test_dir)}'
+            }
+        )
+        # wait until node register
+        time.sleep(5)
+
+    def test_node_job_declined(self):
+
+        # send request for olt
+        data = {
+            'otl_query': "| otstats index='test_index' | join [ | collect index=some_index ] | pp_command2 | readfile 1,2,3 | sum 1,2,3",
+            'tws': now_timestamp,
+            'twf': yesterday_timestamp
+        }
+        response = self.client.post(
+            self.full_url('/makejob/'),
+            data=data,
+            format='json'
+        )
+
+        # checking status code
+        self.assertEqual(response.status_code, 200)
+
+        time.sleep(65)
+
+        # check that spark all  node jobs are finished
+        spark_node_jobs = NodeJob.objects.filter(computing_node_type='SPARK')
+        for node_job in spark_node_jobs:
+            self.assertEqual(node_job.status, NodeJobStatus.FINISHED)
+
+        # check that post processing node jobs is finished
+        pp_node_jobs = NodeJob.objects.filter(
+            computing_node_type='POST_PROCESSING',
+        )
+        for node_job in pp_node_jobs:
+            self.assertEqual(node_job.status, NodeJobStatus.FINISHED)
+
+        # check that eep node job is declined, in queue, or taken from queue
+        eep_node_jobs = NodeJob.objects.filter(
+            computing_node_type='EEP'
+        )
+        for node_job in eep_node_jobs:
+            self.assertIn(node_job.status, [NodeJobStatus.IN_QUEUE, NodeJobStatus.TAKEN_FROM_QUEUE, NodeJobStatus.DECLINED_BY_COMPUTING_NODE])
+
+
+    def tearDown(self):
+        self.spark_computing_node.terminate()
+        self.eep_computing_node.terminate()
+        self.pp_computing_node.terminate()
+        self.dispatcher_process.terminate()
 

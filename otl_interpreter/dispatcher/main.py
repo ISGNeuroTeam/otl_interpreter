@@ -9,6 +9,8 @@ from json import loads
 
 
 from init_django import init_django
+# django initialization should be doen here,
+# because handlers import singletons which are initialized at import
 init_django()
 
 from message_broker import AsyncConsumer as Consumer
@@ -16,6 +18,10 @@ from message_broker import AsyncConsumer as Consumer
 from message_handlers import (
     MessageHandler, ComputingNodeControlHandler, OtlJobHandler, NodeJobStatusHandler,
 )
+
+from otl_interpreter.settings import ini_config
+from node_job_status_manager import NodeJobStatusManager
+
 
 log = getLogger('otl_interpreter.dispatcher')
 
@@ -33,7 +39,21 @@ async def consume_messages(topic, handler_class, consumer_extra_config=None):
                     print(tb)
 
 
+async def check_job_queue():
+    """
+    Task to periodically check node job queue
+    """
+    node_job_status_manager = NodeJobStatusManager()
+    time_to_wait = int(ini_config['dispatcher']['check_job_queue_period'])
+
+    while True:
+        log.debug('Check node job queue by timeout')
+        await node_job_status_manager.check_job_queue()
+        await asyncio.sleep(time_to_wait)
+
+
 async def main():
+
     tasks = [
         asyncio.create_task(
             consume_messages('computing_node_control', ComputingNodeControlHandler, {'broadcast': True})
@@ -43,6 +63,9 @@ async def main():
         ),
         asyncio.create_task(
             consume_messages('otl_job', OtlJobHandler)
+        ),
+        asyncio.create_task(
+            check_job_queue()
         ),
     ]
     await asyncio.gather(*tasks)
