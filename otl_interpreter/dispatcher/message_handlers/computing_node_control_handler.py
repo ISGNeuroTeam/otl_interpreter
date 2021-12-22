@@ -113,7 +113,8 @@ class ComputingNodeControlHandler(MessageHandler):
         pass
 
     async def process_resource_status(self, computing_node_uuid, resource_status_command: ResourceStatusCommand):
-        pass
+        resources = resource_status_command.validated_data['resources']
+        computing_node_pool.update_node_resources(computing_node_uuid, resources)
 
     @staticmethod
     async def process_unregister(computing_node_uuid, unregister_command: UnregisterComputingNodeCommand):

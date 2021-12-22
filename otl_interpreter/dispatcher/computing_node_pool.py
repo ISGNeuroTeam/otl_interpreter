@@ -42,6 +42,16 @@ class ComputingNode:
     def update_used_resources(self, resources):
         self.used_resources.update(resources)
 
+    def all_resources_available(self):
+        """
+        Return True if computing node have at least one resources of each type.
+        False otherwise
+        """
+        for resource, total_resource_value in self.total_resources.items():
+            if self.used_resources[resource] >= self.total_resources[resource]:
+                return False
+        return True
+
 
 class ComputingNodePool:
     def __init__(self):
@@ -74,7 +84,12 @@ class ComputingNodePool:
         """
         Returns uuid of node with lowest resource usage or None
         """
-        nodes = tuple(self.nodes_by_types[node_type].values())
+        # exlude nodes with full usage resources
+        nodes = tuple(filter(
+            lambda node: node.all_resources_available(),
+            self.nodes_by_types[node_type].values()
+        ))
+
         if len(nodes) == 1:
             return nodes[0].uuid
         if len(nodes) == 0:

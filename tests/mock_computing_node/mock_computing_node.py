@@ -1,6 +1,8 @@
 import asyncio
 import sys
 import json
+import random
+
 from pprint import pp
 
 
@@ -14,12 +16,14 @@ default_config = {
   "computing_node_type": "",
   "host_id": 'local',
   "resources": {
-    "job_capacity": 4
+    "job_capacity": 4,
+    "cores": 8
   },
   "time_on_command": 0.3,
-  "lifetime": 180,     # node will be stopped after 60 seconds
-  "fail_job": False,  # every job will failed
-  "decline_rate": 0,  # evey n-th job will be declined
+  "lifetime": 180,             # node will be stopped after 60 seconds
+  "fail_job": False,           # every job will failed
+  "decline_rate": 0,           # evey n-th job will be declined
+  "resources_occupied": False  # every resource status with max resources
 }
 
 
@@ -36,6 +40,8 @@ class ComputingNode:
         self.job_topic = f"{self.config['uuid']}_job"
         self.producer = Producer()
         self.job_counter = 0
+
+        asyncio.create_task(self._send_resources_task())
         asyncio.create_task(self._stop_on_timeout())
 
     async def start(self):
@@ -81,7 +87,6 @@ class ComputingNode:
         async with Consumer(self.job_topic, value_deserializer=json.loads) as job_consumer:
             async for job_message in job_consumer:
                 #pp(job_message.value)
-                print(json.dumps(job_message.value))
                 asyncio.create_task(self._run_job(job_message.value))
 
     async def _run_job(self, job):
@@ -136,6 +141,30 @@ class ComputingNode:
             'last_finished_command': last_finished_command,
         }
         await self.producer.send('nodejob_status', json.dumps(message))
+
+    async def _send_resources(self):
+        if self.config['resources_occupied']:
+            cur_resource_usage = self.config['resources']
+        else:
+            cur_resource_usage = {
+                resource: random.randint(0, max_value-1)
+                for resource, max_value in self.config['resources'].items()
+            }
+        resource_command = {
+            'resources': cur_resource_usage
+        }
+
+        control_command = {
+            'computing_node_uuid': self.config['uuid'],
+            'command_name': 'RESOURCE_STATUS',
+            'command': resource_command,
+        }
+        await self.producer.send('computing_node_control', json.dumps(control_command))
+
+    async def _send_resources_task(self):
+        while True:
+            await self._send_resources()
+            await asyncio.sleep(5)
 
 
 async def main():

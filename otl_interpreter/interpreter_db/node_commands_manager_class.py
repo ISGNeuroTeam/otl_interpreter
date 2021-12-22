@@ -52,11 +52,12 @@ class NodeCommandsManager:
         return self.commands_updated_timestamp > timestamp
 
     @CacheForFunctionDecorator()
-    def register_node(self, node_type, node_uuid, resources=None):
+    def register_node(self, node_type, node_uuid, host_id, resources=None):
         """
         creates node if it doesn't exist
         :param node_type: type string, spark, eep or post_processing
         :param node_uuid: node global id, hex string
+        :poram host_id: host id, any unique string to identify host
         :param resources: dictionary with node resources,
         keys - arbituarary string
         value - any positive integer
@@ -68,7 +69,7 @@ class NodeCommandsManager:
             computing_node = ComputingNode.objects.get(uuid=node_uuid)
         except ComputingNode.DoesNotExist:
             computing_node = ComputingNode(
-                type=node_type, uuid=node_uuid, resources=resources
+                type=node_type, uuid=node_uuid, resources=resources, host_id=host_id
             )
         computing_node.active = True
         computing_node.save()

@@ -184,12 +184,78 @@ class TestNodeJobDecline(TransactionTestCase, BaseApiTest):
             computing_node_type='EEP'
         )
         for node_job in eep_node_jobs:
-            self.assertIn(node_job.status, [NodeJobStatus.IN_QUEUE, NodeJobStatus.TAKEN_FROM_QUEUE, NodeJobStatus.DECLINED_BY_COMPUTING_NODE])
-
+            self.assertIn(
+                node_job.status,
+                [
+                    NodeJobStatus.IN_QUEUE, NodeJobStatus.TAKEN_FROM_QUEUE,
+                    NodeJobStatus.DECLINED_BY_COMPUTING_NODE, NodeJobStatus.READY_TO_EXECUTE
+                ],
+            )
 
     def tearDown(self):
         self.spark_computing_node.terminate()
         self.eep_computing_node.terminate()
         self.pp_computing_node.terminate()
         self.dispatcher_process.terminate()
+
+
+class TestNodeResoucesOccupied(TransactionTestCase, BaseApiTest):
+    def setUp(self) -> None:
+        BaseApiTest.setUp(self)
+
+        self.dispatcher_process = subprocess.Popen(
+            [sys.executable, '-u', dispatcher_main, 'core.settings.test', 'use_test_database'],
+            env={
+                'PYTHONPATH': f'{base_rest_dir}:{plugins_dir}'
+            },
+        )
+
+        # wait until dispatcher start
+        time.sleep(5)
+
+        self.spark_computing_node = subprocess.Popen(
+            [sys.executable, '-m', 'mock_computing_node', 'spark_resources_occupied.json', 'spark_commands1.json'],
+            env={
+                'PYTHONPATH': f'{base_rest_dir}:{plugins_dir}:{str(test_dir)}'
+            }
+        )
+        # wait until node register
+        time.sleep(5)
+
+    def test_node_resources_occupied(self):
+
+        # send request for olt
+        data = {
+            'otl_query': "| otstats index='test_index' ",
+            'tws': now_timestamp,
+            'twf': yesterday_timestamp
+        }
+        response = self.client.post(
+            self.full_url('/makejob/'),
+            data=data,
+            format='json'
+        )
+
+        # checking status code
+        self.assertEqual(response.status_code, 200)
+
+        time.sleep(5)
+
+        spark_node_job = NodeJob.objects.filter(
+            computing_node_type='SPARK'
+        )[0]
+
+        # spark node has no resources so job moves beetwen three statuses
+        self.assertIn(
+            spark_node_job.status,
+            [
+                NodeJobStatus.IN_QUEUE, NodeJobStatus.TAKEN_FROM_QUEUE,
+                NodeJobStatus.READY_TO_EXECUTE
+            ],
+        )
+
+    def tearDown(self):
+        self.spark_computing_node.terminate()
+
+
 

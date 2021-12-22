@@ -128,8 +128,9 @@ class NodeJobStatusManager:
                 self._calculate_node_job_priority_for_queue()
             )
             self._change_node_job_status(
-                node_job_uuid, node_job_dict,
+                node_job_uuid, NodeJobStatus.IN_QUEUE,
                 f'Moved to queue because available computing node not found',
+                node_job_dict
             )
             return
 
