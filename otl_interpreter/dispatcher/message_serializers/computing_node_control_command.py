@@ -19,6 +19,7 @@ class ComputingNodeControlCommand(serializers.Serializer):
 
 class RegisterComputingNodeCommand(serializers.Serializer):
     computing_node_type = serializers.ChoiceField(choices=ComputingNodeType.choices)
+    host_id = serializers.CharField()
     otl_command_syntax = serializers.DictField()
     resources = serializers.DictField()
 

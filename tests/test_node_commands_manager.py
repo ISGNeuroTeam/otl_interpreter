@@ -21,7 +21,7 @@ class TestGetCommands(TestCase):
         dt = datetime.now()
         self.assertEqual(node_commands_manager.commands_were_updated(dt), False)
         node_guid = uuid.uuid4().hex
-        node_commands_manager.register_node('some', node_guid)
+        node_commands_manager.register_node('some', node_guid, 'local')
         node_commands_manager.register_node_commands(
            node_guid,
            {

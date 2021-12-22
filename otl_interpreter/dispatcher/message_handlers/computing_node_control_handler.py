@@ -92,6 +92,7 @@ class ComputingNodeControlHandler(MessageHandler):
                 await register_node(
                     register_command.validated_data['computing_node_type'],
                     computing_node_uuid,
+                    register_command.validated_data['host_id'],
                     register_command.validated_data['resources']
                 )
                 await register_node_commands(

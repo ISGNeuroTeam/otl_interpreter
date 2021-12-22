@@ -12,6 +12,7 @@ from .computing_node_config import read_otl_command_syntax, read_computing_node_
 default_config = {
   "uuid": "",
   "computing_node_type": "",
+  "host_id": 'local',
   "resources": {
     "job_capacity": 4
   },
@@ -55,6 +56,7 @@ class ComputingNode:
     async def _register(self):
         register_command = {
             'computing_node_type': self.config['computing_node_type'],
+            'host_id': self.config['host_id'],
             'otl_command_syntax': self.command_syntax,
             'resources': self.config['resources']
         }

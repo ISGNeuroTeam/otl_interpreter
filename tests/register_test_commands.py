@@ -12,11 +12,11 @@ def register_test_commands():
     default_resources = {
         'job_capacity': 1000000
     }
-    node_commands_manager.register_node('SPARK', spark_node_id1, default_resources)
-    node_commands_manager.register_node('SPARK', spark_node_id2, default_resources)
+    node_commands_manager.register_node('SPARK', spark_node_id1, 'test_host_id', default_resources)
+    node_commands_manager.register_node('SPARK', spark_node_id2, 'test_host_id', default_resources)
 
-    node_commands_manager.register_node('EEP', eep_node_id1, default_resources)
-    node_commands_manager.register_node('POST_PROCESSING', post_processing_node_id1, default_resources)
+    node_commands_manager.register_node('EEP', eep_node_id1, 'test_host_id', default_resources)
+    node_commands_manager.register_node('POST_PROCESSING', post_processing_node_id1, 'test_host_id', default_resources)
 
     node_commands_manager.register_node_commands(
         spark_node_id1,

@@ -61,7 +61,9 @@ class ComputingNode(models.Model):
 
     # node uuid
     uuid = models.UUIDField(unique=True)
-
+    host_id = models.CharField(
+        max_length=255
+    )
     active = models.BooleanField(default=True)
 
     # computing node resuources as dictionary
