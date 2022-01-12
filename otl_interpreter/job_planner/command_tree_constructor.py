@@ -1,4 +1,6 @@
-from .command import Command
+from typing import List
+
+from otlang.job.argument import Command
 from .command_tree import CommandTree
 from .sys_commands import SysWriteResultCommand
 
@@ -66,9 +68,9 @@ class CommandTreeConstructor:
         self.async_subsearches = {}
         self.processed_async_subsearches = set()
 
-    def create_command_tree(self, translated_otl_commands):
+    def create_command_tree(self, translated_otl_commands: List[Command]):
         """
-        :param translated_otl_commands: translated otl, list of dictionaries
+        :param translated_otl_commands: translated otl, list of Command instances
         :return:
         tuple: CommandTree object, awaited_command_tree_list
         """
@@ -93,7 +95,7 @@ class CommandTreeConstructor:
         if await_name in self.async_subsearches:
 
             async_subsearch_tree, subsearch_awaited_command_trees = \
-                self.create_command_tree(self.async_subsearches[await_name])
+                self.create_command_tree(self.async_subsearches[await_name].value)
 
             self.processed_async_subsearches.add(await_name)
             del self.async_subsearches[await_name]
@@ -130,14 +132,14 @@ class CommandTreeConstructor:
 
     ):
         subseartches = self._get_subsearches(translated_otl_command)
-        command = self._make_command(translated_otl_command)
+        command = translated_otl_command
         command_tree = CommandTree(command, command_pipeline_state.previous_command_tree_in_pipeline)
 
         # collect all awaited command trees from subsearches
         awaited_command_trees_from_subsearches = []
 
         for subsearch in subseartches:
-            subsearch_tree, subsearch_awaited_command_trees = self.create_command_tree(subsearch)
+            subsearch_tree, subsearch_awaited_command_trees = self.create_command_tree(subsearch.value)
             command_tree.add_subsearch_command_tree(subsearch_tree)
             awaited_command_trees_from_subsearches.extend(subsearch_awaited_command_trees)
 
@@ -150,7 +152,7 @@ class CommandTreeConstructor:
 
     @staticmethod
     def _is_async(translated_otl_command):
-        return translated_otl_command['command']['value'] == 'async'
+        return translated_otl_command.name == 'async'
 
     def _get_async_name(self, translated_otl_command):
         return self._get_kwarg_by_name(translated_otl_command, 'name')
@@ -160,7 +162,7 @@ class CommandTreeConstructor:
 
     @staticmethod
     def _is_await(translated_otl_command):
-        return translated_otl_command['command']['value'] == 'await'
+        return translated_otl_command.name == 'await'
 
     def _is_await_with_override(self, translated_otl_command):
         override = self._get_kwarg_by_name(translated_otl_command, 'override')
@@ -171,29 +173,15 @@ class CommandTreeConstructor:
 
     @staticmethod
     def _get_kwarg_by_name(translated_otl_command, kwarg_name):
-        for arg_group in translated_otl_command['commandargs']:
+        for arg_group in translated_otl_command.arguments:
             for arg in arg_group:
-                if arg['type'] == 'kwarg' and arg['key']['value'] == kwarg_name:
-                    return arg['value']['value']['value']
+                if arg.key == kwarg_name:
+                    return arg.value
         return None
 
     @staticmethod
     def _get_subsearches(translated_otl_command):
-        subsearches = []
-        for arg_group in translated_otl_command['commandargs']:
-            for arg in arg_group:
-                if arg['type'] == 'subsearch':
-                    subsearches.append(arg['value'])
-        return subsearches
-
-    @staticmethod
-    def _make_command(translated_otl_command):
-        # remove subsearches
-        translated_otl_command['commandargs'] = list(filter(
-            lambda arg: len(arg) > 0 and arg[0]['type'] != 'subsearch',
-            translated_otl_command['commandargs']
-        ))
-        return Command.make_command_from_translated_otl(translated_otl_command)
+        return list(translated_otl_command.get_subsearches())
 
 
 def construct_command_tree_from_translated_otl_commands(translated_otl_commands):

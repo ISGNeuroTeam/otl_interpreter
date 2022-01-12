@@ -1,10 +1,13 @@
+from otlang.job.argument import Argument, Command, Subsearch
+from typing import Iterable
+
 from .abstract_tree import AbstractTree
 
 
 class CommandTree(AbstractTree):
 
     def __init__(
-            self, command,
+            self, command: Command,
             previous_command_tree_in_pipeline=None,
             subsearch_command_trees=None,
             awaited_command_trees=None,
@@ -143,10 +146,33 @@ class CommandTree(AbstractTree):
             yield current_command_tree
             current_command_tree = current_command_tree.next_command_tree_in_pipeline
 
+    def set_subsearches_to_command_arguments(self):
+        """
+        Creates Argument objects for subsearches recursively and put them to Command
+        """
+        argument_list: Iterable[Argument]
+        argument_list = self._create_subsearch_arguments()
+        self.command.replace_subsearches(argument_list)
+
+    def _create_subsearch_arguments(self) -> Iterable[Argument]:
+        """
+        Takes subsearch command trees and create Subsearch argument iterable
+        """
+        return map(
+            self._create_subsearch_argument_from_command_tree,
+            self.subsearch_command_trees
+        )
+
+    @staticmethod
+    def _create_subsearch_argument_from_command_tree(top_command_tree) -> Subsearch:
+        """
+        Make Subsearch object from command_tree objects
+        """
+        command_list = [command_tree.command for command_tree in top_command_tree.through_pipeline_iterator()]
+        return Subsearch(
+            value=command_list,
+        )
+
     def as_command_dict(self):
-        return {
-            'name': self.command.name,
-            'subsearches': [subsearch.as_command_dict() for subsearch in self.subsearch_command_trees],
-            'arguments': self.command.args,
-        }
+        return self.command.to_dict()
 

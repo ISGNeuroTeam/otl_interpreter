@@ -17,7 +17,7 @@ class ResultAddress:
             self.storage_type = storage_type
 
         # read or write commands that will be use the address
-        self._commands = set()
+        self._commands = list()
 
     @property
     def path(self):
@@ -30,7 +30,7 @@ class ResultAddress:
         :return:
         """
 
-        self._commands.add(command)
+        self._commands.append(command)
 
     def set_path(self, path, storage_type=None):
         """

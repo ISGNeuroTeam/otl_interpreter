@@ -1,3 +1,4 @@
+import os
 import sys
 import time
 from datetime import datetime
@@ -26,6 +27,12 @@ test_dir = Path(__file__).parent.parent.resolve()
 now_timestamp = int(datetime.now().timestamp())
 yesterday_timestamp = int(datetime.now().timestamp()) - 60*60*24
 
+dispatcher_proc_env = os.environ.copy()
+dispatcher_proc_env["PYTHONPATH"] = f'{base_rest_dir}:{plugins_dir}'
+
+computing_node_env = os.environ.copy()
+computing_node_env["PYTHONPATH"] = f'{base_rest_dir}:{plugins_dir}:{str(test_dir)}'
+
 
 class TestOtlJobHandler(TransactionTestCase):
     def setUp(self) -> None:
@@ -38,9 +45,7 @@ class TestOtlJobHandler(TransactionTestCase):
         time.sleep(5)
         self.dispatcher_process = subprocess.Popen(
             [sys.executable, '-u', dispatcher_main, 'core.settings.test'],
-            env={
-                'PYTHONPATH': f'{base_rest_dir}:{plugins_dir}'
-            },
+            env=dispatcher_proc_env
         )
 
         # wait until dispatcher start
@@ -48,21 +53,15 @@ class TestOtlJobHandler(TransactionTestCase):
 
         self.spark_computing_node = subprocess.Popen(
             [sys.executable, '-m', 'mock_computing_node', 'spark1.json', 'spark_commands1.json'],
-            env={
-                'PYTHONPATH': f'{base_rest_dir}:{plugins_dir}:{str(test_dir)}'
-            }
+            env=computing_node_env
         )
         self.eep_computing_node = subprocess.Popen(
             [sys.executable, '-m', 'mock_computing_node', 'eep1.json', 'eep_commands1.json'],
-            env={
-                'PYTHONPATH': f'{base_rest_dir}:{plugins_dir}:{str(test_dir)}'
-            }
+            env=computing_node_env
         )
         self.pp_computing_node = subprocess.Popen(
             [sys.executable, '-m', 'mock_computing_node', 'post_processing1.json', 'post_processing_commands1.json'],
-            env={
-                'PYTHONPATH': f'{base_rest_dir}:{plugins_dir}:{str(test_dir)}'
-            }
+            env=computing_node_env
         )
         # wait until node register
         time.sleep(5)

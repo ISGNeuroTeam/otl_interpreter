@@ -40,10 +40,13 @@ def make_node_job_tree(top_command_tree, tws=None, twf=None, shared_post_process
     _make_address_for_result_node_job(top_node_job, shared_post_processing)
 
     # set time window for commands
-    set_timewindow_to_commands(top_node_job, tws, twf)
+    _set_timewindow_to_commands(top_node_job, tws, twf)
 
     # calculate result dataframe paths as hash of command tree json
     _set_read_write_commands_paths(top_node_job)
+
+    # put subsearches to command arguments
+    _put_subsearches_to_command_arguments(top_node_job)
 
     return top_node_job
 
@@ -83,14 +86,23 @@ def _set_read_write_commands_paths(top_node_job):
             node_job.set_path_for_result_address(path)
 
 
-def set_timewindow_to_commands(top_node_job, tws, twf):
+def _set_timewindow_to_commands(top_node_job, tws, twf):
     """
-    Sets additional named arguments for all commmands with timewindow
+    Sets additional named arguments for all commands with timewindow
     """
     for node_job in top_node_job.parent_first_order_traverse_iterator():
         for command in node_job.command_iterator():
             if node_commands_manager.is_command_need_timewindow(command.name):
-                command.set_timewindow(tws, twf)
+                command.add_argument(value=int(tws.timestamp()), key='earliest')
+                command.add_argument(value=int(twf.timestamp()), key='latest')
+
+
+def _put_subsearches_to_command_arguments(top_node_job):
+    """
+    Put all subsearches in arguments of Command ojects
+    """
+    for node_job in top_node_job.children_first_order_traverse_iterator():
+        node_job.set_subsearches_to_command_arguments()
 
 
 def _make_address_for_result_node_job(top_node_job, shared_post_processing):

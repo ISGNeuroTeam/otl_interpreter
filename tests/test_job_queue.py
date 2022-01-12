@@ -3,6 +3,7 @@ import string
 import uuid
 import datetime
 
+from core.settings.test import REDIS_CONFIG
 from rest.test import TestCase
 from otl_interpreter.utils.priority_queue import RedisPriorityQueue
 from otl_interpreter.utils.priority_queue import PriorityQueue
@@ -109,12 +110,7 @@ class TestRedisPriorityQueue(BaseTestCases.TestPriorityQueue):
     def setUp(self):
         self.queue = RedisPriorityQueue(
             'test_queue',
-            {
-                'host': 'localhost',
-                'port': '6379',
-                'db': 0,
-                'password': '',
-            }
+            REDIS_CONFIG
         )
 
 

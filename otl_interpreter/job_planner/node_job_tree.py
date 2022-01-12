@@ -104,3 +104,9 @@ class NodeJobTree(AbstractTree):
         for command_tree  in self.command_tree.parent_first_order_traverse_iterator('all_child_trees'):
             yield command_tree.command
 
+    def set_subsearches_to_command_arguments(self):
+        """
+        Put subsearches in command argument for all commands in node job
+        """
+        for command_tree in self.command_tree.children_first_order_traverse_iterator():
+            command_tree.set_subsearches_to_command_arguments()

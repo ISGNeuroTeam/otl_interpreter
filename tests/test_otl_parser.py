@@ -1,5 +1,6 @@
 from rest.test import TestCase
 from otlang.otl import OTL
+from otlang.job.argument import Command
 from otl_interpreter.interpreter_db import node_commands_manager
 from pprint import pp
 
@@ -17,17 +18,28 @@ class TestSimpleParsing(TestCase):
 
     def test_simple_parse(self):
         otl_query = "| readfile arg1, arg2, arg3"
-        expected_result = [{'command': {'value': 'readfile', 'type': 'term', 'leaf_type': 'simple'}, 'commandargs': [[{'value': {'value': 'arg1', 'type': 'term', 'leaf_type': 'simple'}, 'type': 'arg', 'leaf_type': 'complex'}], [{'value': {'value': 'arg2', 'type': 'term', 'leaf_type': 'simple'}, 'type': 'arg', 'leaf_type': 'complex'}], [{'value': {'value': 'arg3', 'type': 'term', 'leaf_type': 'simple'}, 'type': 'arg', 'leaf_type': 'complex'}]]}]
 
         parsed_otl = self.translate_otl(otl_query)
-        self.assertEqual(expected_result, parsed_otl)
+        self.assertIsInstance(parsed_otl, list)
+        command = parsed_otl[0]
+        self.assertIsInstance(command, Command)
+        self.assertEqual(command.name, 'readfile')
+        self.assertEqual(len(command.arguments), 3)
+        self.assertEqual(command.arguments[0][0].value, 'arg1')
+        self.assertEqual(command.arguments[1][0].value, 'arg2')
+        self.assertEqual(command.arguments[2][0].value, 'arg3')
+
 
     def test_parse_with_syntax_error(self):
         with self.assertRaises(SyntaxError):
             self.translate_otl("| readfile2 arg3")
 
     def test_subsearch(self):
-        parsed_otl = self.translate_otl("async name=\"s3\", [|readfile 1, 2, 3 ]| table a, b, c, key=val \n| join [| sum a, b | await name='s3', override=True]")
+        parsed_otl = self.translate_otl("async name=\"s3\", [ | readfile 1, 2, 3] | table a, b, c, key=val \n| join [| sum a, b | await name='s3', override=True]")
+
+    # def test_expression(self):
+    #     parsed_otl = self.translate_otl("readfile 1+2, 34+2, 34+23")
+
 
     def test_print_subsearches(self):
         parsed_otl = self.translate_otl("| sum arg1, 3, 'asdf', 4.3434 ")
