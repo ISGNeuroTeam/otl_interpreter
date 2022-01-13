@@ -10,7 +10,8 @@ class Translator:
 
     def _init_translator_with_commands(self):
         commands = node_commands_manager.get_commands_syntax()
-        del self.o
+        if self.o is not None:
+            del self.o
         self.o = OTL(commands)
 
     def _init_translator_with_macroses(self):

@@ -1,5 +1,5 @@
 from rest.test import TestCase
-from otlang.job.argument import Command
+from otlang.sdk.argument import Command
 
 from otl_interpreter.job_planner.command_tree_constructor import (
     construct_command_tree_from_translated_otl_commands, CommandPipelineState, CommandTreeConstructor, make_command_tree

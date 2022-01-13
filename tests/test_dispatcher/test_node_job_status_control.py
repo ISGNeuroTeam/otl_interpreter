@@ -70,6 +70,7 @@ class TestNodeJobError(TransactionTestCase, BaseApiTest):
             'tws': now_timestamp,
             'twf': yesterday_timestamp
         }
+
         response = self.client.post(
             self.full_url('/makejob/'),
             data=data,

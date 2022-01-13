@@ -206,8 +206,8 @@ class TestNodeJobTree(TestCase):
         for node_job in top_node_job.parent_first_order_traverse_iterator():
             for command_tree in node_job.command_tree.parent_first_order_traverse_iterator():
                 if isinstance(command_tree.command, SysReadWriteCommand):
-                    self.check_is_it_hash_string(command_tree.command.arguments[0][0].value)
-                    self.assertEqual(command_tree.command.arguments[1][0].value, 'INTERPROC_STORAGE')
+                    self.check_is_it_hash_string(command_tree.command.arguments['path'][0].value)
+                    self.assertEqual(command_tree.command.arguments['storage_type'][0].value, 'INTERPROC_STORAGE')
 
     def test_read_and_write_has_same_address(self):
         test_otl = "| otstats index='test_index2' | merge_dataframes [readfile 1,2,4]"
@@ -217,8 +217,8 @@ class TestNodeJobTree(TestCase):
         write_interproc_command = top_node_job.awaited_node_job_trees[0].command_tree.command
 
         self.assertEqual(
-            read_interproc_command.arguments[0][0].value,
-            write_interproc_command.arguments[0][0].value
+            read_interproc_command.arguments['path'][0].value,
+            write_interproc_command.arguments['path'][0].value
         )
 
     def test_same_jobs_has_same_hash(self):
@@ -277,11 +277,11 @@ class TestNodeJobTree(TestCase):
         command_list = top_node_job.as_command_dict_list()
         first_join_command = command_list[1]
         self.assertEqual(first_join_command['name'], 'join')
-        first_subsearch = first_join_command['arguments'][0][0]
+        first_subsearch = first_join_command['arguments']['subsearch'][0]
         self.assertEqual(first_subsearch['arg_type'], 'subsearch')
         second_join_command = first_subsearch['value'][2]
         self.assertEqual(second_join_command['name'], 'join')
-        last_readfile_command = second_join_command['arguments'][0][0]['value'][0]
+        last_readfile_command = second_join_command['arguments']['subsearch'][0]['value'][0]
         self.assertEqual(last_readfile_command['name'], 'readfile')
 
 

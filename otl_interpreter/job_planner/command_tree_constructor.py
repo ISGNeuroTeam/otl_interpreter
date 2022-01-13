@@ -1,6 +1,6 @@
 from typing import List
 
-from otlang.job.argument import Command
+from otlang.sdk.argument import Command
 from .command_tree import CommandTree
 from .sys_commands import SysWriteResultCommand
 
@@ -173,7 +173,7 @@ class CommandTreeConstructor:
 
     @staticmethod
     def _get_kwarg_by_name(translated_otl_command, kwarg_name):
-        for arg_group in translated_otl_command.arguments:
+        for arg_group in translated_otl_command.arguments.values():
             for arg in arg_group:
                 if arg.key == kwarg_name:
                     return arg.value

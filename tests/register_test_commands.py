@@ -18,99 +18,85 @@ def register_test_commands():
     node_commands_manager.register_node('EEP', eep_node_id1, 'test_host_id', default_resources)
     node_commands_manager.register_node('POST_PROCESSING', post_processing_node_id1, 'test_host_id', default_resources)
 
-    node_commands_manager.register_node_commands(
-        spark_node_id1,
-        {
-            'otstats': {
-                "rules":
-                [
-                    {
-                        "type": "kwarg",
-                        "key": "index",
-                        "required": True,
-                    },
-                ]},
-            'collect': {
-                "rules":
-                [
-                    {
-                        "type": "kwarg",
-                        "key": "index",
-                        "required": True,
-                    }
-                ]},
-            "readfile": {"rules": [{"type": "arg"}, {"type": "arg"}, {"type": "arg"}]},
-            "join": {"rules": [
-
+    spark_commands = {
+        'otstats': {
+            "rules":
+            [
                 {
-                    "type": "subsearch",
-                    "required": True
+                    "name": "index",
+                    "type": "kwarg",
+                    "key": "index",
+                    "required": True,
                 },
             ]},
-        }
+        'collect': {
+            "rules":
+            [
+                {
+                    "name": "index",
+                    "type": "kwarg",
+                    "key": "index",
+                    "required": True,
+                }
+            ]},
+        "readfile": {"rules": [
+            {"name": "file1", "type": "arg"},
+            {"name": "file2", "type": "arg"},
+            {"name": "file3", "type": "arg"}
+        ]},
+        "join": {"rules": [
+
+            {
+                "name": "subsearch",
+                "type": "subsearch",
+                "required": True
+            },
+        ]},
+    }
+
+    eep_commands = {
+        'sum': {
+            "rules":
+            [
+                {
+                    "name": "argument",
+                    "type": "arg",
+                    "inf": True,
+                }
+            ]},
+        'merge_dataframes': {
+            "rules":
+            [
+                {
+                    "name": 'subsearch',
+                    "type": 'subsearch',
+                    "inf": True
+                }
+
+            ]
+        },
+        "join": {"rules": [
+            {
+                "name": "subsearch",
+                "type": "subsearch",
+                "required": True
+            },
+        ]}
+    }
+
+    node_commands_manager.register_node_commands(
+        spark_node_id1,
+        spark_commands
     )
 
     node_commands_manager.register_node_commands(
         spark_node_id2,
-        {
-            'otstats': {
-                "rules":
-                [
-                    {
-                        "type": "kwarg",
-                        "key": "index",
-                        "required": True,
-                    },
-                ]},
-            'collect': {
-                "rules":
-                [
-                    {
-                        "type": "kwarg",
-                        "key": "index",
-                        "required": True,
-                    }
-                ]},
-            "readfile": {"rules": [{"type": "arg"}, {"type": "arg"}, {"type": "arg"}]},
-            "join": {"rules": [
-
-                {
-                    "type": "subsearch",
-                    "required": True
-                },
-            ]},
-        }
+        spark_commands
     )
 
     node_commands_manager.register_node_commands(
         eep_node_id1,
-        {
-            'sum': {
-                "rules":
-                [
-                    {
-                        "type": "arg",
-                        "inf": True,
-                    }
-                ]},
-            'merge_dataframes': {
-                "rules":
-                [
-                    {
-                        "type": 'subsearch',
-                        "inf": True
-                    }
-
-                ]
-            },
-            "join": {"rules": [
-
-                {
-                    "type": "subsearch",
-                    "required": True
-                },
-            ]}
-        }
+        eep_commands
     )
 
     node_commands_manager.register_node_commands(
@@ -119,10 +105,10 @@ def register_test_commands():
             'table': {
                 "rules":
                 [
-                    {"type": "arg"},
-                    {"type": "arg"},
-                    {"type": "arg"},
-                    {"type": "kwarg"}
+                    {"name": "positional_arg1", "type": "arg"},
+                    {"name": "positional_arg2", "type": "arg"},
+                    {"name": "positional_arg3", "type": "arg"},
+                    {"name": "last_argument", "type": "kwarg"}
                 ]},
         }
     )
@@ -134,6 +120,7 @@ def register_test_commands():
                 "rules":
                 [
                     {
+                        "name": "argument1",
                         "type": "arg",
                         "required": True,
                     },
@@ -142,6 +129,7 @@ def register_test_commands():
             "join": {"rules": [
 
                 {
+                    "name": "subsearch",
                     "type": "subsearch",
                     "required": True
                 },

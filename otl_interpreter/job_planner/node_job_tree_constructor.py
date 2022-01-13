@@ -93,8 +93,8 @@ def _set_timewindow_to_commands(top_node_job, tws, twf):
     for node_job in top_node_job.parent_first_order_traverse_iterator():
         for command in node_job.command_iterator():
             if node_commands_manager.is_command_need_timewindow(command.name):
-                command.add_argument(value=int(tws.timestamp()), key='earliest')
-                command.add_argument(value=int(twf.timestamp()), key='latest')
+                command.add_argument('earliest', value=int(tws.timestamp()), key='earliest')
+                command.add_argument('latest', value=int(twf.timestamp()), key='latest')
 
 
 def _put_subsearches_to_command_arguments(top_node_job):

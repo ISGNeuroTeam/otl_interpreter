@@ -1,4 +1,4 @@
-from otlang.job.argument import Argument, Command, Subsearch
+from otlang.sdk.argument import Argument, Command, Subsearch
 from typing import Iterable
 
 from .abstract_tree import AbstractTree

@@ -2,6 +2,7 @@
     "pp_command1": {
         "rules": [
             {
+                "name": "argument1",
                 "type": "arg",
                 "required": true
             }
@@ -10,6 +11,7 @@
     "pp_command2": {
         "rules": [
             {
+                "name": "argument1",
                 "type": "arg",
                 "required": false
             }

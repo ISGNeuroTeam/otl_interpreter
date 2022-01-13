@@ -1,11 +1,11 @@
-from otlang.job.argument import Command
+from otlang.sdk.argument import Command
 
 
 class SysReadWriteCommand(Command):
     def set_path(self, path, storage_type=None):
-        self.add_argument(value=path)
+        self.add_argument('path', value=path)
         if storage_type is not None:
-            self.add_argument(value=storage_type)
+            self.add_argument('storage_type', value=storage_type)
 
 
 class SysWriteResultCommand(SysReadWriteCommand):

@@ -1,6 +1,6 @@
 from rest.test import TestCase
 from otlang.otl import OTL
-from otlang.job.argument import Command
+from otlang.sdk.argument import Command
 from otl_interpreter.interpreter_db import node_commands_manager
 from pprint import pp
 
@@ -25,9 +25,9 @@ class TestSimpleParsing(TestCase):
         self.assertIsInstance(command, Command)
         self.assertEqual(command.name, 'readfile')
         self.assertEqual(len(command.arguments), 3)
-        self.assertEqual(command.arguments[0][0].value, 'arg1')
-        self.assertEqual(command.arguments[1][0].value, 'arg2')
-        self.assertEqual(command.arguments[2][0].value, 'arg3')
+        self.assertEqual(command.arguments['file1'][0].value, 'arg1')
+        self.assertEqual(command.arguments['file2'][0].value, 'arg2')
+        self.assertEqual(command.arguments['file3'][0].value, 'arg3')
 
 
     def test_parse_with_syntax_error(self):
