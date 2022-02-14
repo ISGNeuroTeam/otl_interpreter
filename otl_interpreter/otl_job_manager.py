@@ -38,7 +38,7 @@ class OtlJobManager:
         :param otl_query: otl query
         :param user_guid: user guid
         :param tws: time window start
-        :param twf: time windw finish
+        :param twf: time window finish
         :param cache_ttl: number of seconds to keep node job results
         :param timeout: timeout for otl job
         :param shared_post_processing: result will be in shared storage or local
