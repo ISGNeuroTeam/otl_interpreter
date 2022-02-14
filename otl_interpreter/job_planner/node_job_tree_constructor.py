@@ -116,7 +116,8 @@ def _make_address_for_result_node_job(top_node_job, shared_post_processing):
     else:
         result_storage_type = ResultStorage.INTERPROCESSING.value
 
-    top_node_job.set_result_address(ResultAddress(top_node_job, result_storage_type))
+    result_address = ResultAddress(top_node_job, result_storage_type)
+    return result_address
 
 
 def _create_new_node_job_for_child_command_tree(command_tree, child_command_tree, node_job_tree_storage):
@@ -154,11 +155,11 @@ def _create_new_node_job_for_child_command_tree(command_tree, child_command_tree
 
     result_address = ResultAddress(new_node_job_tree)
 
-    # add them to address object, path argument will be initialized after
-    result_address.add_command(write_sys_command)
+    # add read_sys_command to address object, path argument will be initialized after
+    # write_sys_command has been added already in init
     result_address.add_command(read_sys_command)
 
-    new_node_job_tree.set_result_address(result_address)
+
 
     node_job_tree_storage.set_node_job_tree_for_command_tree(
         read_sys_command_tree,

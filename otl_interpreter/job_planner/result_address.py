@@ -19,6 +19,11 @@ class ResultAddress:
         # read or write commands that will be use the address
         self._commands = list()
 
+        # add top command of node job tree to _commands
+        top_node_job_command = node_job_tree.get_top_command()
+        self.add_command(top_node_job_command)
+        node_job_tree.set_result_address(self)
+
     @property
     def path(self):
         return self._path
@@ -29,7 +34,7 @@ class ResultAddress:
         :param command:
         :return:
         """
-
+        assert command not in self._commands
         self._commands.append(command)
 
     def set_path(self, path, storage_type=None):

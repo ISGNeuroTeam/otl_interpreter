@@ -89,7 +89,6 @@ class NodeJobTree(AbstractTree):
         return [command_tree.as_command_dict() for command_tree in self.command_tree.through_pipeline_iterator()]
 
     def set_result_address(self, address):
-        address.add_command(self.command_tree.command)
         self.result_address = address
 
     def set_path_for_result_address(self, path):
@@ -110,3 +109,9 @@ class NodeJobTree(AbstractTree):
         """
         for command_tree in self.command_tree.children_first_order_traverse_iterator():
             command_tree.set_subsearches_to_command_arguments()
+
+    def get_top_command(self):
+        """
+        Returns top command instance in node job tree
+        """
+        return self.command_tree.command
