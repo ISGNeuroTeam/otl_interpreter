@@ -1,5 +1,5 @@
 import datetime
-from core.celery import app
+from core.celeryapp import app
 from otl_interpreter.otl_job_manager import otl_job_manager
 
 
