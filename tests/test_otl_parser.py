@@ -48,7 +48,7 @@ class TestSimpleParsing(TestCase):
         # pp(parsed_otl)
 
     def test_register_garbage(self):
-        with self.assertRaises(KeyError):
+        with self.assertRaises(TypeError):
             o = OTL({
                 "join": {"rules": [
 
