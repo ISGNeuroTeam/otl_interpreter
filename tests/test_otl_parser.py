@@ -1,6 +1,8 @@
 from rest.test import TestCase
 from otlang.otl import OTL
 from otlang.sdk.argument import Command
+from otlang.exceptions import OTLException
+
 from otl_interpreter.interpreter_db import node_commands_manager
 from pprint import pp
 
@@ -48,7 +50,7 @@ class TestSimpleParsing(TestCase):
         # pp(parsed_otl)
 
     def test_register_garbage(self):
-        with self.assertRaises(TypeError):
+        with self.assertRaises(OTLException):
             o = OTL({
                 "join": {"rules": [
 
