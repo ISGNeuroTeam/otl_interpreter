@@ -65,12 +65,13 @@ grant all privileges on database otl_interpreter to otl_interpreter;
 ```
 10. Make migrations and migrate them to database
 ```bash
+source ./venv/bin/activate
 python ./complex_rest/manage.py makemigrations otl_interpreter
 python ./complex_rest/manage.py migrate otl_interpreter --database otl_interpreter
 ```
 
 11. Checkout:  
-- http://localhost:8080/admin/  
+- http://localhost:8080/admin/. Login: `admin`. Password: `admin`.  
 - http://localhost:8080/otl_interpreter/v1/checkjob/
 
 
