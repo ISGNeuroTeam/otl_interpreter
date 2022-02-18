@@ -30,6 +30,8 @@ default_ini_config = {
         'cache_ttl': 60,
         'timeout': 0,
         'shared_post_processing': True,
+        'data_path': 'data',
+        'schema_path': '_SCHEMA'
     }
 }
 
