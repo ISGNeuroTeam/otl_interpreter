@@ -168,6 +168,7 @@ class ComputingNode:
 
 
 async def main():
+    print(sys.argv)
     computing_node_config_file = sys.argv[1]
     command_syntax_file = sys.argv[2]
 

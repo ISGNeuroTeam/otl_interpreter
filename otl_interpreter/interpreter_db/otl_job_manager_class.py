@@ -3,7 +3,7 @@ import datetime
 
 from uuid import UUID
 
-from .models import OtlJob
+from .models import OtlJob, NodeJob
 from .enums import JobStatus
 
 log = logging.getLogger('otl_interpreter.interpreter_db')
@@ -24,6 +24,11 @@ class OtlJobManager:
     def check_job(self, otl_job_id: UUID):
         otl_job = OtlJob.objects.get(uuid=otl_job_id)
         return otl_job.status, otl_job.status_text
+
+    def get_result(self, otl_job_id: UUID):
+        otl_job = OtlJob.objects.get(uuid=otl_job_id)
+        root_job = NodeJob.objects.get(otl_job=otl_job, next_job=None)
+        return root_job.result
 
     def cancel_job(self, otl_job_id: UUID):
         otl_job = OtlJob.objects.get(uuid=otl_job_id)

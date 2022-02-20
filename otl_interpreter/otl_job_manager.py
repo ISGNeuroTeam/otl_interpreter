@@ -25,10 +25,12 @@ class QueryError(Exception):
 
 
 class OtlJobManager:
-    def __init__(self, default_cache_ttl, default_timeout, default_shared_post_processing):
+    def __init__(self, default_cache_ttl, default_timeout, default_shared_post_processing, data_path, schema_path):
         self.default_cache_ttl = default_cache_ttl
         self.default_timeout = default_timeout
         self.default_shared_post_processing = default_shared_post_processing
+        self.data_path = data_path
+        self.schema_path = schema_path
 
     def makejob(
             self, otl_query, user_guid, tws, twf, cache_ttl=None,
@@ -118,10 +120,22 @@ class OtlJobManager:
         with Producer() as producer:
             message_id = producer.send('otl_job', message)
 
+    def get_result(self, job_id: UUID):
+        result = db_otl_job_manager.get_result(job_id)
+        if not result.calculated:
+            raise QueryError("Result is not ready yet")
+
+        data_path = f"{result.storage}/{result.path}/jsonl/{self.data_path}"
+        schema_path = f"{result.storage}/{result.path}/jsonl/{self.schema_path}"
+
+        return data_path, schema_path
+
 
 otl_job_manager = OtlJobManager(
     int(ini_config['otl_job_defaults']['cache_ttl']),
     int(ini_config['otl_job_defaults']['timeout']),
-    bool(ini_config['otl_job_defaults']['shared_post_processing'])
+    bool(ini_config['otl_job_defaults']['shared_post_processing']),
+    ini_config['otl_job_defaults']['data_path'],
+    ini_config['otl_job_defaults']['schema_path']
 )
 
