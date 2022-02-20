@@ -26,7 +26,7 @@ class GetJobResultView(APIView):
                             status.HTTP_404_NOT_FOUND)
         return Response(
             {
-                'status': 'ok',
+                'status': 'success',
                 'data_urls': list(urls),
             },
             status.HTTP_200_OK
