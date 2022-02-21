@@ -1,10 +1,11 @@
 import logging
+import uuid
 
 from rest.views import APIView
 from rest.response import Response, status
 from rest.permissions import IsAuthenticated, AllowAny
+from otl_interpreter.otl_job_manager import otl_job_manager, QueryError
 
-from otl_interpreter.settings import ini_config
 log = logging.getLogger('otl_interpreter')
 
 
@@ -14,14 +15,19 @@ class GetJobResultView(APIView):
 
     def get(self, request):
         log.info('Get result to otl_interpreter')
-        only_address = 'only_address' in request.GET
+        job_id = request.GET.get('job_id')
+        if not job_id:
+            return Response({'status': 'failure', 'error_message': 'Missing job_id parameter'},
+                            status.HTTP_400_BAD_REQUEST)
+        try:
+            urls = otl_job_manager.get_result(uuid.UUID(job_id))
+        except QueryError:
+            return Response({'status': 'failure', 'error_message': 'Results are not ready yet'},
+                            status.HTTP_404_NOT_FOUND)
         return Response(
             {
-                'status': 'ok',
-                'only_address': bool(only_address)
+                'status': 'success',
+                'data_urls': list(urls),
             },
             status.HTTP_200_OK
         )
-
-
-
