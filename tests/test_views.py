@@ -13,7 +13,7 @@ from otl_interpreter.interpreter_db.enums import ResultStorage, JobStatus
 from otl_interpreter.interpreter_db.models import OtlJob, NodeJob
 from create_test_users import create_test_users
 from register_test_commands import register_test_commands
-
+from base_api_test_class import BaseApiTest
 
 from pathlib import Path
 
@@ -39,29 +39,11 @@ now_timestamp = int(datetime.now().timestamp())
 yesterday_timestamp = int(datetime.now().timestamp()) - 60*60*24
 
 
-class ViewTestCase(TestCase):
-    base_url = '/otl_interpreter/v1'
-
-    def _get_user_token(self):
-        data = {
-            "login": "ordinary_user1",
-            "password": "ordinary_user1"
-        }
-        response = self.client.post('/auth/login/', data=data)
-        return response.data['token']
-
-    @staticmethod
-    def _full_url(url):
-        return ViewTestCase.base_url + url
-
-
-class TestMakeJob(ViewTestCase):
+class TestMakeJob(TestCase, BaseApiTest):
     def setUp(self):
         register_test_commands()
-        create_test_users()
-        self.client = APIClient()
-        self.user_token = self._get_user_token()
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + str(self.user_token))
+        BaseApiTest.setUp(self)
+
 
     def test_makejob_without_errors(self):
         data = {
@@ -70,7 +52,7 @@ class TestMakeJob(ViewTestCase):
             'twf': yesterday_timestamp
         }
         response = self.client.post(
-            self._full_url('/makejob/'),
+            self.full_url('/makejob/'),
             data=data,
             format='json'
         )
@@ -97,7 +79,7 @@ class TestMakeJob(ViewTestCase):
             'twf': yesterday_timestamp
         }
         response = self.client.post(
-            self._full_url('/makejob/'),
+            self.full_url('/makejob/'),
             data=data
         )
 
@@ -113,7 +95,7 @@ class TestMakeJob(ViewTestCase):
             'twf': yesterday_timestamp
         }
         response = self.client.post(
-            self._full_url('/makejob/'),
+            self.full_url('/makejob/'),
             data=data
         )
 
@@ -123,12 +105,9 @@ class TestMakeJob(ViewTestCase):
         self.assertEqual('Async subsearches with names: test was never awaited', response.data['error'])
 
 
-class TestGetJobResult(ViewTestCase):
+class TestGetJobResult(TestCase, BaseApiTest):
     def setUp(self):
-        create_test_users()
-        self.client = APIClient()
-        self.user_token = self._get_user_token()
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + str(self.user_token))
+        BaseApiTest.setUp(self)
 
         self.dispatcher_process = subprocess.Popen(
             [sys.executable, '-u', dispatcher_main, 'core.settings.test', 'use_test_database'],
@@ -137,7 +116,6 @@ class TestGetJobResult(ViewTestCase):
 
         # wait until dispatcher start
         time.sleep(5)
-
 
         self.spark_computing_node = subprocess.Popen(
             [sys.executable, '-m', 'mock_computing_node', 'spark1.json', 'spark_commands1.json'],
@@ -161,7 +139,7 @@ class TestGetJobResult(ViewTestCase):
             'twf': yesterday_timestamp
         }
         response = self.client.post(
-            self._full_url('/makejob/'),
+            self.full_url('/makejob/'),
             data=data,
             format='json'
         ).data
@@ -176,7 +154,7 @@ class TestGetJobResult(ViewTestCase):
             raise TimeoutError("Job hasn't FINISHED in 15 seconds")
 
         job_result = self.client.get(
-            self._full_url(f'/getresult/?job_id={response["job_id"]}'),
+            self.full_url(f'/getresult/?job_id={response["job_id"]}'),
         ).data
 
         _id = re.match(r"INTERPROC_STORAGE/(\w+)/jsonl/data", job_result['data_urls'][0]).group(1)
@@ -190,19 +168,19 @@ class TestGetJobResult(ViewTestCase):
             'twf': yesterday_timestamp
         }
         response = self.client.post(
-            self._full_url('/makejob/'),
+            self.full_url('/makejob/'),
             data=data,
             format='json'
         ).data
 
         job_result = self.client.get(
-            self._full_url(f'/getresult/?job_id={response["job_id"]}'),
+            self.full_url(f'/getresult/?job_id={response["job_id"]}'),
         ).data
         self.assertEqual(job_result['status'], 'failure')
         self.assertEqual(job_result['error_message'], 'Results are not ready yet')
 
     def tearDown(self):
-        self.spark_computing_node.terminate()
-        self.eep_computing_node.terminate()
-        self.pp_computing_node.terminate()
-        self.dispatcher_process.terminate()
+        self.spark_computing_node.kill()
+        self.eep_computing_node.kill()
+        self.pp_computing_node.kill()
+        self.dispatcher_process.kill()

@@ -108,10 +108,10 @@ class TestNodeJobError(TransactionTestCase, BaseApiTest):
         self.assertEqual(len(canceled_pp_node_jobs), 1)
 
     def tearDown(self):
-        self.spark_computing_node.terminate()
-        self.eep_computing_node.terminate()
-        self.pp_computing_node.terminate()
-        self.dispatcher_process.terminate()
+        self.spark_computing_node.kill()
+        self.eep_computing_node.kill()
+        self.pp_computing_node.kill()
+        self.dispatcher_process.kill()
 
 
 class TestNodeJobDecline(TransactionTestCase, BaseApiTest):
@@ -186,10 +186,10 @@ class TestNodeJobDecline(TransactionTestCase, BaseApiTest):
             )
 
     def tearDown(self):
-        self.spark_computing_node.terminate()
-        self.eep_computing_node.terminate()
-        self.pp_computing_node.terminate()
-        self.dispatcher_process.terminate()
+        self.spark_computing_node.kill()
+        self.eep_computing_node.kill()
+        self.pp_computing_node.kill()
+        self.dispatcher_process.kill()
 
 
 class TestNodeResoucesOccupied(TransactionTestCase, BaseApiTest):
@@ -244,7 +244,8 @@ class TestNodeResoucesOccupied(TransactionTestCase, BaseApiTest):
         )
 
     def tearDown(self):
-        self.spark_computing_node.terminate()
+        self.spark_computing_node.kill()
+        self.dispatcher_process.kill()
 
 
 
