@@ -25,7 +25,7 @@ class NodeCommandsManager:
 
     @property
     def commands_updated_timestamp(self):
-        return self._cache.get('commands_updated_timestamp')
+        return self._cache.get('commands_updated_timestamp', datetime.min)
 
     @commands_updated_timestamp.setter
     def commands_updated_timestamp(self, value=None):

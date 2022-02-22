@@ -107,6 +107,6 @@ class TestOtlJobHandler(TransactionTestCase):
         self.spark_computing_node.terminate()
         self.eep_computing_node.terminate()
         self.pp_computing_node.terminate()
-        self.dispatcher_process.terminate()
+        self.dispatcher_process.kill()
 
 

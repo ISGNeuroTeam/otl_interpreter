@@ -46,7 +46,6 @@ class TestMakeJob(TestCase, BaseApiTest):
         register_test_commands()
         BaseApiTest.setUp(self)
 
-
     def test_makejob_without_errors(self):
         data = {
             'otl_query': "| otstats index='test_index' | join [ | readfile 23,3,4 | sum 4,3,4,3,3,3 | merge_dataframes [ | readfile 1,2,3] | async name=test_async, [readfile 23,5,4 | collect index='test'] ]  | table asdf,34,34,key=34 | await name=test_async, override=True |  merge_dataframes [ | readfile 1,2,3]",
@@ -134,6 +133,12 @@ class TestGetJobResult(TestCase, BaseApiTest):
         # wait until node register
         time.sleep(5)
 
+    def tearDown(self):
+        self.spark_computing_node.kill()
+        self.eep_computing_node.kill()
+        self.pp_computing_node.kill()
+        self.dispatcher_process.kill()
+
     def test_getresults_no_errors(self):
         data = {
             'otl_query': "| otstats index='test_index' | join [ | collect index=some_index ] | pp_command2 | readfile 1,2,3 | sum 1,2,3",
@@ -178,14 +183,8 @@ class TestGetJobResult(TestCase, BaseApiTest):
         job_result = self.client.get(
             self.full_url(f'/getresult/?job_id={response["job_id"]}'),
         ).data
-        self.assertEqual(job_result['status'], 'failure')
-        self.assertEqual(job_result['error_message'], 'Results are not ready yet')
-
-    def tearDown(self):
-        self.spark_computing_node.kill()
-        self.eep_computing_node.kill()
-        self.pp_computing_node.kill()
-        self.dispatcher_process.kill()
+        self.assertEqual(job_result['status'], 'error')
+        self.assertEqual(job_result['error'], 'Results are not ready yet')
 
 
 class TestNodeWithEmptyResources(TestCase, BaseApiTest):
@@ -207,6 +206,10 @@ class TestNodeWithEmptyResources(TestCase, BaseApiTest):
 
         # wait until node register
         time.sleep(5)
+
+    def tearDown(self):
+        self.spark_computing_node.kill()
+        self.dispatcher_process.kill()
 
     def test_node_register(self):
         guids_list = node_commands_manager.get_active_nodes_uuids()
@@ -235,6 +238,76 @@ class TestNodeWithEmptyResources(TestCase, BaseApiTest):
         else:
             raise TimeoutError("Job hasn't FINISHED in 15 seconds")
 
+
+
+class TestCheckJobView(TestCase, BaseApiTest):
+    def setUp(self):
+        BaseApiTest.setUp(self)
+
+        self.dispatcher_process = subprocess.Popen(
+            [sys.executable, '-u', dispatcher_main, 'core.settings.test', 'use_test_database'],
+            env=dispatcher_proc_env
+        )
+
+        # wait until dispatcher start
+        time.sleep(5)
+
+        self.spark_computing_node = subprocess.Popen(
+            [sys.executable, '-m', 'mock_computing_node', 'spark1.json', 'spark_commands1.json'],
+            env=computing_node_env
+        )
+
+        # wait until node register
+        time.sleep(1)
+
     def tearDown(self):
         self.spark_computing_node.kill()
         self.dispatcher_process.kill()
+
+    def test_check_job(self):
+        data = {
+            'otl_query': "| otstats index='test_index' | otstats index='test_index2' | otstats index='test_index3' | otstats index='test_index4' | otstats index='test_index5' | join [ | collect index=some_index | otstats index='test_index6' | otstats index='test_index7'] ",
+            'tws': now_timestamp,
+            'twf': yesterday_timestamp,
+            'subsearch_is_node_job': True
+        }
+        response = self.client.post(
+            self.full_url('/makejob/'),
+            data=data,
+            format='json'
+        ).data
+
+        self.assertEqual(response['status'], 'success')
+        job_id = response['job_id']
+        otl_job = OtlJob.objects.get(uuid=job_id)
+
+        for _ in range(5):
+            if otl_job.status == JobStatus.RUNNING:
+                break
+            time.sleep(1)
+            otl_job.refresh_from_db()
+        else:
+            raise TimeoutError("Job hasn't achieved running state in 5 seconds")
+
+        response = self.client.get(
+            self.full_url(f'/checkjob/?job_id={job_id}'),
+        )
+        self.assertEqual(response.status_code, 200)
+        response_data = response.data
+        self.assertEqual(response_data['job_status'], JobStatus.RUNNING)
+
+        for _ in range(10):
+            if otl_job.status in [JobStatus.FINISHED, JobStatus.FAILED]:
+                break
+            time.sleep(1)
+            otl_job.refresh_from_db()
+        else:
+            raise TimeoutError("Job hasn't FINISHED in 10 seconds")
+
+        response = self.client.get(
+            self.full_url(f'/checkjob/?job_id={job_id}'),
+            format='json'
+        )
+        self.assertEqual(response.status_code, 200)
+        response_data = response.data
+        self.assertEqual(response_data['job_status'], JobStatus.FINISHED)

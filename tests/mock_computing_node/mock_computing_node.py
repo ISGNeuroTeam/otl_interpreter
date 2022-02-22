@@ -105,6 +105,11 @@ class ComputingNode:
                 job_was_declined = True
 
         if not self.config['fail_job'] and not job_was_declined:
+            await self._send_node_job_status(
+                job['uuid'],
+                'RUNNING',
+                f"Start executing",
+            )
             # send status job running
             for command in job['commands']:
                 await asyncio.sleep(self.config['time_on_command'])

@@ -15,7 +15,7 @@ from otl_interpreter.interpreter_db import (
     otl_job_manager as db_otl_job_manager, node_job_manager as db_node_job_manager
 )
 
-from otl_interpreter.interpreter_db.enums import NodeJobStatus
+from otl_interpreter.interpreter_db.enums import NodeJobStatus, JobStatus
 
 log = getLogger('otl_interpreter')
 
@@ -53,6 +53,8 @@ class OtlJobManager:
         if shared_post_processing is None:
             shared_post_processing = self.default_shared_post_processing
 
+        otl_job_uuid = db_otl_job_manager.make_otl_job(otl_query, user_guid, tws, twf, cache_ttl)
+
         try:
             translated_query = translate_otl(otl_query)
 
@@ -60,6 +62,10 @@ class OtlJobManager:
             log.error(f'Query: {otl_query}\n \nUser_guid: {user_guid} Syntax error: {str(err)}')
             raise QueryError(f'Tranlation error: {err.args[0]}') from err
 
+        db_otl_job_manager.change_otl_job_status(
+            otl_job_uuid, JobStatus.TRANSLATED,
+            status_text=f'Otl job was successfully translated'
+        )
         log.debug(f'otl_query: {otl_query} translated successfully')
         try:
             top_node_job_tree = plan_job(translated_query, tws, twf, shared_post_processing, subsearch_is_node_job)
@@ -67,8 +73,12 @@ class OtlJobManager:
             log.info(f'Query: {otl_query}\n Job planer error: {str(err)}')
             raise QueryError(err.args[0]) from err
 
-        otl_job_uuid = db_otl_job_manager.make_otl_job(otl_query, user_guid, tws, twf, cache_ttl)
         db_node_job_manager.create_node_jobs(top_node_job_tree, otl_job_uuid, cache_ttl)
+
+        db_otl_job_manager.change_otl_job_status(
+            otl_job_uuid, JobStatus.PLANNED,
+            status_text=f'Otl job was decomposed on node jobs and planned'
+        )
 
         self._send_new_job_to_dispatcher(top_node_job_tree)
 

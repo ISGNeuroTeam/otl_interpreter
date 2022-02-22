@@ -185,7 +185,9 @@ class NodeJobStatusManager:
         )
 
     def _on_running(self, node_job_uuid, node_job_dict=None):
-        pass
+        # change otl job status
+        otl_job_uuid = node_job_manager.get_otl_job_uuid(node_job_uuid)
+        otl_job_manager.change_otl_job_status(otl_job_uuid, JobStatus.RUNNING)
 
     def _on_finished(self, node_job_uuid, node_job_dict=None):
         log.debug(f'node_job_finished {node_job_uuid}')
