@@ -2,7 +2,6 @@ import asyncio
 
 
 from asgiref.sync import sync_to_async
-from rest_framework.renderers import JSONRenderer
 
 from logging import getLogger
 from message_broker import AsyncProducer
@@ -10,7 +9,6 @@ from message_broker import AsyncProducer
 from otl_interpreter.interpreter_db import node_job_manager
 from otl_interpreter.interpreter_db.enums import NodeJobStatus
 
-from computing_node_pool import computing_node_pool
 from node_job_status_manager import NodeJobStatusManager
 
 from message_serializers.otl_job import OtlJobCommand, OtlJobCommandName, NewOtlJobCommand
@@ -19,7 +17,7 @@ from .abstract_message_handler import MessageHandler, Message
 
 log = getLogger('otl_interpreter.dispatcher')
 
-set_computing_node_for_node_job = sync_to_async(node_job_manager.set_computing_node_for_node_job)
+
 change_node_job_status = sync_to_async(node_job_manager.change_node_job_status)
 
 

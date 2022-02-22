@@ -2,6 +2,8 @@ from logging import getLogger
 from asgiref.sync import sync_to_async
 
 from otl_interpreter.interpreter_db import node_commands_manager, NodeCommandsError
+from otl_interpreter.settings import host_id as local_host_id
+
 
 from message_serializers.computing_node_control_command import (
     ComputingNodeControlCommand, ControlNodeCommandName,
@@ -106,7 +108,8 @@ class ComputingNodeControlHandler(MessageHandler):
         # add compuging node information in computing node pool
         computing_node_pool.add_computing_node(
             computing_node_uuid, register_command.validated_data['computing_node_type'],
-            register_command.validated_data['resources']
+            register_command.validated_data['resources'],
+            register_command.validated_data['host_id'] == local_host_id
         )
 
     async def process_error_occured(self, computing_node_uuid, error_occured_command: ErrorOccuredCommand):

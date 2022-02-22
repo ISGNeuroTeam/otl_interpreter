@@ -4,7 +4,7 @@ import logging
 from datetime import timedelta
 
 from .models import NodeJob, NodeJobResult, OtlJob, ComputingNode
-from .enums import NodeJobStatus, JobStatus
+from .enums import NodeJobStatus
 
 
 
@@ -57,11 +57,15 @@ class NodeJobManager:
             node_job_for_job_tree[node_job_tree] = node_job
 
     @staticmethod
-    def set_computing_node_for_node_job(node_job_uuid,  computing_node_uuid):
+    def set_computing_node_for_node_job(node_job_uuid,  computing_node_uuid=None):
         try:
             node_job = NodeJob.objects.get(uuid=node_job_uuid)
-            computing_node = ComputingNode.objects.get(uuid=computing_node_uuid)
-            node_job.computing_node = computing_node
+            if computing_node_uuid is not None:
+                computing_node = ComputingNode.objects.get(uuid=computing_node_uuid)
+                node_job.computing_node = computing_node
+            else:
+                node_job.computing_node = None
+
             node_job.save()
         except NodeJob.DoesNotExist:
             log.error(f'Setting computing node for unexisting nodejob: {node_job_uuid}')
@@ -161,7 +165,8 @@ class NodeJobManager:
             'uuid': node_job.uuid,
             'status': node_job.status,
             'computing_node_type': node_job.computing_node_type,
-            'commands': node_job.commands
+            'commands': node_job.commands,
+            'storage': node_job.result.storage
         }
 
     @staticmethod

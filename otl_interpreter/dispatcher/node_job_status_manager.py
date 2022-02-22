@@ -8,7 +8,7 @@ from asgiref.sync import sync_to_async
 
 from message_broker import Producer
 
-from otl_interpreter.interpreter_db.enums import NodeJobStatus, JobStatus, ComputingNodeType
+from otl_interpreter.interpreter_db.enums import NodeJobStatus, JobStatus, ComputingNodeType, ResultStorage
 from otl_interpreter.interpreter_db import node_job_manager, otl_job_manager
 
 from computing_node_pool import computing_node_pool
@@ -119,7 +119,11 @@ class NodeJobStatusManager:
             node_job_dict = node_job_manager.get_node_job_dict(node_job_uuid)
 
         # find computing node to execute
-        computing_node_uuid = computing_node_pool.get_least_loaded_node(node_job_dict['computing_node_type'])
+        find_only_local_computing_nodes = node_job_dict['storage'] == ResultStorage.LOCAL_POST_PROCESSING
+        computing_node_uuid = computing_node_pool.get_least_loaded_node(
+            node_job_dict['computing_node_type'],
+            find_only_local_computing_nodes
+        )
 
         # if not found move node job to queue
         if computing_node_uuid is None:
@@ -131,6 +135,8 @@ class NodeJobStatusManager:
             )
             return
 
+        node_job_manager.set_computing_node_for_node_job(node_job_dict['uuid'], computing_node_uuid)
+
         # send node job to computing node
         node_job_dict['uuid'] = node_job_dict['uuid'].hex
         node_job_dict['status'] = NodeJobStatus.READY_TO_EXECUTE
@@ -140,7 +146,8 @@ class NodeJobStatusManager:
         self._change_node_job_status(
             node_job_dict['uuid'],
             NodeJobStatus.SENT_TO_COMPUTING_NODE,
-            f'Sent to computing node {computing_node_uuid}'
+            f'Sent to computing node {computing_node_uuid}',
+            node_job_dict
         )
 
     def _on_in_queue(self, node_job_uuid, node_job_dict=None):
@@ -167,6 +174,9 @@ class NodeJobStatusManager:
             node_job_dict = node_job_manager.get_node_job_dict(node_job_uuid)
 
         self._put_node_job_in_queue(node_job_dict)
+
+        # set computing node to None
+        node_job_manager.set_computing_node_for_node_job(node_job_dict['uuid'], None)
 
         self._change_node_job_status(
             node_job_uuid, NodeJobStatus.IN_QUEUE,

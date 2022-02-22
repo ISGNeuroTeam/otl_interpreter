@@ -12,7 +12,8 @@ class TestComputingNodePool(TestCase):
             testUUID, ComputingNodeType.SPARK.value,
             {
                 'job_capacity': 10
-            }
+            },
+            False
         )
         computing_node = computing_node_pool.nodes_by_types[ComputingNodeType.SPARK.value][testUUID]
         self.assertEqual(
@@ -36,7 +37,8 @@ class TestComputingNodePool(TestCase):
             'SPARK',
             {
                 'test_resource': 20
-            }
+            },
+            False
         )
         node = computing_node_pool.get_least_loaded_node('SPARK')
         self.assertEqual(node, 'test1')
@@ -47,7 +49,8 @@ class TestComputingNodePool(TestCase):
             'SPARK',
             {
                 'test_resource': 20
-            }
+            },
+            False
         )
 
         node2 = ComputingNode(
@@ -55,7 +58,8 @@ class TestComputingNodePool(TestCase):
             'SPARK',
             {
                 'test_resource': 20
-            }
+            },
+            False
         )
 
         node1.update_used_resources({
@@ -77,7 +81,8 @@ class TestComputingNodePool(TestCase):
                 'test_resource': 100,
                 'test_resource2': 100,
                 'test_resource3': 100
-            }
+            },
+            False
         )
 
         node1.update_used_resources(
@@ -95,7 +100,8 @@ class TestComputingNodePool(TestCase):
                 'test_resource': 200,
                 'test_resource2': 200,
                 'test_resource3': 200
-            }
+            },
+            False
         )
 
         node2.update_used_resources(
@@ -122,7 +128,8 @@ class TestComputingNodePool(TestCase):
             ComputingNodeType.SPARK.value,
             {
                 'first_resource': 100
-            }
+            },
+            False
         )
         computing_node_pool.update_node_resources(
             'test1',
@@ -135,7 +142,8 @@ class TestComputingNodePool(TestCase):
             ComputingNodeType.SPARK.value,
             {
                 'first_resource': 100
-            }
+            },
+            False
         )
         computing_node_pool.update_node_resources(
             'test2',
@@ -158,7 +166,8 @@ class TestComputingNodePool(TestCase):
             ComputingNodeType.SPARK.value,
             {
                 'first_resource': 100
-            }
+            },
+            False
         )
         computing_node_pool.update_node_resources(
             'test0',
@@ -171,7 +180,8 @@ class TestComputingNodePool(TestCase):
             ComputingNodeType.SPARK.value,
             {
                 'first_resource': 100
-            }
+            },
+            False
         )
         computing_node_pool.update_node_resources(
             'test-1',
@@ -186,7 +196,8 @@ class TestComputingNodePool(TestCase):
             {
                 'first_resource': 100,
                 'second_resource': 100
-            }
+            },
+            False
         )
         computing_node_pool.update_node_resources(
             'test1',
@@ -202,7 +213,8 @@ class TestComputingNodePool(TestCase):
             {
                 'first_resource': 100,
                 'second_resource': 100
-            }
+            },
+            False
         )
         computing_node_pool.update_node_resources(
             'test2',
@@ -218,7 +230,8 @@ class TestComputingNodePool(TestCase):
             {
                 'first_resource': 100,
                 'second_resource': 100
-            }
+            },
+            False
         )
 
         computing_node_pool.update_node_resources(
@@ -243,7 +256,8 @@ class TestComputingNodePool(TestCase):
             {
                 'first_resource': 100,
                 'second_resource': 100
-            }
+            },
+            False
         )
         computing_node_pool.update_node_resources(
             'test1',
@@ -259,7 +273,8 @@ class TestComputingNodePool(TestCase):
             {
                 'first_resource': 100,
                 'second_resource': 100
-            }
+            },
+            False
         )
         computing_node_pool.update_node_resources(
             'test2',
@@ -275,7 +290,8 @@ class TestComputingNodePool(TestCase):
             {
                 'first_resource': 100,
                 'second_resource': 100
-            }
+            },
+            False
         )
         computing_node_pool.update_node_resources(
             'test3',
@@ -290,7 +306,8 @@ class TestComputingNodePool(TestCase):
             {
                 'first_resource': 100,
                 'second_resource': 100
-            }
+            },
+            False
         )
         computing_node_pool.update_node_resources(
             'test4',
@@ -310,5 +327,97 @@ class TestComputingNodePool(TestCase):
         self.assertIn('test1', node_uuids)
         self.assertIn('test3', node_uuids)
 
+    def test_get_least_loaded_local(self):
+        computing_node_pool = ComputingNodePool()
+        computing_node_pool.add_computing_node(
+            'test1',
+            ComputingNodeType.POST_PROCESSING.value,
+            {
+                'first_resource': 100,
+                'second_resource': 100
+            },
+            False
+        )
+        computing_node_pool.update_node_resources(
+            'test1',
+            {
+                'first_resource': 10,
+                'second_resource': 10
+            }
+        )
 
+        # add local computing node
+        computing_node_pool.add_computing_node(
+            'test2',
+            ComputingNodeType.POST_PROCESSING.value,
+            {
+                'first_resource': 100,
+                'second_resource': 100
+            },
+            True
+        )
+        computing_node_pool.update_node_resources(
+            'test2',
+            {
+                'first_resource': 15,
+                'second_resource': 15
+            }
+        )
+
+        computing_node_pool.add_computing_node(
+            'test3',
+            ComputingNodeType.POST_PROCESSING.value,
+            {
+                'first_resource': 100,
+                'second_resource': 100
+            },
+            False
+        )
+        computing_node_pool.update_node_resources(
+            'test3',
+            {
+                'first_resource': 30,
+                'second_resource': 40
+            }
+        )
+
+        computing_node_pool.add_computing_node(
+            'test4',
+            ComputingNodeType.SPARK.value,
+            {
+                'first_resource': 100,
+                'second_resource': 100
+            },
+            True
+        )
+        computing_node_pool.update_node_resources(
+            'test4',
+            {
+                'first_resource': 4,
+                'second_resource': 2
+            }
+        )
+
+        computing_node_pool.add_computing_node(
+            'test5',
+            ComputingNodeType.POST_PROCESSING.value,
+            {
+                'first_resource': 100,
+                'second_resource': 100
+            },
+            True
+        )
+        computing_node_pool.update_node_resources(
+            'test5',
+            {
+                'first_resource': 30,
+                'second_resource': 40
+            }
+        )
+
+        least_loaded_node_uuid = computing_node_pool.get_least_loaded_node('POST_PROCESSING', True)
+        self.assertEqual(
+            least_loaded_node_uuid,
+            'test2'
+        )
 

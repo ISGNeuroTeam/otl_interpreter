@@ -155,6 +155,9 @@ class TestNodeJobDecline(TransactionTestCase, BaseApiTest):
             format='json'
         )
 
+        if response.status_code == 400:
+            print(response.data)
+
         # checking status code
         self.assertEqual(response.status_code, 200)
 

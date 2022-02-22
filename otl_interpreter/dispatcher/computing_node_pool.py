@@ -1,22 +1,23 @@
 import random
 import logging
 
-from message_broker import AsyncProducer
 from otl_interpreter.interpreter_db.enums import ComputingNodeType
 
 log = logging.getLogger('otl_interpreter.dispatcher.computing_node_pool')
 
 
 class ComputingNode:
-    def __init__(self, uuid, node_type, total_resources):
+    def __init__(self, uuid, node_type, total_resources, local):
         """
         :param uuid: node uuid
         :param node_type: node type
         :param total_resources: dictionary, node resources
+        :param local: True if computing node runs on the same host
         :return:
         """
         self.uuid = uuid
         self.type = node_type
+        self.local = local
         self.total_resources = total_resources
         self.used_resources = {key: 0 for key in total_resources.keys()}
 
@@ -61,15 +62,16 @@ class ComputingNodePool:
         self.nodes_by_types = {key: {} for key in ComputingNodeType}
         self.nodes = {}
 
-    def add_computing_node(self, uuid, node_type, resources):
+    def add_computing_node(self, uuid, node_type, resources, local):
         """
         :param uuid: node uuid
         :param node_type: node type
         :param resources: dictionary, node resources
+        :param local: True if node runs on local host
         :return:
         """
         computing_node = ComputingNode(
-            uuid, node_type, resources
+            uuid, node_type, resources, local
         )
         self.nodes_by_types[node_type][uuid] = computing_node
         self.nodes[uuid] = computing_node
@@ -83,7 +85,7 @@ class ComputingNodePool:
         del self.nodes_by_types[node_type][uuid]
         del self.nodes[uuid]
 
-    def get_least_loaded_node(self, node_type):
+    def get_least_loaded_node(self, node_type, only_local_nodes=False):
         """
         Returns uuid of node with lowest resource usage or None
         """
@@ -92,6 +94,13 @@ class ComputingNodePool:
             lambda node: node.all_resources_available(),
             self.nodes_by_types[node_type].values()
         ))
+
+        # filter locals
+        if only_local_nodes:
+            nodes = tuple(filter(
+                lambda node: node.local,
+                nodes
+            ))
 
         if len(nodes) == 1:
             return nodes[0].uuid

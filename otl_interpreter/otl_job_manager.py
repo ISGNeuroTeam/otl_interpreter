@@ -91,7 +91,8 @@ class OtlJobManager:
                         'uuid': node_job_tree.uuid.hex,
                         'status': NodeJobStatus.PLANNED,
                         'computing_node_type': node_job_tree.computing_node_type,
-                        'commands': node_job_tree.as_command_dict_list()
+                        'commands': node_job_tree.as_command_dict_list(),
+                        'storage': node_job_tree.result_address.storage_type
                     }
                     for node_job_tree in independent_node_job_trees
                 ]

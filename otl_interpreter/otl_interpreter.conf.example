@@ -20,6 +20,9 @@ subsearch_is_node_job = True
 one_process_mode = False
 check_job_queue_period = 10
 
+# hostid linux command will be used if empty
+host_id =
+
 [otl_job_defaults]
 cache_ttl = 60
 
