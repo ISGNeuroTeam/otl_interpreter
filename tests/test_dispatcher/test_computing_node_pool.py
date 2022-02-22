@@ -421,3 +421,29 @@ class TestComputingNodePool(TestCase):
             'test2'
         )
 
+    def test_empty_resources(self):
+        computing_node_pool = ComputingNodePool()
+        computing_node_pool.add_computing_node(
+            'test1',
+            ComputingNodeType.SPARK.value,
+            {},
+            False
+        )
+        computing_node_pool.update_node_resources(
+            'test1',
+            {}
+        )
+
+        computing_node_pool.add_computing_node(
+            'test2',
+            ComputingNodeType.SPARK.value,
+            {},
+            False
+        )
+        computing_node_pool.update_node_resources(
+            'test2',
+            {}
+        )
+
+        least_loaded_node_uuid = computing_node_pool.get_least_loaded_node('SPARK')
+        self.assertIn(least_loaded_node_uuid, ['test1', 'test2'])

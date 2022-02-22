@@ -7,17 +7,19 @@ import os
 import sys
 import subprocess
 
+from pathlib import Path
+from django.conf import settings
 from rest.test import TransactionTestCase as TestCase, APIClient
 
 from otl_interpreter.interpreter_db.enums import ResultStorage, JobStatus
 from otl_interpreter.interpreter_db.models import OtlJob, NodeJob
-from create_test_users import create_test_users
+from otl_interpreter.interpreter_db import node_commands_manager
+
 from register_test_commands import register_test_commands
 from base_api_test_class import BaseApiTest
+from mock_computing_node.computing_node_config import read_computing_node_config
 
-from pathlib import Path
 
-from django.conf import settings
 
 
 plugins_dir = settings.PLUGINS_DIR
@@ -183,4 +185,56 @@ class TestGetJobResult(TestCase, BaseApiTest):
         self.spark_computing_node.kill()
         self.eep_computing_node.kill()
         self.pp_computing_node.kill()
+        self.dispatcher_process.kill()
+
+
+class TestNodeWithEmptyResources(TestCase, BaseApiTest):
+    def setUp(self):
+        BaseApiTest.setUp(self)
+
+        self.dispatcher_process = subprocess.Popen(
+            [sys.executable, '-u', dispatcher_main, 'core.settings.test', 'use_test_database'],
+            env=dispatcher_proc_env
+        )
+
+        # wait until dispatcher start
+        time.sleep(5)
+
+        self.spark_computing_node = subprocess.Popen(
+            [sys.executable, '-m', 'mock_computing_node', 'spark_empty_resources.json', 'spark_commands1.json'],
+            env=computing_node_env
+        )
+
+        # wait until node register
+        time.sleep(5)
+
+    def test_node_register(self):
+        guids_list = node_commands_manager.get_active_nodes_uuids()
+        self.assertEqual(len(guids_list), 1)
+        node_conf = read_computing_node_config('spark_empty_resources.json')
+        self.assertEqual(guids_list[0].hex, node_conf['uuid'])
+
+    def test_job_finished(self):
+        data = {
+            'otl_query': "| otstats index='test_index'",
+            'tws': now_timestamp,
+            'twf': yesterday_timestamp
+        }
+        response = self.client.post(
+            self.full_url('/makejob/'),
+            data=data,
+            format='json'
+        ).data
+        otl_job = OtlJob.objects.get(uuid=response["job_id"])
+
+        for _ in range(15):
+            if otl_job.status in [JobStatus.FINISHED, JobStatus.FAILED]:
+                break
+            time.sleep(1)
+            otl_job.refresh_from_db()
+        else:
+            raise TimeoutError("Job hasn't FINISHED in 15 seconds")
+
+    def tearDown(self):
+        self.spark_computing_node.kill()
         self.dispatcher_process.kill()
