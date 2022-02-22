@@ -1,7 +1,10 @@
 import random
+import logging
 
 from message_broker import AsyncProducer
 from otl_interpreter.interpreter_db.enums import ComputingNodeType
+
+log = logging.getLogger('otl_interpreter.dispatcher.computing_node_pool')
 
 
 class ComputingNode:
@@ -84,7 +87,7 @@ class ComputingNodePool:
         """
         Returns uuid of node with lowest resource usage or None
         """
-        # exlude nodes with full usage resources
+        # exclude nodes with full usage resources
         nodes = tuple(filter(
             lambda node: node.all_resources_available(),
             self.nodes_by_types[node_type].values()
@@ -113,9 +116,12 @@ class ComputingNodePool:
             return random.choice(tuple(min_resources_computing_nodes_uuids))
 
     def update_node_resources(self, node_uuid, resources):
-        self.nodes[node_uuid].update_used_resources(
-            resources
-        )
+        if node_uuid in self.nodes:
+            self.nodes[node_uuid].update_used_resources(
+                resources
+            )
+        else:
+            log.error(f'Computing node with uuid={node_uuid} hasn\'t been added in node pool')
 
 
 computing_node_pool = ComputingNodePool()

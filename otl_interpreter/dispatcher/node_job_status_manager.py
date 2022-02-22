@@ -123,10 +123,7 @@ class NodeJobStatusManager:
 
         # if not found move node job to queue
         if computing_node_uuid is None:
-            node_job_queue.add(
-                node_job_dict,
-                self._calculate_node_job_priority_for_queue()
-            )
+            self._put_node_job_in_queue(node_job_dict)
             self._change_node_job_status(
                 node_job_uuid, NodeJobStatus.IN_QUEUE,
                 f'Moved to queue because available computing node not found',
