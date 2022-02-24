@@ -4,6 +4,7 @@ from pprint import pp
 from rest.test import TestCase
 
 from otl_interpreter.interpreter_db import node_commands_manager
+from otl_interpreter.interpreter_db.enums import ResultStorage
 from otl_interpreter.job_planner.node_job_tree_constructor import _construct_node_job_tree, make_node_job_tree
 from otl_interpreter.job_planner.command_tree_constructor import make_command_tree
 from otl_interpreter.job_planner.define_computing_node_type_algorithm import define_computing_node_type_for_command_tree
@@ -207,7 +208,7 @@ class TestNodeJobTree(TestCase):
             for command_tree in node_job.command_tree.parent_first_order_traverse_iterator():
                 if isinstance(command_tree.command, SysReadWriteCommand):
                     self.check_is_it_hash_string(command_tree.command.arguments['path'][0].value)
-                    self.assertEqual(command_tree.command.arguments['storage_type'][0].value, 'INTERPROC_STORAGE')
+                    self.assertEqual(command_tree.command.arguments['storage_type'][0].value, ResultStorage.INTERPROCESSING.value)
 
     def test_read_and_write_has_same_address(self):
         test_otl = "| otstats index='test_index2' | merge_dataframes [readfile 1,2,4]"
@@ -245,10 +246,10 @@ class TestNodeJobTree(TestCase):
     def test_shared_post_processing_result(self):
         test_otl = "| otstats index='test_index2' | merge_dataframes [readfile 1,2,4] | pp_command1 hello"
         top_node_job = self.get_node_job_tree_from_otl(test_otl, shared=True)
-        self.assertEqual(top_node_job.result_address.storage_type, 'SHARED_POST_PROCESSING')
+        self.assertEqual(top_node_job.result_address.storage_type, ResultStorage.SHARED_POST_PROCESSING.value)
 
         top_node_job_local = self.get_node_job_tree_from_otl(test_otl, shared=False)
-        self.assertEqual(top_node_job_local.result_address.storage_type, 'LOCAL_POST_PROCESSING')
+        self.assertEqual(top_node_job_local.result_address.storage_type, ResultStorage.LOCAL_POST_PROCESSING.value)
 
     def test_read_write_interproc(self):
         test_otl = "| readfile 23,3,4 | sum 4,3,4,3,3,3"

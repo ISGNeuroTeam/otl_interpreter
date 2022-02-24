@@ -32,6 +32,6 @@ class ComputingNodeType(models.TextChoices):
 
 
 class ResultStorage(models.TextChoices):
-    INTERPROCESSING = 'INTERPROC_STORAGE', _('Interprocessing storage')
-    LOCAL_POST_PROCESSING = 'LOCAL_POST_PROCESSING', _('Local post processing storage')
-    SHARED_POST_PROCESSING = 'SHARED_POST_PROCESSING', _('Shared post processing storage')
+    INTERPROCESSING = 'interproc_storage', _('Interprocessing storage')
+    LOCAL_POST_PROCESSING = 'local_post_processing', _('Local post processing storage')
+    SHARED_POST_PROCESSING = 'shared_post_processing', _('Shared post processing storage')

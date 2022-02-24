@@ -164,7 +164,7 @@ class TestGetJobResult(TestCase, BaseApiTest):
             self.full_url(f'/getresult/?job_id={response["job_id"]}'),
         ).data
 
-        _id = re.match(r"INTERPROC_STORAGE/(\w+)/jsonl/data", job_result['data_urls'][0]).group(1)
+        _id = re.match(rf"{ResultStorage.INTERPROCESSING.value}/(\w+)/jsonl/data", job_result['data_urls'][0]).group(1)
         commands = NodeJob.objects.filter(result__path=_id).first().commands
         self.assertEqual(commands[1]["name"], "sum")
 
