@@ -88,6 +88,25 @@ class TestCoumputingNodeUnRegister(TestCase):
         for node_command in node_commands:
             self.assertEqual(node_command.active, False)
 
+        # test reregister
+        # restart the node
+        self.computing_node_process = subprocess.Popen(
+            [sys.executable, '-m', 'mock_computing_node', 'spark_10_sec_lifetime.json', 'spark_commands1.json'],
+            env=computing_node_env
+        )
+        time.sleep(5)
+        guids_list = node_commands_manager.get_active_nodes_uuids()
+        self.assertEqual(len(guids_list), 1)
+        node_conf = read_computing_node_config('spark_10_sec_lifetime.json')
+        self.assertEqual(guids_list[0].hex, node_conf['uuid'])
+        guids_list = node_commands_manager.get_active_nodes_uuids()
+        self.assertEqual(len(guids_list), 1)
+        computing_node = ComputingNode.objects.get(uuid=node_conf['uuid'])
+        self.assertEqual(computing_node.active, True)
+        node_commands = NodeCommand.objects.filter(node=computing_node)
+        for node_command in node_commands:
+            self.assertEqual(node_command.active, True)
+
     def tearDown(self):
         self.computing_node_process.kill()
         self.dispatcher_process.kill()

@@ -1,6 +1,5 @@
 from datetime import datetime
 from functools import wraps
-from cache import CacheForFunctionDecorator
 
 from otl_interpreter.settings import get_cache
 from otl_interpreter.interpreter_db.models import NodeCommand, ComputingNode
@@ -51,7 +50,6 @@ class NodeCommandsManager:
         """
         return self.commands_updated_timestamp > timestamp
 
-    @CacheForFunctionDecorator()
     def register_node(self, node_type, node_uuid, host_id, resources=None):
         """
         creates node if it doesn't exist
@@ -111,7 +109,6 @@ class NodeCommandsManager:
                 ).value_list('uuid', flat=True)
             )
 
-    @CacheForFunctionDecorator()
     @_set_commands_updated_timestamp_decorator
     def register_node_commands(self, node_uuid, commands):
 
