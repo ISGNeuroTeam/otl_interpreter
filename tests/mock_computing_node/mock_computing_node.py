@@ -19,6 +19,7 @@ default_config = {
     "job_capacity": 4,
     "cores": 8
   },
+  "max_jobs": 10000,             # max node jobs to execute
   "time_on_command": 0.3,
   "lifetime": 180,             # node will be stopped after 60 seconds
   "fail_job": False,           # every job will failed
@@ -96,13 +97,14 @@ class ComputingNode:
         job_was_declined = False
         async with lock:
             self.job_counter += 1
-            if decline_rate and self.job_counter % decline_rate == 0:
+            if (decline_rate and self.job_counter % decline_rate == 0) or self.job_counter > self.config['max_jobs']:
                 await self._send_node_job_status(
                     job['uuid'],
                     'DECLINED_BY_COMPUTING_NODE',
                     f"Node job was declined",
                 )
                 job_was_declined = True
+                self.job_counter -= 1
 
         if not self.config['fail_job'] and not job_was_declined:
             await self._send_node_job_status(
@@ -121,6 +123,7 @@ class ComputingNode:
                     f"command {command['name']} finished",
                     command['name']
                 )
+            self.job_counter -= 1
             # send status job done
             await self._send_node_job_status(
                 job['uuid'],
@@ -135,6 +138,7 @@ class ComputingNode:
                 'FAILED',
                 f"Node job {job['uuid']} failed",
             )
+        await self._send_resources()
 
     async def _send_node_job_status(
         self, node_job_uuid, status, status_text=None, last_finished_command=None

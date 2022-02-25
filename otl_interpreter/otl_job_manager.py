@@ -59,8 +59,8 @@ class OtlJobManager:
             translated_query = translate_otl(otl_query)
 
         except SyntaxError as err:
-            log.error(f'Query: {otl_query}\n \nUser_guid: {user_guid} Syntax error: {str(err)}')
-            raise QueryError(f'Tranlation error: {err.args[0]}') from err
+            log.error(f'Query: {otl_query}\n \nUser_guid: {user_guid} Syntax error:\n {str(err)}')
+            raise QueryError(f'Translation error:\n {err.args[0]}') from err
 
         db_otl_job_manager.change_otl_job_status(
             otl_job_uuid, JobStatus.TRANSLATED,

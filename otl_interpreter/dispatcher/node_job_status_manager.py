@@ -154,14 +154,13 @@ class NodeJobStatusManager:
         pass
 
     def _on_taken_from_queue(self, node_job_uuid, node_job_dict=None):
-        # todo check computing node availability without change node job state???
         if node_job_dict is None:
             node_job_dict = node_job_manager.get_node_job_dict(node_job_uuid)
 
         self._change_node_job_status(
             node_job_uuid,
             NodeJobStatus.READY_TO_EXECUTE,
-            f'Checking for avalable computing node',
+            f'Checking for available computing node',
             node_job_dict
         )
 

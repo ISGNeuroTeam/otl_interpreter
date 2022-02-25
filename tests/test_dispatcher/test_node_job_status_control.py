@@ -9,7 +9,7 @@ from pathlib import Path
 from django.conf import settings
 from rest.test import TransactionTestCase
 from otl_interpreter.interpreter_db.models import NodeJob
-from otl_interpreter.interpreter_db.enums import NodeJobStatus
+from otl_interpreter.interpreter_db.enums import NodeJobStatus, JobStatus
 
 from base_api_test_class import BaseApiTest
 
@@ -249,6 +249,101 @@ class TestNodeResoucesOccupied(TransactionTestCase, BaseApiTest):
     def tearDown(self):
         self.spark_computing_node.kill()
         self.dispatcher_process.kill()
+
+
+class TestNodeReleaseResources(TransactionTestCase, BaseApiTest):
+    def setUp(self) -> None:
+        BaseApiTest.setUp(self)
+
+        self.dispatcher_process = subprocess.Popen(
+            [sys.executable, '-u', dispatcher_main, 'core.settings.test', 'use_test_database'],
+            env=dispatcher_proc_env
+        )
+
+        # wait until dispatcher start
+        time.sleep(5)
+
+        self.spark_computing_node = subprocess.Popen(
+            [sys.executable, '-m', 'mock_computing_node', 'spark_max_4_job.json', 'spark_commands1.json'],
+            env=computing_node_env
+        )
+        # wait until node register
+        time.sleep(5)
+
+    def tearDown(self):
+        self.spark_computing_node.kill()
+        self.dispatcher_process.kill()
+
+    def test_release_resources(self):
+
+        job_for_5_sec = "| otstats index='test_index' | otstats index='test_index2' | otstats index='test_index3' | otstats index='test_index4' | otstats index='test_index7'"
+        job_for_3_sec = "| otstats index='test_index' | otstats index='test_index2' | otstats index='test_index3'"
+        job_for_1_sec = "| otstats index='test_index'"
+
+        jobs_id = [None]*4
+
+        # send 4 jobs to occupy all resources
+        for i in range(4):
+            data = {
+                'otl_query': job_for_3_sec if i == 3 else job_for_5_sec,
+                'tws': now_timestamp,
+                'twf': yesterday_timestamp
+            }
+            response = self.client.post(
+                self.full_url('/makejob/'),
+                data=data,
+                format='json'
+            )
+            # checking status code
+            self.assertEqual(response.status_code, 200)
+            jobs_id[i] = response.data['job_id']
+
+        # send 1 job and check it's in queue
+        data = {
+            'otl_query': job_for_1_sec,
+            'tws': now_timestamp,
+            'twf': yesterday_timestamp
+        }
+        response = self.client.post(
+            self.full_url('/makejob/'),
+            data=data,
+            format='json'
+        )
+        time.sleep(2)
+        self.assertEqual(response.status_code, 200)
+        job_in_queue = response.data['job_id']
+
+
+        # checking status code must be still PLANNED
+        response = self.client.get(
+            self.full_url(f'/checkjob/?job_id={job_in_queue}'),
+        )
+        self.assertEqual(response.status_code, 200)
+        response_data = response.data
+        self.assertEqual(response_data['job_status'], JobStatus.PLANNED)
+
+        # one job is over by that time
+        time.sleep(2)
+
+        response = self.client.get(
+            self.full_url(f'/checkjob/?job_id={job_in_queue}'),
+        )
+        self.assertEqual(response.status_code, 200)
+        response_data = response.data
+        self.assertIn(response_data['job_status'], [JobStatus.RUNNING, JobStatus.FINISHED])
+
+        if response_data['job_status'] == JobStatus.RUNNING:
+            time.sleep(2)
+            response = self.client.get(
+                self.full_url(f'/checkjob/?job_id={job_in_queue}'),
+            )
+            self.assertEqual(response.status_code, 200)
+            response_data = response.data
+            self.assertEqual(response_data['job_status'], JobStatus.FINISHED)
+
+
+
+
 
 
 
