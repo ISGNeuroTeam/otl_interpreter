@@ -53,7 +53,7 @@ clean_build:
 venv: clean_venv
 	echo Create venv
 	conda create --copy -p ./venv -y
-	conda install -p ./venv python==3.8.5 -y
+	conda install -p ./venv python==3.9.7 -y
 	./venv/bin/pip install --no-input  -r requirements.txt
 
 venv_pack: venv
