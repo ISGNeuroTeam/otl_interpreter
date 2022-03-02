@@ -104,9 +104,10 @@ class TestOtlJobHandler(TransactionTestCase):
             self.assertEqual(node_job.status, NodeJobStatus.FINISHED)
 
     def tearDown(self):
-        self.spark_computing_node.terminate()
-        self.eep_computing_node.terminate()
-        self.pp_computing_node.terminate()
         self.dispatcher_process.kill()
+        self.spark_computing_node.kill()
+        self.eep_computing_node.kill()
+        self.pp_computing_node.kill()
+
 
 

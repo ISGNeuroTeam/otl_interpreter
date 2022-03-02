@@ -3,7 +3,6 @@ import signal
 import asyncio
 import traceback
 
-from asgiref.sync import sync_to_async
 from logging import getLogger
 from json import loads
 
@@ -52,6 +51,17 @@ async def check_job_queue():
         await asyncio.sleep(time_to_wait)
 
 
+async def health_check():
+    """
+    Task to periodically check computing node health
+    """
+    time_to_wait = int(ini_config['dispatcher']['health_check_period'])
+    computing_node_control_handler = ComputingNodeControlHandler()
+    while True:
+        await computing_node_control_handler.check_computing_node_health()
+        await asyncio.sleep(time_to_wait)
+
+
 async def main():
 
     tasks = [
@@ -66,6 +76,9 @@ async def main():
         ),
         asyncio.create_task(
             check_job_queue()
+        ),
+        asyncio.create_task(
+            health_check()
         ),
     ]
     await asyncio.gather(*tasks)

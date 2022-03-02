@@ -27,6 +27,7 @@ default_ini_config = {
         'one_process_mode': False,
         'check_job_queue_period': 10,
         'host_id': os.popen("hostid").read().strip(),
+        'health_check_period': 15
     },
     'otl_job_defaults': {
         'cache_ttl': 60,

@@ -11,7 +11,7 @@ from message_serializers.computing_node_control_command import (
 )
 from lock import Lock
 from computing_node_pool import computing_node_pool
-
+from node_job_status_manager import NodeJobStatusManager
 from .abstract_message_handler import MessageHandler, Message
 
 log = getLogger('otl_interpreter.dispatcher')
@@ -25,6 +25,9 @@ node_deactivate = sync_to_async(node_commands_manager.node_deactivate)
 
 
 class ComputingNodeControlHandler(MessageHandler):
+    def __init__(self):
+        self.node_job_status_manager = NodeJobStatusManager()
+
     async def __aenter__(self):
         return self
 
@@ -119,8 +122,7 @@ class ComputingNodeControlHandler(MessageHandler):
         resources = resource_status_command.validated_data['resources']
         computing_node_pool.update_node_resources(computing_node_uuid, resources)
 
-    @staticmethod
-    async def process_unregister(computing_node_uuid, unregister_command: UnregisterComputingNodeCommand):
+    async def process_unregister(self, computing_node_uuid, unregister_command: UnregisterComputingNodeCommand):
         # only one instance of dispatcher put node information in database
         unregister_node_lock = Lock(
             key=f'unregister_computing_node_{computing_node_uuid}'
@@ -130,3 +132,15 @@ class ComputingNodeControlHandler(MessageHandler):
             unregister_node_lock.release()
 
         computing_node_pool.del_computing_node(computing_node_uuid)
+        await self.node_job_status_manager.inactive_computing_node(computing_node_uuid)
+
+    async def check_computing_node_health(self):
+        """
+        For all inactive computing nodes start unregister process
+        """
+        inactive_node_uuids = computing_node_pool.get_inactive_node_uuids()
+        if inactive_node_uuids:
+            log.warning('found inactive node uuids' + str(inactive_node_uuids))
+
+        for inactive_node_uuid in inactive_node_uuids:
+            await self.process_unregister(inactive_node_uuid, UnregisterComputingNodeCommand())

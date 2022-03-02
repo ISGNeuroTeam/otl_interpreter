@@ -53,8 +53,9 @@ class TestCoumputingNodeRegister(TestCase):
         self.assertEqual(guids_list[0].hex, node_conf['uuid'])
 
     def tearDown(self):
-        self.computing_node_process.kill()
         self.dispatcher_process.kill()
+        self.computing_node_process.kill()
+
 
 
 class TestCoumputingNodeUnRegister(TestCase):
@@ -108,6 +109,7 @@ class TestCoumputingNodeUnRegister(TestCase):
             self.assertEqual(node_command.active, True)
 
     def tearDown(self):
-        self.computing_node_process.kill()
         self.dispatcher_process.kill()
+        self.computing_node_process.kill()
+
 

@@ -1,13 +1,16 @@
 import random
 import logging
 
+from uuid import UUID
+from datetime import datetime, timedelta
 from otl_interpreter.interpreter_db.enums import ComputingNodeType
+from otl_interpreter.settings import ini_config
 
 log = logging.getLogger('otl_interpreter.dispatcher.computing_node_pool')
 
 
 class ComputingNode:
-    def __init__(self, uuid, node_type, total_resources, local):
+    def __init__(self, uuid: UUID, node_type, total_resources, local):
         """
         :param uuid: node uuid
         :param node_type: node type
@@ -15,11 +18,12 @@ class ComputingNode:
         :param local: True if computing node runs on the same host
         :return:
         """
-        self.uuid = uuid
+        self.uuid: UUID = uuid
         self.type = node_type
         self.local = local
         self.total_resources = total_resources
         self.used_resources = {key: 0 for key in total_resources.keys()}
+        self.last_modified = datetime.now()
 
     def __gt__(self, other):
         for resource in self.used_resources.keys():
@@ -45,6 +49,7 @@ class ComputingNode:
 
     def update_used_resources(self, resources):
         self.used_resources.update(resources)
+        self.last_modified = datetime.now()
 
     def all_resources_available(self):
         """
@@ -58,11 +63,17 @@ class ComputingNode:
 
 
 class ComputingNodePool:
-    def __init__(self):
+    def __init__(self, health_check_period=10):
+        """
+        :param health_check_period: health check period in seconds
+        If computing node pool didn't receive resource information in that interval computing node considering inactive
+        """
         self.nodes_by_types = {key: {} for key in ComputingNodeType}
         self.nodes = {}
 
-    def add_computing_node(self, uuid, node_type, resources, local):
+        self.health_check_period: timedelta = timedelta(seconds=health_check_period)
+
+    def add_computing_node(self, uuid: UUID, node_type, resources, local):
         """
         :param uuid: node uuid
         :param node_type: node type
@@ -76,7 +87,7 @@ class ComputingNodePool:
         self.nodes_by_types[node_type][uuid] = computing_node
         self.nodes[uuid] = computing_node
 
-    def del_computing_node(self, uuid):
+    def del_computing_node(self, uuid: UUID):
         """
         ;:param uuid: node uuid
         :return:
@@ -124,7 +135,7 @@ class ComputingNodePool:
             # if two equals nodes return random
             return random.choice(tuple(min_resources_computing_nodes_uuids))
 
-    def update_node_resources(self, node_uuid, resources):
+    def update_node_resources(self, node_uuid: UUID, resources):
         if node_uuid in self.nodes:
             self.nodes[node_uuid].update_used_resources(
                 resources
@@ -132,5 +143,18 @@ class ComputingNodePool:
         else:
             log.error(f'Computing node with uuid={node_uuid} hasn\'t been added in node pool')
 
+    def get_inactive_node_uuids(self):
+        """
+        Returns uuids list of nodes whose last_modified timestamp was earlier than health_check interval ago
+        """
+        inactive_node_uuids = list()
+        log.debug(str(list(self.nodes.keys())))
+        for node_uuid, node in self.nodes.items():
+            if node.last_modified < (datetime.now() - self.health_check_period):
+                inactive_node_uuids.append(node_uuid)
+        return inactive_node_uuids
 
-computing_node_pool = ComputingNodePool()
+
+computing_node_pool = ComputingNodePool(
+    int(ini_config['dispatcher']['health_check_period'])
+)

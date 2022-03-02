@@ -23,6 +23,11 @@ check_job_queue_period = 10
 # hostid linux command will be used if empty
 host_id =
 
+# if computing node didn't send resource status in that interval
+# then it considered as inactive
+health_check_period = 15
+
+
 [otl_job_defaults]
 cache_ttl = 60
 

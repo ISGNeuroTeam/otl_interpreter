@@ -134,10 +134,11 @@ class TestGetJobResult(TestCase, BaseApiTest):
         time.sleep(5)
 
     def tearDown(self):
+        self.dispatcher_process.kill()
         self.spark_computing_node.kill()
         self.eep_computing_node.kill()
         self.pp_computing_node.kill()
-        self.dispatcher_process.kill()
+
 
     def test_getresults_no_errors(self):
         data = {
@@ -150,6 +151,9 @@ class TestGetJobResult(TestCase, BaseApiTest):
             data=data,
             format='json'
         ).data
+        if response['status'] != 'success':
+            print(response['error'])
+
         otl_job = OtlJob.objects.get(uuid=response["job_id"])
 
         for _ in range(15):
@@ -261,8 +265,8 @@ class TestCheckJobView(TestCase, BaseApiTest):
         time.sleep(1)
 
     def tearDown(self):
-        self.spark_computing_node.kill()
         self.dispatcher_process.kill()
+        self.spark_computing_node.kill()
 
     def test_check_job(self):
         data = {
@@ -276,6 +280,8 @@ class TestCheckJobView(TestCase, BaseApiTest):
             data=data,
             format='json'
         ).data
+        if response['status'] != 'success':
+            print(response['error'])
 
         self.assertEqual(response['status'], 'success')
         job_id = response['job_id']

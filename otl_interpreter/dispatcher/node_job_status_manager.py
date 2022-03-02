@@ -3,6 +3,7 @@ import json
 import datetime
 
 from uuid import UUID
+from typing import List
 from asgiref.sync import sync_to_async
 
 
@@ -44,7 +45,7 @@ allowed_state_transfer_table = {
     },
     NodeJobStatus.FINISHED: {},
     NodeJobStatus.CANCELED: {},
-    NodeJobStatus.FAILED: {},
+    NodeJobStatus.FAILED: {NodeJobStatus.CANCELED, },
 }
 
 
@@ -106,6 +107,19 @@ class NodeJobStatusManager:
         """
         for computing_node_type in ComputingNodeType:
             self._check_job_queue(computing_node_type)
+
+    @sync_to_async
+    def inactive_computing_node(self, computing_node_uuid: UUID):
+        """
+        Process situation when computing node became inactive
+        """
+        # get jobs running on inactive nodes
+        node_job_uuids: List[UUID] = node_job_manager.get_running_node_job_uuids_for_computing_node(computing_node_uuid)
+        # for all jobs set FAIL status
+        for node_job_uuid in node_job_uuids:
+            self._change_node_job_status(
+                node_job_uuid, NodeJobStatus.FAILED, 'Computing node doesn\'t respond to dispatcher'
+            )
 
     # ==================================================================================================================
     # _on_* functions are "callbacks" on node job state changing

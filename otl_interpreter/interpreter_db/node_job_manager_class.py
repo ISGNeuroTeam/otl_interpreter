@@ -114,13 +114,13 @@ class NodeJobManager:
             log.error(f'Setting node job status for unexisting nodejob: {node_job_uuid}')
 
     @staticmethod
-    def get_computing_nodes_and_node_jobs_uuids_for_cancel(failed_node_job_uuid):
+    def get_running_node_job_uuids_for_computing_node(computing_node_uuid):
         """
-        When one node job failed, other nodes jobs need to be canceled
-        :param failed_node_job_uuid:
-        :return:
+        Returns list of node job uuids running on computing node
         """
-        pass
+        return list(NodeJob.objects.filter(
+            status=NodeJobStatus.RUNNING, computing_node__uuid=computing_node_uuid
+        ).values_list('uuid', flat=True))
 
     def get_next_node_job_to_execute(self, finished_node_uuid):
         """
