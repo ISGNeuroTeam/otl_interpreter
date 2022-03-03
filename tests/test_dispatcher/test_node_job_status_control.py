@@ -35,7 +35,7 @@ computing_node_env = os.environ.copy()
 computing_node_env["PYTHONPATH"] = f'{base_rest_dir}:{plugins_dir}:{str(test_dir)}'
 
 
-class TestNodeJobError(TransactionTestCase, BaseApiTest):
+class TestNodeJobError(BaseApiTest):
     def setUp(self) -> None:
         BaseApiTest.setUp(self)
 
@@ -64,23 +64,9 @@ class TestNodeJobError(TransactionTestCase, BaseApiTest):
         time.sleep(5)
 
     def test_job_in_the_middle_failed(self):
-
-        # send request for olt
-        data = {
-            'otl_query': "| otstats index='test_index' | pp_command2 | readfile 1,2,3 | sum 1,2,3 | pp_command1 test_arg | pp_command2",
-            'tws': now_timestamp,
-            'twf': yesterday_timestamp
-        }
-
-        response = self.client.post(
-            self.full_url('/makejob/'),
-            data=data,
-            format='json'
-        )
-
+        otl_query = "| otstats index='test_index' | pp_command2 | readfile 1,2,3 | sum 1,2,3 | pp_command1 test_arg | pp_command2"
+        response = BaseApiTest.make_job_success(self, otl_query)
         time.sleep(20)
-        # checking status code
-        self.assertEqual(response.status_code, 200)
 
         # check that spark node jobs are finished
         spark_node_jobs = NodeJob.objects.filter(computing_node_type='SPARK')
@@ -115,7 +101,7 @@ class TestNodeJobError(TransactionTestCase, BaseApiTest):
         self.pp_computing_node.kill()
 
 
-class TestNodeJobDecline(TransactionTestCase, BaseApiTest):
+class TestNodeJobDecline(BaseApiTest):
     def setUp(self) -> None:
         BaseApiTest.setUp(self)
 
@@ -143,25 +129,8 @@ class TestNodeJobDecline(TransactionTestCase, BaseApiTest):
         time.sleep(5)
 
     def test_node_job_declined(self):
-
-        # send request for olt
-        data = {
-            'otl_query': "| otstats index='test_index' | join [ | collect index=some_index ] | pp_command2 | readfile 1,2,3 | sum 1,2,3",
-            'tws': now_timestamp,
-            'twf': yesterday_timestamp
-        }
-        response = self.client.post(
-            self.full_url('/makejob/'),
-            data=data,
-            format='json'
-        )
-
-        if response.status_code != 200:
-            print(response.data)
-
-        # checking status code
-        self.assertEqual(response.status_code, 200)
-
+        otl_query = "| otstats index='test_index' | join [ | collect index=some_index ] | pp_command2 | readfile 1,2,3 | sum 1,2,3"
+        response = BaseApiTest.make_job_success(self, otl_query)
         time.sleep(65)
 
         # check that spark all  node jobs are finished
@@ -196,8 +165,7 @@ class TestNodeJobDecline(TransactionTestCase, BaseApiTest):
         self.pp_computing_node.kill()
 
 
-
-class TestNodeResoucesOccupied(TransactionTestCase, BaseApiTest):
+class TestNodeResoucesOccupied(BaseApiTest):
     def setUp(self) -> None:
         BaseApiTest.setUp(self)
 
@@ -217,21 +185,9 @@ class TestNodeResoucesOccupied(TransactionTestCase, BaseApiTest):
         time.sleep(5)
 
     def test_node_resources_occupied(self):
-
         # send request for olt
-        data = {
-            'otl_query': "| otstats index='test_index' ",
-            'tws': now_timestamp,
-            'twf': yesterday_timestamp
-        }
-        response = self.client.post(
-            self.full_url('/makejob/'),
-            data=data,
-            format='json'
-        )
-
-        # checking status code
-        self.assertEqual(response.status_code, 200)
+        otl_query = "| otstats index='test_index' "
+        response = BaseApiTest.make_job_success(self, otl_query)
 
         time.sleep(5)
 
@@ -254,7 +210,7 @@ class TestNodeResoucesOccupied(TransactionTestCase, BaseApiTest):
 
 
 
-class TestNodeReleaseResources(TransactionTestCase, BaseApiTest):
+class TestNodeReleaseResources(BaseApiTest):
     def setUp(self) -> None:
         BaseApiTest.setUp(self)
 
@@ -288,35 +244,13 @@ class TestNodeReleaseResources(TransactionTestCase, BaseApiTest):
 
         # send 4 jobs to occupy all resources
         for i in range(4):
-            data = {
-                'otl_query': job_for_3_sec if i == 3 else job_for_5_sec,
-                'tws': now_timestamp,
-                'twf': yesterday_timestamp
-            }
-            response = self.client.post(
-                self.full_url('/makejob/'),
-                data=data,
-                format='json'
-            )
-            # checking status code
-            self.assertEqual(response.status_code, 200)
-            jobs_id[i] = response.data['job_id']
+            response = BaseApiTest.make_job_success(self, job_for_3_sec if i == 3 else job_for_5_sec)
+            jobs_id[i] = response['job_id']
 
         # send 1 job and check it's in queue
-        data = {
-            'otl_query': job_for_1_sec,
-            'tws': now_timestamp,
-            'twf': yesterday_timestamp
-        }
-        response = self.client.post(
-            self.full_url('/makejob/'),
-            data=data,
-            format='json'
-        )
+        response = BaseApiTest.make_job_success(self, job_for_1_sec)
         time.sleep(2)
-        self.assertEqual(response.status_code, 200)
-        job_in_queue = response.data['job_id']
-
+        job_in_queue = response['job_id']
 
         # checking status code must be still PLANNED
         response = self.client.get(
@@ -346,7 +280,7 @@ class TestNodeReleaseResources(TransactionTestCase, BaseApiTest):
             self.assertEqual(response_data['job_status'], JobStatus.FINISHED)
 
 
-class TestComputingNodeDown(TransactionTestCase, BaseApiTest):
+class TestComputingNodeDown(BaseApiTest):
     def setUp(self) -> None:
         BaseApiTest.setUp(self)
 
@@ -372,23 +306,9 @@ class TestComputingNodeDown(TransactionTestCase, BaseApiTest):
     def test_computing_node_down(self):
 
         job_for_5_sec = "| otstats index='test_index' | otstats index='test_index2' | otstats index='test_index3' | otstats index='test_index4' | otstats index='test_index7'"
-
-        data = {
-            'otl_query': job_for_5_sec,
-            'tws': now_timestamp,
-            'twf': yesterday_timestamp
-        }
-        response = self.client.post(
-            self.full_url('/makejob/'),
-            data=data,
-            format='json'
-        )
+        response = BaseApiTest.make_job_success(self, job_for_5_sec)
         time.sleep(2)
-
-        # checking status code
-        self.assertEqual(response.status_code, 200)
-
-        job_id = response.data['job_id']
+        job_id = response['job_id']
 
         # checking status code must be still PLANNED
         response = self.client.get(

@@ -9,7 +9,6 @@ import subprocess
 
 from pathlib import Path
 from django.conf import settings
-from rest.test import TransactionTestCase as TestCase, APIClient
 
 from otl_interpreter.interpreter_db.enums import ResultStorage, JobStatus
 from otl_interpreter.interpreter_db.models import OtlJob, NodeJob
@@ -41,72 +40,35 @@ now_timestamp = int(datetime.now().timestamp())
 yesterday_timestamp = int(datetime.now().timestamp()) - 60*60*24
 
 
-class TestMakeJob(TestCase, BaseApiTest):
+class TestMakeJob(BaseApiTest):
     def setUp(self):
         register_test_commands()
         BaseApiTest.setUp(self)
 
     def test_makejob_without_errors(self):
-        data = {
-            'otl_query': "| otstats index='test_index' | join [ | readfile 23,3,4 | sum 4,3,4,3,3,3 | merge_dataframes [ | readfile 1,2,3] | async name=test_async, [readfile 23,5,4 | collect index='test'] ]  | table asdf,34,34,key=34 | await name=test_async, override=True |  merge_dataframes [ | readfile 1,2,3]",
-            'tws': now_timestamp,
-            'twf': yesterday_timestamp
-        }
-        response = self.client.post(
-            self.full_url('/makejob/'),
-            data=data,
-            format='json'
-        )
-
-        # checking status code
-        self.assertEqual(response.status_code, 200)
-
-        self.assertEqual(response.data['status'], 'success')
-
-        self.assertEqual(len(response.data['job_id']), 32)
+        otl_query = "| otstats index='test_index' | join [ | readfile 23,3,4 | sum 4,3,4,3,3,3 | merge_dataframes [ | readfile 1,2,3] | async name=test_async, [readfile 23,5,4 | collect index='test'] ]  | table asdf,34,34,key=34 | await name=test_async, override=True |  merge_dataframes [ | readfile 1,2,3]"
+        response = BaseApiTest.make_job_success(self, otl_query)
 
         # hash string 128 character
-        self.assertEqual(len(response.data['path']), 128)
+        self.assertEqual(len(response['path']), 128)
 
         self.assertEqual(
-            response.data['storage_type'],
+            response['storage_type'],
             ResultStorage.INTERPROCESSING.value
         )
 
     def test_makejob_with_syntax_error(self):
-        data = {
-            'otl_query': "| otstats2 index='test_index' ",
-            'tws': now_timestamp,
-            'twf': yesterday_timestamp
-        }
-        response = self.client.post(
-            self.full_url('/makejob/'),
-            data=data
-        )
-
-        self.assertEqual(response.status_code, 400)
-
-        self.assertEqual(response.data['status'], 'error')
+        otl_query = "| otstats2 index='test_index' "
+        response = BaseApiTest.make_job_error(self, otl_query)
         self.assertIn('otstats2', response.data['error'])
 
     def test_makejob_with_job_planner_error(self):
-        data = {
-            'otl_query': "async name=test, [otstats index='test_index'] | readfile 1,2,3",
-            'tws': now_timestamp,
-            'twf': yesterday_timestamp
-        }
-        response = self.client.post(
-            self.full_url('/makejob/'),
-            data=data
-        )
-
-        self.assertEqual(response.status_code, 400)
-
-        self.assertEqual(response.data['status'], 'error')
+        otl_query = "async name=test, [otstats index='test_index'] | readfile 1,2,3"
+        response = BaseApiTest.make_job_error(self, otl_query)
         self.assertEqual('Async subsearches with names: test was never awaited', response.data['error'])
 
 
-class TestGetJobResult(TestCase, BaseApiTest):
+class TestGetJobResult(BaseApiTest):
     def setUp(self):
         BaseApiTest.setUp(self)
 
@@ -141,18 +103,8 @@ class TestGetJobResult(TestCase, BaseApiTest):
 
 
     def test_getresults_no_errors(self):
-        data = {
-            'otl_query': "| otstats index='test_index' | join [ | collect index=some_index ] | pp_command2 | readfile 1,2,3 | sum 1,2,3",
-            'tws': now_timestamp,
-            'twf': yesterday_timestamp
-        }
-        response = self.client.post(
-            self.full_url('/makejob/'),
-            data=data,
-            format='json'
-        ).data
-        if response['status'] != 'success':
-            print(response['error'])
+        otl_query = "| otstats index='test_index' | join [ | collect index=some_index ] | pp_command2 | readfile 1,2,3 | sum 1,2,3"
+        response = BaseApiTest.make_job_success(self, otl_query)
 
         otl_job = OtlJob.objects.get(uuid=response["job_id"])
 
@@ -173,17 +125,8 @@ class TestGetJobResult(TestCase, BaseApiTest):
         self.assertEqual(commands[1]["name"], "sum")
 
     def test_getresults_too_early(self):
-        data = {
-            'otl_query': "| otstats index='test_index' | join [ | collect index=some_index ] | pp_command1 1 | readfile 1,2,4 | sum 2,2,3",
-            'tws': now_timestamp,
-            'twf': yesterday_timestamp
-        }
-        response = self.client.post(
-            self.full_url('/makejob/'),
-            data=data,
-            format='json'
-        ).data
-
+        otl_query = "| otstats index='test_index' | join [ | collect index=some_index ] | pp_command1 1 | readfile 1,2,4 | sum 2,2,3"
+        response = BaseApiTest.make_job_success(self, otl_query)
         job_result = self.client.get(
             self.full_url(f'/getresult/?job_id={response["job_id"]}'),
         ).data
@@ -191,7 +134,7 @@ class TestGetJobResult(TestCase, BaseApiTest):
         self.assertEqual(job_result['error'], 'Results are not ready yet')
 
 
-class TestNodeWithEmptyResources(TestCase, BaseApiTest):
+class TestNodeWithEmptyResources(BaseApiTest):
     def setUp(self):
         BaseApiTest.setUp(self)
 
@@ -222,18 +165,9 @@ class TestNodeWithEmptyResources(TestCase, BaseApiTest):
         self.assertEqual(guids_list[0].hex, node_conf['uuid'])
 
     def test_job_finished(self):
-        data = {
-            'otl_query': "| otstats index='test_index'",
-            'tws': now_timestamp,
-            'twf': yesterday_timestamp
-        }
-        response = self.client.post(
-            self.full_url('/makejob/'),
-            data=data,
-            format='json'
-        ).data
+        otl_query = "| otstats index='test_index'"
+        response = BaseApiTest.make_job_success(self, otl_query)
         otl_job = OtlJob.objects.get(uuid=response["job_id"])
-
         for _ in range(15):
             if otl_job.status in [JobStatus.FINISHED, JobStatus.FAILED]:
                 break
@@ -243,8 +177,7 @@ class TestNodeWithEmptyResources(TestCase, BaseApiTest):
             raise TimeoutError("Job hasn't FINISHED in 15 seconds")
 
 
-
-class TestCheckJobView(TestCase, BaseApiTest):
+class TestCheckJobView(BaseApiTest):
     def setUp(self):
         BaseApiTest.setUp(self)
 
@@ -269,21 +202,9 @@ class TestCheckJobView(TestCase, BaseApiTest):
         self.spark_computing_node.kill()
 
     def test_check_job(self):
-        data = {
-            'otl_query': "| otstats index='test_index' | otstats index='test_index2' | otstats index='test_index3' | otstats index='test_index4' | otstats index='test_index5' | join [ | collect index=some_index | otstats index='test_index6' | otstats index='test_index7'] ",
-            'tws': now_timestamp,
-            'twf': yesterday_timestamp,
-            'subsearch_is_node_job': True
-        }
-        response = self.client.post(
-            self.full_url('/makejob/'),
-            data=data,
-            format='json'
-        ).data
-        if response['status'] != 'success':
-            print(response['error'])
+        otl_query = "| otstats index='test_index' | otstats index='test_index2' | otstats index='test_index3' | otstats index='test_index4' | otstats index='test_index5' | join [ | collect index=some_index | otstats index='test_index6' | otstats index='test_index7'] "
+        response = BaseApiTest.make_job_success(self, otl_query)
 
-        self.assertEqual(response['status'], 'success')
         job_id = response['job_id']
         otl_job = OtlJob.objects.get(uuid=job_id)
 

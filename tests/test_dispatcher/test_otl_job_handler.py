@@ -10,7 +10,7 @@ from django.conf import settings
 from rest.test import TransactionTestCase, APIClient
 from otl_interpreter.interpreter_db.models import NodeJob
 from otl_interpreter.interpreter_db.enums import NodeJobStatus
-
+from base_api_test_class import BaseApiTest
 from create_test_users import create_test_users
 
 from rest_auth.models import User
@@ -34,20 +34,14 @@ computing_node_env = os.environ.copy()
 computing_node_env["PYTHONPATH"] = f'{base_rest_dir}:{plugins_dir}:{str(test_dir)}'
 
 
-class TestOtlJobHandler(TransactionTestCase):
+class TestOtlJobHandler(BaseApiTest):
     def setUp(self) -> None:
-        create_test_users()
-        self.base_url = '/otl_interpreter/v1'
-        self.client = APIClient()
-        self.user_token = self._get_user_token()
-        self.client.credentials(HTTP_AUTHORIZATION='Bearer ' + str(self.user_token))
+        BaseApiTest.setUp(self)
 
-        time.sleep(5)
         self.dispatcher_process = subprocess.Popen(
             [sys.executable, '-u', dispatcher_main, 'core.settings.test'],
             env=dispatcher_proc_env
         )
-
         # wait until dispatcher start
         time.sleep(5)
 
@@ -78,22 +72,10 @@ class TestOtlJobHandler(TransactionTestCase):
         return self.base_url + url
 
     def test_node_jobs_done(self):
-
         # send request for olt
-        data = {
-            'otl_query': "| otstats index='test_index'| sum 1,2,3 | pp_command1 test",
-            'tws': now_timestamp,
-            'twf': yesterday_timestamp
-        }
-        response = self.client.post(
-            self._full_url('/makejob/'),
-            data=data,
-            format='json'
-        )
-
+        otl_query = "| otstats index='test_index'| sum 1,2,3 | pp_command1 test"
+        response = BaseApiTest.make_job_success(self, otl_query)
         time.sleep(10)
-        # checking status code
-        self.assertEqual(response.status_code, 200)
 
         node_jobs = NodeJob.objects.all()
         self.assertEqual(len(node_jobs), 3)
@@ -108,6 +90,5 @@ class TestOtlJobHandler(TransactionTestCase):
         self.spark_computing_node.kill()
         self.eep_computing_node.kill()
         self.pp_computing_node.kill()
-
 
 
