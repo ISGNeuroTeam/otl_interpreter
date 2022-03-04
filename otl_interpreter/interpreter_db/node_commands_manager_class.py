@@ -181,8 +181,11 @@ class NodeCommandsManager:
         """
         Returns all commands as dictionary. keys - commands names, value - syntax
         """
-        result =  dict(
+        result = dict(
             NodeCommand.objects.filter(active=True).values_list('name', 'syntax')
         )
         result.update(job_planer_commands)
+        # ignore commands with sys_ prefix
+        # computing node must not be register commands with sys_ prefix. Those commands considered as system commands
+        result = {key: value for key, value in result.items() if not key.startswith('sys_')}
         return result

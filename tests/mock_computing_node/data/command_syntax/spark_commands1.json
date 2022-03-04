@@ -42,5 +42,17 @@
             "type": "subsearch",
             "required": true
         }
+    ]},
+    "sys_read_interproc": {"rules": [
+    {
+        "name": "path",
+        "type": "arg",
+        "required": true
+    },
+    {
+        "name": "storage_type",
+        "type": "arg",
+        "required": true
+    }
     ]}
 }

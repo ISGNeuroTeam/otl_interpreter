@@ -337,5 +337,34 @@ class TestComputingNodeDown(BaseApiTest):
         self.assertEqual(response_data['job_status'], JobStatus.FAILED)
 
 
+class TestWithOneNode(BaseApiTest):
+    def setUp(self) -> None:
+        BaseApiTest.setUp(self)
+
+        self.dispatcher_process = subprocess.Popen(
+            [sys.executable, '-u', dispatcher_main, 'core.settings.test', 'use_test_database'],
+            env=dispatcher_proc_env
+        )
+
+        # wait until dispatcher start
+        time.sleep(5)
+
+        self.spark_computing_node = subprocess.Popen(
+            [sys.executable, '-m', 'mock_computing_node', 'spark1.json', 'spark_commands1.json'],
+            env=computing_node_env
+        )
+        # wait until node register
+        time.sleep(5)
+
+    def tearDown(self):
+        self.dispatcher_process.kill()
+        self.spark_computing_node.kill()
+
+    def test_system_command_usage(self):
+        # send request for olt
+        otl_query = "| sys_read_interproc asdfasdfasdfasd, 'INTERPROC_STORAGE'"
+        response = BaseApiTest.make_job_error(self, otl_query)
+        self.assertIn('Translation error', response.data['error'])
+
 
 
