@@ -183,6 +183,23 @@ class TestNodeJobTree(TestCase):
 
         self.check_one_command_tree_in_one_node_job(all_command_trees, top_node_job_tree)
 
+    def test_await_override_false_in_subsearch(self):
+        test_otl = "async name=test_async, [readfile 23,5,4] | otstats index='test_index' \
+                                | join [| table asdf,34,34,key=34 | await name=test_async, override=False]"
+
+        test_otl = "readfile 23,5,4 | async name=test_async, [readfile 23,5,4] | await name=test_async"
+
+        top_command_tree = self.get_command_tree_from_otl(test_otl)
+        top_node_job_tree = make_node_job_tree(top_command_tree, subsearch_is_node_job=True)
+        print(top_node_job_tree.result_address.storage_type)
+
+        # check that every node job has result address
+        independent_node_job_trees = top_node_job_tree.leaf_iterator()
+        for node_job_tree in top_node_job_tree.children_first_order_traverse_iterator():
+            self.assertIsNotNone(node_job_tree.result_address)
+
+        self.assertEqual(top_node_job_tree.result_address.storage_type, ResultStorage.INTERPROCESSING)
+
     def test_all_read_write_commands_with_address(self):
         test_otl = "| otstats index='test_index' \
                         | join [\

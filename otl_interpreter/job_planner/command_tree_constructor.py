@@ -129,7 +129,6 @@ class CommandTreeConstructor:
 
     def _process_ordinary_command(
             self, translated_otl_command, command_pipeline_state
-
     ):
         subseartches = self._get_subsearches(translated_otl_command)
         command = translated_otl_command

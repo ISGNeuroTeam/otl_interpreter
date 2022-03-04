@@ -159,8 +159,6 @@ def _create_new_node_job_for_child_command_tree(command_tree, child_command_tree
     # write_sys_command has been added already in init
     result_address.add_command(read_sys_command)
 
-
-
     node_job_tree_storage.set_node_job_tree_for_command_tree(
         read_sys_command_tree,
         node_job_tree
@@ -231,6 +229,15 @@ def _define_node_job_tree_for_awaited_command_trees(command_tree, node_job_tree_
     for awaited_command_tree in command_tree.awaited_command_trees:
         awaited_node_job = _construct_node_job_tree(awaited_command_tree)
 
-        node_job_tree.add_awaited_node_job_tree(
-            awaited_node_job
+        # add sys_write_ineterproc command for saving result
+        command_tree = awaited_node_job.command_tree
+        sys_write_inter_proc_command = SysWriteInterprocCommand()
+
+        command_tree_with_write_inter_proc = CommandTree(
+            sys_write_inter_proc_command,
+            previous_command_tree_in_pipeline=command_tree,
         )
+        awaited_node_job.command_tree = command_tree_with_write_inter_proc
+        awaited_node_job.set_parent_node_job_tree(node_job_tree)
+        result_address = ResultAddress(awaited_node_job)
+
