@@ -30,13 +30,18 @@ class JsonAdmin(ModelAdmin):
 
 @register(OtlJob)
 class OtlQueryAdmin(ModelAdmin):
-    pass
+    list_display = ['query', 'uuid']
 
 
 @register(NodeJob)
-class NodeJobAdmin(MPTTModelAdmin, JsonAdmin):
+class NodeJobAdmin(MPTTModelAdmin):
     list_display = ['computing_node_type', 'result', 'status']
 
+    search_fields = ['otl_job__uuid', ]
+
+    formfield_overrides = {
+        JSONField: {'widget': PrettyJSONWidget}
+    }
 
 @register(ComputingNode)
 class ComputingNodeAdmin(ModelAdmin):
@@ -45,6 +50,9 @@ class ComputingNodeAdmin(ModelAdmin):
 
 @register(NodeCommand)
 class NodeCommandAdmin(ModelAdmin):
+    formfield_overrides = {
+        JSONField: {'widget': PrettyJSONWidget}
+    }
     list_display = ['name', 'node', ]
 
 

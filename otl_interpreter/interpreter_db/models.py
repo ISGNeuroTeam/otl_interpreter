@@ -40,6 +40,9 @@ class OtlJob(TimeStampedModel):
         query_hash = hashlib.blake2b(query.encode())
         return query_hash.digest()
 
+    def __str__(self):
+        return self.query[:50]
+
     class Meta:
         app_label = 'otl_interpreter'
 
