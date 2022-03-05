@@ -68,8 +68,15 @@ def _construct_node_job_tree(top_command_tree, subsearch_is_node_job=False):
     )
 
     for command_tree in top_command_tree.parent_first_order_traverse_iterator():
-        _define_node_job_tree_for_previous_command_tree_in_pipeline(command_tree, node_job_tree_storage)
-        _define_node_job_tree_for_subsearch_command_trees(command_tree, node_job_tree_storage, subsearch_is_node_job)
+        nodejob_for_subsearch_was_created = _define_node_job_tree_for_subsearch_command_trees(
+            command_tree,
+            node_job_tree_storage,
+            subsearch_is_node_job
+        )
+        _define_node_job_tree_for_previous_command_tree_in_pipeline(
+            command_tree, node_job_tree_storage, nodejob_for_subsearch_was_created
+        )
+
         _define_node_job_tree_for_awaited_command_trees(command_tree, node_job_tree_storage)
 
     return top_node_job
@@ -159,6 +166,7 @@ def _create_new_node_job_for_child_command_tree(command_tree, child_command_tree
     # write_sys_command has been added already in init
     result_address.add_command(read_sys_command)
 
+    # save relations between command trees and node jobs
     node_job_tree_storage.set_node_job_tree_for_command_tree(
         read_sys_command_tree,
         node_job_tree
@@ -177,19 +185,29 @@ def _create_new_node_job_for_child_command_tree(command_tree, child_command_tree
     return read_sys_command_tree
 
 
-def _define_node_job_tree_for_previous_command_tree_in_pipeline(command_tree, node_job_tree_storage):
+def _define_node_job_tree_for_previous_command_tree_in_pipeline(
+        command_tree, node_job_tree_storage, nodejob_for_subsearch_was_created=False
+):
+    """
+    Create node job for previous command tree in pipeline
+    :param command_tree: command tree
+    :param node_job_tree_storage: storage for relations between node job and command trees
+    :param nodejob_for_subsearch_was_created: if true then node job need to be created anyway
+    """
     if command_tree.previous_command_tree_in_pipeline is None:
         return
 
     node_job_tree = node_job_tree_storage.get_node_job_tree_for_command_tree(command_tree)
 
-    if command_tree.previous_command_tree_in_pipeline.computing_node_type != \
+    if nodejob_for_subsearch_was_created or command_tree.previous_command_tree_in_pipeline.computing_node_type != \
             command_tree.computing_node_type:
 
         read_sys_command_tree = _create_new_node_job_for_child_command_tree(
             command_tree, command_tree.previous_command_tree_in_pipeline, node_job_tree_storage,
         )
 
+        # add read_sys_command to current command tree
+        # write_sys_command has been added to previous command tree in _create_new_node_job_for_child_command_tree
         command_tree.set_previous_command_tree_in_pipeline(read_sys_command_tree)
 
     else:
@@ -199,6 +217,15 @@ def _define_node_job_tree_for_previous_command_tree_in_pipeline(command_tree, no
 
 
 def _define_node_job_tree_for_subsearch_command_trees(command_tree, node_job_tree_storage, subsearch_is_node_job):
+    """
+    Creates child node jobs for subsearches if condition is true
+    :param command_tree: command tree
+    :param node_job_tree_storage: storage for relations between node job and command trees
+    :param subsearch_is_node_job: if True then create subsearch anyway, else check computing node type
+    Returns True if node job was created
+    """
+    node_job_was_created = False
+
     node_job_tree = node_job_tree_storage.get_node_job_tree_for_command_tree(command_tree)
 
     new_command_trees_for_subsearches = {}
@@ -210,6 +237,7 @@ def _define_node_job_tree_for_subsearch_command_trees(command_tree, node_job_tre
                 command_tree, subsearch_command_tree, node_job_tree_storage
             )
             new_command_trees_for_subsearches[index] = read_sys_command_tree
+            node_job_was_created = True
 
         else:
             node_job_tree_storage.set_node_job_tree_for_command_tree(
@@ -220,6 +248,8 @@ def _define_node_job_tree_for_subsearch_command_trees(command_tree, node_job_tre
     # replace old command trees with new command trees
     for index, new_subsearch_command_tree in new_command_trees_for_subsearches.items():
         command_tree.replace_subsearch_command_tree(new_subsearch_command_tree, index)
+
+    return node_job_was_created
 
 
 def _define_node_job_tree_for_awaited_command_trees(command_tree, node_job_tree_storage):

@@ -184,14 +184,10 @@ class TestNodeJobTree(TestCase):
         self.check_one_command_tree_in_one_node_job(all_command_trees, top_node_job_tree)
 
     def test_await_override_false_in_subsearch(self):
-        test_otl = "async name=test_async, [readfile 23,5,4] | otstats index='test_index' \
-                                | join [| table asdf,34,34,key=34 | await name=test_async, override=False]"
-
         test_otl = "readfile 23,5,4 | async name=test_async, [readfile 23,5,4] | await name=test_async"
 
         top_command_tree = self.get_command_tree_from_otl(test_otl)
         top_node_job_tree = make_node_job_tree(top_command_tree, subsearch_is_node_job=True)
-        print(top_node_job_tree.result_address.storage_type)
 
         # check that every node job has result address
         independent_node_job_trees = top_node_job_tree.leaf_iterator()
@@ -232,7 +228,7 @@ class TestNodeJobTree(TestCase):
         top_node_job = self.get_node_job_tree_from_otl(test_otl)
 
         read_interproc_command = top_node_job.command_tree.first_command_tree_in_pipeline.command
-        write_interproc_command = top_node_job.awaited_node_job_trees[0].command_tree.command
+        write_interproc_command = top_node_job.awaited_node_job_trees[1].command_tree.command
 
         self.assertEqual(
             read_interproc_command.arguments['path'][0].value,
@@ -301,5 +297,23 @@ class TestNodeJobTree(TestCase):
         self.assertEqual(second_join_command['name'], 'join')
         last_readfile_command = second_join_command['arguments']['subsearch'][0]['value'][0]
         self.assertEqual(last_readfile_command['name'], 'readfile')
+
+    def test_command_with_subsearch_creates_three_node_job(self):
+        test_otl = "| otstats index=test | join [readfile 10,20,30]"
+        top_command_tree = self.get_command_tree_from_otl(test_otl)
+        top_node_job_tree = make_node_job_tree(top_command_tree, subsearch_is_node_job=True)
+
+        join_command = top_node_job_tree.command_tree.previous_command_tree_in_pipeline.command.name
+        self.assertEqual(join_command, 'join')
+
+        readfile_node_job = top_node_job_tree.awaited_node_job_trees[0]
+        otstats_node_job = top_node_job_tree.awaited_node_job_trees[1]
+
+        readfile_command = readfile_node_job.command_tree.previous_command_tree_in_pipeline.command.name
+        self.assertEqual(readfile_command, 'readfile')
+
+        otstats_command = otstats_node_job.command_tree.previous_command_tree_in_pipeline.command.name
+        self.assertEqual(otstats_command, 'otstats')
+
 
 
