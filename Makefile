@@ -37,14 +37,14 @@ build: make_build
 make_build: venv venv_pack
 	# required section
 	echo make_build
-	mkdir make_build
+	mkdir -p make_build
 
 	cp -R ./otl_interpreter make_build
-	rm make_build/otl_interpreter/otl_interpreter.conf
+	rm -f make_build/otl_interpreter/otl_interpreter.conf
 	mv make_build/otl_interpreter/otl_interpreter.conf.example make_build/otl_interpreter/otl_interpreter.conf
 	cp *.md make_build/otl_interpreter/
 	cp *.py make_build/otl_interpreter/
-	mkdir make_build/otl_interpreter/venv
+	mkdir -p make_build/otl_interpreter/venv
 	tar -xzf ./venv.tar.gz -C make_build/otl_interpreter/venv
 
 clean_build:
@@ -64,25 +64,12 @@ clean_venv:
 	rm -f ./venv.tar.gz
 
 
-complex_rest:
-	git clone git@github.com:ISGNeuroTeam/complex_rest.git
-	{ cd ./complex_rest; git checkout develop; make venv; make redis; }
-	ln -s ../../../../otl_interpreter/otl_interpreter ./complex_rest/complex_rest/plugins/otl_interpreter
+clean: clean_build clean_venv clean_pack clean_test
 
-clean_complex_rest:
-ifneq (,$(wildcard ./complex_rest))
-	{ cd ./complex_rest; make clean;}
-	rm -f ./complex_rest/plugins/otl_interpreter
-	rm -rf ./complex_rest
-endif
-
-clean: clean_build clean_venv clean_pack clean_test clean_complex_rest
-
-test: venv complex_rest
+test: venv
 	@echo "Testing..."
-	PYTHONPATH=$PYTHONPATH:`pwd`/tests; ./complex_rest/venv/bin/python ./complex_rest/complex_rest/manage.py test ./tests --settings=core.settings.test --noinput
 
-clean_test: clean_complex_rest
+clean_test:
 	@echo "Clean tests"
 
 
