@@ -5,7 +5,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from mptt.models import MPTTModel, TreeForeignKey
 from mixins.models import TimeStampedModel
-from .enums import JobStatus, NodeJobStatus, ComputingNodeType, ResultStorage
+from .enums import JobStatus, NodeJobStatus, ResultStorage
 
 
 class OtlJob(TimeStampedModel):
@@ -58,7 +58,6 @@ class ComputingNode(models.Model):
     # node type: EEP, Spark, PostProcessing.
     type = models.CharField(
         max_length=255,
-        choices=ComputingNodeType.choices,
         db_index=True,
     )
 
@@ -154,7 +153,6 @@ class NodeJob(TimeStampedModel, MPTTModel):
     computing_node_type = models.CharField(
         'Node type',
         max_length=255,
-        choices=ComputingNodeType.choices
     )
 
     computing_node = models.ForeignKey(

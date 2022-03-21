@@ -3,7 +3,7 @@ import logging
 
 from uuid import UUID
 from datetime import datetime, timedelta
-from otl_interpreter.interpreter_db.enums import ComputingNodeType
+from collections import defaultdict
 from otl_interpreter.settings import ini_config
 
 log = logging.getLogger('otl_interpreter.dispatcher.computing_node_pool')
@@ -68,12 +68,12 @@ class ComputingNodePool:
         :param health_check_period: health check period in seconds
         If computing node pool didn't receive resource information in that interval computing node considering inactive
         """
-        self.nodes_by_types = {key: {} for key in ComputingNodeType}
+        self.nodes_by_types = defaultdict(dict)
         self.nodes = {}
 
         self.health_check_period: timedelta = timedelta(seconds=health_check_period)
 
-    def add_computing_node(self, uuid: UUID, node_type, resources, local):
+    def add_computing_node(self, uuid: UUID, node_type: str, resources, local):
         """
         :param uuid: node uuid
         :param node_type: node type

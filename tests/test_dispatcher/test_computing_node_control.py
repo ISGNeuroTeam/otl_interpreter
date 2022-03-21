@@ -57,6 +57,34 @@ class TestCoumputingNodeRegister(TestCase):
         self.computing_node_process.kill()
 
 
+class TestAnotherNodeRegister(TestCase):
+
+    def setUp(self):
+
+        self.dispatcher_process = subprocess.Popen(
+            [sys.executable, '-u', dispatcher_main, 'core.settings.test', 'use_test_database'],
+            env=dispatcher_proc_env
+        )
+
+        time.sleep(5)
+
+        self.computing_node_process = subprocess.Popen(
+            [sys.executable, '-m', 'mock_computing_node', 'another_name.json', 'spark_commands1.json'],
+            env=computing_node_env
+        )
+        time.sleep(5)
+
+    def test_simple_register_with_another_name(self):
+        guids_list = node_commands_manager.get_active_nodes_uuids()
+        self.assertEqual(len(guids_list), 1)
+        node_conf = read_computing_node_config('another_name.json')
+        self.assertEqual(guids_list[0].hex, node_conf['uuid'])
+
+    def tearDown(self):
+        self.dispatcher_process.kill()
+        self.computing_node_process.kill()
+
+
 
 class TestCoumputingNodeUnRegister(TestCase):
 

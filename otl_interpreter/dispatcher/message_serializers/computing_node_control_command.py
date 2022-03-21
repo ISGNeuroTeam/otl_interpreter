@@ -1,8 +1,6 @@
 from rest_framework import serializers
 from django.db.models import TextChoices
 
-from otl_interpreter.interpreter_db.enums import ComputingNodeType
-
 
 class ControlNodeCommandName(TextChoices):
     REGISTER_COMPUTING_NODE = 'REGISTER_COMPUTING_NODE'
@@ -18,7 +16,7 @@ class ComputingNodeControlCommand(serializers.Serializer):
 
 
 class RegisterComputingNodeCommand(serializers.Serializer):
-    computing_node_type = serializers.ChoiceField(choices=ComputingNodeType.choices)
+    computing_node_type = serializers.CharField()
     host_id = serializers.CharField()
     otl_command_syntax = serializers.DictField()
     resources = serializers.DictField()

@@ -9,7 +9,7 @@ from asgiref.sync import sync_to_async
 
 from message_broker import Producer
 
-from otl_interpreter.interpreter_db.enums import NodeJobStatus, JobStatus, ComputingNodeType, ResultStorage
+from otl_interpreter.interpreter_db.enums import NodeJobStatus, JobStatus, ResultStorage
 from otl_interpreter.interpreter_db import node_job_manager, otl_job_manager
 
 from computing_node_pool import computing_node_pool
@@ -105,7 +105,7 @@ class NodeJobStatusManager:
         """
         Task to check periodicaly node job queue
         """
-        for computing_node_type in ComputingNodeType:
+        for computing_node_type in node_job_queue.computing_node_types():
             self._check_job_queue(computing_node_type)
 
     @sync_to_async

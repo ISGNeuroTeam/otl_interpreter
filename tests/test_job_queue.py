@@ -151,6 +151,27 @@ class BaseNodeJobQueueTestCases:
             node_job_dict, priority_score = self.node_job_queue.pop('SPARK')
             self.assertDictEqual(node_job_dict, node_job_dict2)
 
+        def test_computing_node_type_keys(self):
+            node_job_dicts = [
+                {
+                    'uuid': uuid.uuid4(),
+                    'computing_node_type': ''.join(random.choices(string.ascii_uppercase, k=random.randint(4, 10)))
+                }
+                for i in range(10)
+            ]
+            score = datetime.datetime.now().timestamp()
+            for node_job_dict in node_job_dicts:
+                self.node_job_queue.add(node_job_dict, score)
+
+            node_types = set(
+                map(
+                    lambda x: x['computing_node_type'], node_job_dicts
+                )
+            )
+
+            self.assertSetEqual(node_types, set(self.node_job_queue.computing_node_types()))
+
+
 
 class TestNodeJobQueueOnRedis(BaseNodeJobQueueTestCases.TestNodeJobQueue):
     def setUp(self) -> None:

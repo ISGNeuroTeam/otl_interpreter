@@ -16,7 +16,7 @@ class OtlJobCommand(serializers.Serializer):
 class NodeJobSerializer(serializers.Serializer):
     uuid = serializers.UUIDField()
     status =  serializers.ChoiceField(choices=NodeJobStatus.choices)
-    computing_node_type = serializers.ChoiceField(choices=ComputingNodeType.choices)
+    computing_node_type = serializers.CharField()
     commands = serializers.ListField()
     storage = serializers.ChoiceField(choices=ResultStorage.choices)
 
