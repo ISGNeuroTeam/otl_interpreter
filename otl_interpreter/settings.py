@@ -11,7 +11,7 @@ default_ini_config = {
     },
     'db_conf': {
         'host': 'localhost',
-        'port': '5432',
+        'port': '5433',
         'database':  'otl_interpreter',
         'user': 'otl_interpreter',
         'password': 'otl_interpreter'
