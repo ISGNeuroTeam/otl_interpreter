@@ -19,7 +19,7 @@ class Translator:
         pass
 
     def __call__(self, otl_query):
-        if node_commands_manager.commands_were_updated(self._commands_updated_timestamp):
+        if self.o is None or node_commands_manager.commands_were_updated(self._commands_updated_timestamp):
             self._init_translator_with_commands()
             self._commands_updated_timestamp = datetime.now()
         # TODO check macroses the same way
