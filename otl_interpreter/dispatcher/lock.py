@@ -9,7 +9,7 @@ one_process_mode = ini_config['dispatcher']['one_process_mode'].lower() == 'true
 
 
 class FakeLock:
-    def acquire(self):
+    def acquire(self, blocking=True):
         return True
 
     def release(self):
