@@ -1,5 +1,5 @@
 from otl_interpreter.interpreter_db import node_commands_manager
-from otl_interpreter.interpreter_db import node_job_manager
+from otl_interpreter.interpreter_db.enums import ComputingNodeType
 
 from .command_tree_constructor import make_command_tree
 from .define_computing_node_type_algorithm import define_computing_node_type_for_command_tree
@@ -8,8 +8,22 @@ from .node_job_tree_constructor import make_node_job_tree
 
 class JobPlanner:
     def __init__(self, node_type_priority, subsearch_is_node_job=False):
-        self.node_type_priority = node_type_priority
+        self.node_type_priority = self._form_node_type_priority_list(node_type_priority)
         self.subsearch_is_node_job = subsearch_is_node_job
+
+
+    @staticmethod
+    def _form_node_type_priority_list(node_type_priority):
+        """
+        Forms the list of node types
+        Node type priority list given in init function may not have all node types.
+        """
+        registered_node_types = node_commands_manager.get_node_types()
+        not_in_priority_list_node_types = registered_node_types - set(node_type_priority)
+
+        if node_type_priority[-1] == ComputingNodeType.POST_PROCESSING.value:
+            node_type_priority.pop()
+        return node_type_priority + list(not_in_priority_list_node_types) + [ComputingNodeType.POST_PROCESSING.value, ]
 
     def plan_job(self, translated_otl_commands, tws, twf, shared_post_processing=True, subsearch_is_node_job=None):
         """
@@ -36,6 +50,7 @@ class JobPlanner:
             node_type: node_commands_manager.get_command_name_set_for_node_type(node_type)
             for node_type in self.node_type_priority
         }
+
 
         define_computing_node_type_for_command_tree(
             top_command_tree, self.node_type_priority, command_name_set
