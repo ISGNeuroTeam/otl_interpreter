@@ -1,2 +1,4 @@
-git+ssh://git@github.com/ISGNeuroTeam/otlang-proto.git
-TatSu==5.6.1
+otlang~=1.0
+--extra-index-url http://s.dev.isgneuro.com/repository/ot.platform/simple
+--trusted-host s.dev.isgneuro.com
+
