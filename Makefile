@@ -44,6 +44,7 @@ make_build: venv venv_pack
 	mv make_build/otl_interpreter/otl_interpreter.conf.example make_build/otl_interpreter/otl_interpreter.conf
 	cp *.md make_build/otl_interpreter/
 	cp *.py make_build/otl_interpreter/
+	cp ./docs/scripts/create_db.sh make_build/otl_interpreter/
 	mkdir -p make_build/otl_interpreter/venv
 	tar -xzf ./venv.tar.gz -C make_build/otl_interpreter/venv
 
