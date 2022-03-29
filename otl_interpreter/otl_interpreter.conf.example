@@ -1,0 +1,38 @@
+[logging]
+level = INFO
+
+[db_conf]
+host = localhost
+port = 5433
+database = otl_interpreter
+user = otl_interpreter
+password = otl_interpreter
+
+[node_job]
+cache_ttl = 60
+
+[job_planer]
+computing_node_type_priority = SPARK EEP POST_PROCESSING
+subsearch_is_node_job = True
+
+[dispatcher]
+;if the dispatcher has one process or several
+one_process_mode = False
+check_job_queue_period = 10
+
+# hostid linux command will be used if empty
+host_id =
+
+# if computing node didn't send resource status in that interval
+# then it considered as inactive
+health_check_period = 15
+
+
+[otl_job_defaults]
+cache_ttl = 60
+
+;0 = infinity
+timeout = 0
+
+; if the results will be available for all authenticated users
+shared_post_processing = True

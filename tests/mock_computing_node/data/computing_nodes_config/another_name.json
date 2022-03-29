@@ -1,0 +1,8 @@
+{
+  "uuid": "6c3fc7fe5cd64740b22d45dac0f00d5c",
+  "computing_node_type": "ANOTHER_NAME",
+  "resources": {
+    "job_capacity": 4
+  },
+  "time_on_command": 0.2
+}

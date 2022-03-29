@@ -1,0 +1,8 @@
+{
+  "uuid": "45de92debef840eba25d8de94014c2a9",
+  "computing_node_type": "SPARK",
+  "resources": {
+    "job_capacity": 4
+  },
+  "time_on_command": 1
+}

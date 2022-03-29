@@ -1,0 +1,58 @@
+{
+    "otstats": {
+        "rules": [
+            {
+                "name": "index",
+                "type": "kwarg",
+                "key": "index",
+                "required": true
+            }
+        ],
+        "use_timewindow": true
+    },
+    "collect": {
+        "rules": [
+            {
+                "name": "index",
+                "type": "kwarg",
+                "key": "index",
+                "required": true
+            }
+        ]
+    },
+    "readfile": {
+        "rules": [
+            {
+                "name": "file1",
+                "type": "arg"
+            },
+            {
+                "name": "file2",
+                "type": "arg"
+            },
+            {
+                "name": "file3",
+                "type": "arg"
+            }
+        ]
+    },
+    "join": {"rules": [
+        {
+            "name": "subsearch",
+            "type": "subsearch",
+            "required": true
+        }
+    ]},
+    "sys_read_interproc": {"rules": [
+    {
+        "name": "path",
+        "type": "arg",
+        "required": true
+    },
+    {
+        "name": "storage_type",
+        "type": "arg",
+        "required": true
+    }
+    ]}
+}

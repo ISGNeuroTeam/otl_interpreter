@@ -1,0 +1,2 @@
+git+ssh://git@github.com/ISGNeuroTeam/otlang-proto.git
+TatSu==5.6.1

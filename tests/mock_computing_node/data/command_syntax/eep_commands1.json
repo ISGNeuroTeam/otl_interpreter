@@ -1,0 +1,40 @@
+{
+    "sum": {
+        "rules": [
+            {
+                "name": "argument",
+                "type": "arg",
+                "inf": true
+            }
+        ]
+    },
+    "merge_dataframes": {
+        "rules": [
+            {
+                "name": "subsearch",
+                "type": "subsearch",
+                "inf": true
+            }
+        ]
+    },
+    "table": {
+        "rules": [
+            {
+                "name": "positional_arg1",
+                "type": "arg"
+            },
+            {
+                "name": "positional_arg2",
+                "type": "arg"
+            },
+            {
+                "name": "positional_arg3",
+                "type": "arg"
+            },
+            {
+                "name": "last_argument",
+                "type": "kwarg"
+            }
+        ]
+    }
+}
