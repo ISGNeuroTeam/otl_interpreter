@@ -4,8 +4,7 @@ import logging
 from datetime import timedelta
 
 from .models import NodeJob, NodeJobResult, OtlJob, ComputingNode
-from .enums import NodeJobStatus
-
+from .enums import NodeJobStatus, END_STATUSES
 
 
 log = logging.getLogger('otl_interpreter.interpreter_db')
@@ -170,6 +169,25 @@ class NodeJobManager:
         }
 
     @staticmethod
+    def get_unfinished_node_jobs_for_otl_job(otl_job_uuid):
+        """
+        Returns list node jobs dictionary for otl job
+        """
+        try:
+            otl_job = OtlJob.objects.get(uuid=otl_job_uuid)
+            node_jobs = NodeJob.objects.filter(otl_job=otl_job).exclude(status__in=END_STATUSES)
+            return list(
+                map(
+                    lambda node_job: NodeJobManager.get_node_job_dict(node_job),
+                    node_jobs
+                ),
+            )
+        except OtlJob.DoesNotExist:
+            log.error(f'Can\'t find otl job with uuid {otl_job_uuid}')
+
+        return []
+
+    @staticmethod
     def get_node_jobs_for_cancelling(failed_node_job):
         """
         Get running node jobs uuid that must be cancel
@@ -180,10 +198,9 @@ class NodeJobManager:
         if not isinstance(failed_node_job, NodeJob):
             failed_node_job = NodeJob.objects.get(uuid=failed_node_job)
 
-        done_statuses = {NodeJobStatus.CANCELED, NodeJobStatus.FAILED, NodeJobStatus.FINISHED}
         running_node_jobs = NodeJob.objects.filter(
             otl_job=failed_node_job.otl_job
-        ).exclude(status__in=done_statuses)
+        ).exclude(status__in=END_STATUSES)
 
         return list(running_node_jobs.values_list('uuid', flat=True))
 

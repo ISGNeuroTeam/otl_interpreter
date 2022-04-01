@@ -14,20 +14,20 @@ log = logging.getLogger('otl_interpreter')
 
 class CancelJobView(APIView):
     permission_classes = (IsAuthenticated, )
-    http_method_names = ['get', ]
+    http_method_names = ['post', ]
 
-    def get(self, request):
+    def post(self, request):
 
         check_job_serializer = CancelJobSerializer(data=request.data)
         check_job_serializer.is_valid(raise_exception=True)
 
         job_id: UUID = check_job_serializer.validated_data['job_id']
 
-        job_status = otl_job_manager.cancel_job(job_id)
+        otl_job_manager.cancel_job(job_id)
 
         return SuccessResponse(
             {
-                'job_status': job_status,
+                'job_status': 'CANCELED',
             },
         )
 

@@ -25,6 +25,9 @@ class NodeJobStatus(models.TextChoices):
     FAILED = 'FAILED', _('Failed')
 
 
+END_STATUSES = {NodeJobStatus.CANCELED, NodeJobStatus.FAILED, NodeJobStatus.FINISHED}
+
+
 class ComputingNodeType(models.TextChoices):
     SPARK = 'SPARK', _('Spark')
     EEP = 'EEP', _('EEP')

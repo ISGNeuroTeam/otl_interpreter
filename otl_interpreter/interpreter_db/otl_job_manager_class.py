@@ -30,9 +30,10 @@ class OtlJobManager:
         root_job = NodeJob.objects.get(otl_job=otl_job, next_job=None)
         return root_job.result
 
-    def cancel_job(self, otl_job_id: UUID):
+    def cancel_job(self, otl_job_id: UUID, status_text=None):
         otl_job = OtlJob.objects.get(uuid=otl_job_id)
         otl_job.status = JobStatus.CANCELED
+        otl_job.status_text = status_text or 'Canceled by user'
         otl_job.save()
         return otl_job.status
 

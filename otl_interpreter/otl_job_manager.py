@@ -20,6 +20,14 @@ from otl_interpreter.interpreter_db.enums import NodeJobStatus, JobStatus
 log = getLogger('otl_interpreter')
 
 
+class UUIDEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, UUID):
+            # if the obj is uuid, we simply return the value of uuid
+            return obj.hex
+        return json.JSONEncoder.default(self, obj)
+
+
 class QueryError(Exception):
     pass
 
@@ -119,14 +127,16 @@ class OtlJobManager:
 
     @staticmethod
     def cancel_job(job_id: UUID):
+        db_otl_job_manager.cancel_job(job_id)
         # send message to dispatcher to cancel node jobs
+        unfinished_node_jobs = db_node_job_manager.get_unfinished_node_jobs_for_otl_job(job_id)
         message = json.dumps(
             {
                 'command_name': 'CANCEL_JOB',
                 'command': {
-                    'uuid': job_id.hex
+                    'node_jobs': unfinished_node_jobs
                 }
-            }
+            },  cls=UUIDEncoder
         )
         with Producer() as producer:
             message_id = producer.send('otl_job', message)

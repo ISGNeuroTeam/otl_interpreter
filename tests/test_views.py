@@ -10,7 +10,7 @@ import subprocess
 from pathlib import Path
 from django.conf import settings
 
-from otl_interpreter.interpreter_db.enums import ResultStorage, JobStatus
+from otl_interpreter.interpreter_db.enums import ResultStorage, JobStatus, END_STATUSES
 from otl_interpreter.interpreter_db.models import OtlJob, NodeJob
 from otl_interpreter.interpreter_db import node_commands_manager
 
@@ -100,7 +100,6 @@ class TestGetJobResult(BaseApiTest):
         self.spark_computing_node.kill()
         self.eep_computing_node.kill()
         self.pp_computing_node.kill()
-
 
     def test_getresults_no_errors(self):
         otl_query = "| otstats index='test_index' | join [ | collect index=some_index ] | pp_command2 | readfile 1,2,3 | sum 1,2,3"
@@ -238,3 +237,81 @@ class TestCheckJobView(BaseApiTest):
         self.assertEqual(response.status_code, 200)
         response_data = response.data
         self.assertEqual(response_data['job_status'], JobStatus.FINISHED)
+
+
+class TestCancelJobView(BaseApiTest):
+    def setUp(self):
+        BaseApiTest.setUp(self)
+
+        self.dispatcher_process = subprocess.Popen(
+            [sys.executable, '-u', dispatcher_main, 'core.settings.test', 'use_test_database'],
+            env=dispatcher_proc_env
+        )
+
+        # wait until dispatcher start
+        time.sleep(5)
+
+        self.spark_computing_node = subprocess.Popen(
+            [sys.executable, '-m', 'mock_computing_node', 'spark_1s_command.json', 'spark_commands1.json'],
+            env=computing_node_env
+        )
+
+        self.eep_computing_node = subprocess.Popen(
+            [sys.executable, '-m', 'mock_computing_node', 'eep1.json', 'eep_commands1.json'],
+            env=computing_node_env
+        )
+
+        # wait until node register
+        time.sleep(1)
+
+    def tearDown(self):
+        self.dispatcher_process.kill()
+        self.spark_computing_node.kill()
+        self.eep_computing_node.kill()
+
+    def test_cancel_job(self):
+        otl_query = "| otstats index='test_index' | otstats index='test_index2' | otstats index='test_index3' | otstats index='test_index4' | otstats index='test_index5' | join [ | collect index=some_index | table 1,2,3| otstats index='test_index6' | otstats index='test_index7'] "
+        response = BaseApiTest.make_job_success(self, otl_query)
+
+        job_id = response['job_id']
+        otl_job = OtlJob.objects.get(uuid=job_id)
+
+        for _ in range(5):
+            if otl_job.status == JobStatus.RUNNING:
+                break
+            time.sleep(1)
+            otl_job.refresh_from_db()
+        else:
+            raise TimeoutError("Job hasn't achieved running state in 5 seconds")
+
+        # check that otl job is running
+        time.sleep(2)
+        response = self.client.get(
+            self.full_url(f'/checkjob/?job_id={job_id}'),
+        )
+        self.assertEqual(response.status_code, 200)
+        response_data = response.data
+        self.assertEqual(response_data['job_status'], JobStatus.RUNNING)
+
+        self.cancel_job(job_id)
+
+        for _ in range(10):
+            if otl_job.status == JobStatus.CANCELED:
+                break
+            time.sleep(1)
+            otl_job.refresh_from_db()
+        else:
+            raise TimeoutError("Job hasn't canceled in 10 seconds")
+
+        response = self.client.get(
+            self.full_url(f'/checkjob/?job_id={job_id}'),
+            format='json'
+        )
+        self.assertEqual(response.status_code, 200)
+        response_data = response.data
+        self.assertEqual(response_data['job_status'], JobStatus.CANCELED)
+
+        # check that all node jobs in done state
+        for node_job in NodeJob.objects.filter(otl_job=otl_job):
+            self.assertIn(node_job.status, END_STATUSES)
+

@@ -26,6 +26,6 @@ class NewOtlJobCommand(serializers.Serializer):
 
 
 class CancelOtlJobCommand(serializers.Serializer):
-    uuid = serializers.UUIDField()
+    node_jobs = NodeJobSerializer(many=True)
 
 
