@@ -1,5 +1,6 @@
 import re
 import datetime
+import logging
 
 from uuid import UUID
 from redis import Redis
@@ -8,6 +9,7 @@ from pottery import RedisDict
 from core.settings import REDIS_CONNECTION_STRING
 from otl_interpreter.otl_job_manager import otl_job_manager, QueryError
 
+log = logging.getLogger('ot_simple_rest_job_proxy')
 
 query_match_reg = re.compile(r'\s*v2\s*\|')
 
@@ -97,22 +99,34 @@ class JobProxyManager:
         """
         Use otl job manager to get results
         """
-        # if cid not in self.new_platform_queries_job_id:
-        #     return {'status': 'failed', 'error': 'No cache with id=cid '}
-        #
-        #
-        # {"status": "success",
-        #  "data_urls": ["cache/search_59.cache/data/part-00000-34570ec2-3504-4f4e-9ebb-aa58965b8fc9-c000.json",
-        #                "cache/search_59.cache/data/_SCHEMA"]}
-        pass
+        if cid not in self.new_platform_queries_job_id:
+            return {'status': 'failed', 'error': f'No cache with id={cid} '}
+
+        query_key = self.new_platform_queries_job_id[cid]
+        query = self.new_platform_queries[query_key]
+        job_id = UUID(query['job_id'])
+
+        data_path, schema_path = otl_job_manager.get_result(job_id)
+
+        return {
+            "status": "success",
+            "data_urls": [
+                data_path,
+                schema_path
+            ]
+        }
+
 
     def is_new_platform_query(selfj, query):
         """
         Analise query content
-        Returns true if query should be sent to new platform, false otherwise
+        Returns index of query begining ( after 'v2 |' string) if query should be sent to new platform, 0 otherwise
 
         """
-        return bool(query_match_reg.match(query))
+        m = query_match_reg.match(query)
+        if m:
+            return m.end()
+        return 0
 
     def is_new_platform_query_id(self, query_id):
         """
@@ -124,7 +138,7 @@ class JobProxyManager:
         """
         Makes unique key for query
         """
-        return hash(query + str(tws), + str(twf))
+        return hash(query + str(tws) + str(twf))
 
 
 job_proxy_manager = JobProxyManager()

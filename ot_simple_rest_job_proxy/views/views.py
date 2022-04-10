@@ -1,15 +1,21 @@
 import logging
 import jwt
+import json
 
+from io import BytesIO
 from jwt.exceptions import PyJWTError
+
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import get_user_model
-from rest.response import ErrorResponse, status
-from ot_simple_rest_job_proxy.settings import ini_config
+from django.http import HttpResponse
+
+from rest.response import ErrorResponse, Response, status
+
 from ot_simple_rest_job_proxy.job_proxy_manager import job_proxy_manager
+from ot_simple_rest_job_proxy.settings import ini_config
 
 from .proxy import proxy_view
-from ot_simple_rest_job_proxy.settings import ini_config
+
 
 
 User = get_user_model()
@@ -38,8 +44,22 @@ def get_or_create_user(username):
 
 @csrf_exempt
 def makejob(request):
-    log.debug(str(request.COOKIES))
-    log.info(f'Get makejob request')
+    # django forbids access to body property after reading POST,
+    # so to get post data without error in proxy_view we are parsing body
+    data = BytesIO(request.body)
+    post_dict, _ = request.parse_file_upload(request.META, data)
+
+    query = post_dict['original_otl']
+    tws = post_dict['tws']
+    twf = post_dict['twf']
+    cache_ttl = post_dict['cache_ttl']
+
+    new_platform_query_index = job_proxy_manager.is_new_platform_query(query)
+
+    if not new_platform_query_index:
+        return proxy_view(request, makejob_uri)
+
+    log.info(f'Get makejob request for new platform{query}, tws={tws}, twf={twf}, cache_ttl={cache_ttl}')
 
     eva_token = request.COOKIES.get('eva_token')
     if not eva_token:
@@ -51,9 +71,9 @@ def makejob(request):
 
     username = token_payload['username']
     user = get_or_create_user(username)
-    log.warning(str(user.guid))
-    log.warning(str(token_payload))
-    return proxy_view(request, makejob_uri)
+    resp = job_proxy_manager.makejob(query[new_platform_query_index:], user.guid, tws, twf, cache_ttl)
+    return HttpResponse(json.dumps(resp))
+
 
 
 @csrf_exempt
