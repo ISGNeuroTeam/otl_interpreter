@@ -38,7 +38,7 @@ class NodeJobManager:
                 node_job_result = NodeJobResult(
                     storage=result_address.storage_type,
                     path=result_address.path,
-                    ttl=timedelta(cache_ttl),
+                    ttl=timedelta(seconds=cache_ttl),
                 )
                 node_job_result.save()
             else:
