@@ -80,7 +80,7 @@ class OtlJobManager:
             top_node_job_tree = plan_job(translated_query, tws, twf, shared_post_processing, subsearch_is_node_job)
         except JobPlanException as err:
             log.info(f'Query: {otl_query}\n Job planer error: {str(err)}')
-            db_otl_job_manager.change_otl_job_status(otl_job_uuid, JobStatus.FAILED, f'Job planer error: {str(err)')
+            db_otl_job_manager.change_otl_job_status(otl_job_uuid, JobStatus.FAILED, f'Job planer error: {str(err)}')
             raise QueryError(err.args[0]) from err
 
         db_node_job_manager.create_node_jobs(top_node_job_tree, otl_job_uuid, cache_ttl)
