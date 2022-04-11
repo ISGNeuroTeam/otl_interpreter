@@ -116,7 +116,6 @@ class JobProxyManager:
             ]
         }
 
-
     def is_new_platform_query(selfj, query):
         """
         Analise query content

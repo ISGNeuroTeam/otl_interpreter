@@ -42,13 +42,27 @@ class OtlJobManager:
         try:
             otl_job = OtlJob.objects.get(uuid=otl_job_uuid)
             if status == JobStatus.RUNNING:
-                status_text = OtlJobManager._form_running_status_message(otl_job) + \
-                              (status_text if status_text is not None else '')
+                status_text = (status_text if status_text is not None else '') +\
+                              OtlJobManager._form_running_status_message(otl_job)
+
+            if status == JobStatus.FAILED:
+                status_text = (status_text if status_text is not None else '') + \
+                                OtlJobManager._form_fail_status_message(otl_job)
+                log.error(f'Failed and status_text={status_text}')
             otl_job.status = status
             otl_job.status_text = status_text
             otl_job.save()
         except OtlJob.DoesNotExist:
             log.error(f'Otl job with uuid: {otl_job_uuid} doesn\'t exist')
+
+    @staticmethod
+    def _form_fail_status_message(otl_job: OtlJob):
+        failed_node_jobs = otl_job.nodejobs.filter(status=NodeJobStatus.FAILED)
+        status_text = '\n'.join(map(
+            lambda node_job: str(node_job.uuid.hex) + ': ' + node_job.status_text,
+            failed_node_jobs
+        ))
+        return status_text
 
     @staticmethod
     def _form_running_status_message(otl_job: OtlJob):

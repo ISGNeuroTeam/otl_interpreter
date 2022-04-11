@@ -24,7 +24,10 @@ User = get_user_model()
 log = logging.getLogger('ot_simple_rest_job_proxy')
 
 ot_simple_rest_url = ini_config['ot_simple_rest']['url']
+
 makejob_uri = ot_simple_rest_url + '/' + ini_config['ot_simple_rest']['makejob_urn']
+checkjob_uri = ot_simple_rest_url + '/' + ini_config['ot_simple_rest']['checkjob_urn']
+getresult_uri = ot_simple_rest_url + '/' + ini_config['ot_simple_rest']['getresult_urn']
 
 secret_key = ini_config['ot_simple_rest']['secret_key']
 
@@ -75,22 +78,29 @@ def makejob(request):
     return HttpResponse(json.dumps(resp))
 
 
-
 @csrf_exempt
 def checkjob(request):
-    log.debug(str(request.COOKIES))
-    log.info(f'Get checkjob request')
-    ot_simple_rest_url = ini_config['ot_simple_rest']['url']
-    checkjob_urn = ini_config['ot_simple_rest']['checkjob_urn']
-    uri = ot_simple_rest_url + '/' + checkjob_urn
-    return proxy_view(request, uri)
+    query = request.GET['original_otl']
+    new_platform_query_index = job_proxy_manager.is_new_platform_query(query)
+
+    if not new_platform_query_index:
+        return proxy_view(request, checkjob_uri)
+
+    tws = request.GET['tws']
+    twf = request.GET['twf']
+
+    log.info(f'Get checkjob request for new platform{query}, tws={tws}, twf={twf}')
+    resp = job_proxy_manager.checkjob(query[new_platform_query_index:], tws, twf)
+    return HttpResponse(json.dumps(resp))
 
 
 @csrf_exempt
 def getresult(request):
-    log.debug(str(request.COOKIES))
-    log.info(f'Get getresult request')
-    ot_simple_rest_url = ini_config['ot_simple_rest']['url']
-    getresult_urn = ini_config['ot_simple_rest']['getresult_urn']
-    uri = ot_simple_rest_url + '/' + getresult_urn
-    return proxy_view(request, uri)
+    cid = request.GET['cid']
+    if not job_proxy_manager.is_new_platform_query_id(cid):
+        return proxy_view(request, getresult_uri)
+
+    log.info(f'Get getresult request with cid={cid}')
+
+    resp = job_proxy_manager.getresult(cid)
+    return HttpResponse(json.dumps(resp))
