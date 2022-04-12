@@ -256,21 +256,16 @@ class TestCancelJobView(BaseApiTest):
             env=computing_node_env
         )
 
-        self.eep_computing_node = subprocess.Popen(
-            [sys.executable, '-m', 'mock_computing_node', 'eep1.json', 'eep_commands1.json'],
-            env=computing_node_env
-        )
-
         # wait until node register
         time.sleep(1)
 
     def tearDown(self):
         self.dispatcher_process.kill()
         self.spark_computing_node.kill()
-        self.eep_computing_node.kill()
 
     def test_cancel_job(self):
-        otl_query = "| otstats index='test_index' | otstats index='test_index2' | otstats index='test_index3' | otstats index='test_index4' | otstats index='test_index5' | join [ | collect index=some_index | table 1,2,3| otstats index='test_index6' | otstats index='test_index7'] "
+        otl_query = ' '.join(["| otstats  index = 'test_index%d'" % i for i in range(20)])
+
         response = BaseApiTest.make_job_success(self, otl_query)
 
         job_id = response['job_id']

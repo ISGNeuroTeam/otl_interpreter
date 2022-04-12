@@ -15,7 +15,7 @@ from otl_interpreter.interpreter_db import (
     otl_job_manager as db_otl_job_manager, node_job_manager as db_node_job_manager
 )
 
-from otl_interpreter.interpreter_db.enums import NodeJobStatus, JobStatus
+from otl_interpreter.interpreter_db.enums import NodeJobStatus, JobStatus, ResultStatus
 
 log = getLogger('otl_interpreter')
 
@@ -112,7 +112,8 @@ class OtlJobManager:
                         'status': NodeJobStatus.PLANNED,
                         'computing_node_type': node_job_tree.computing_node_type,
                         'commands': node_job_tree.as_command_dict_list(),
-                        'storage': node_job_tree.result_address.storage_type
+                        'storage': node_job_tree.result_address.storage_type,
+                        'path': node_job_tree.result_address.path,
                     }
                     for node_job_tree in independent_node_job_trees
                 ]
@@ -145,7 +146,7 @@ class OtlJobManager:
 
     def get_result(self, job_id: UUID):
         result = db_otl_job_manager.get_result(job_id)
-        if not result.calculated:
+        if not result.status == ResultStatus.CALCULATED:
             raise QueryError("Result is not ready yet")
 
         data_path = f"{result.storage}/{result.path}/jsonl/{self.data_path}"

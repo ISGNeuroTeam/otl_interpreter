@@ -5,7 +5,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from mptt.models import MPTTModel, TreeForeignKey
 from mixins.models import TimeStampedModel
-from .enums import JobStatus, NodeJobStatus, ResultStorage
+from .enums import JobStatus, NodeJobStatus, ResultStorage, ResultStatus
 
 
 class OtlJob(TimeStampedModel):
@@ -117,8 +117,12 @@ class NodeJobResult(models.Model):
     # flag to indicate that dataframe was read by client or next job
     was_read = models.BooleanField(default=False)
 
-    # job was finished and calculated
-    calculated = models.BooleanField(default=False)
+    status = models.CharField(
+        'Result status',
+        max_length=255,
+        choices=ResultStatus.choices, db_index=True,  # set index for fast finding when delete
+        default=ResultStatus.NOT_EXIST
+    )
 
     ttl = models.DurationField(
         default=60
@@ -139,6 +143,7 @@ class NodeJobResult(models.Model):
 
     class Meta:
         app_label = 'otl_interpreter'
+        unique_together = ['storage', 'path']
 
 
 class NodeJob(TimeStampedModel, MPTTModel):
@@ -174,7 +179,7 @@ class NodeJob(TimeStampedModel, MPTTModel):
         related_name='awaited_jobs'
     )
 
-    result = models.OneToOneField(
+    result = models.ForeignKey(
         NodeJobResult, on_delete=models.CASCADE, null=True
     )
 

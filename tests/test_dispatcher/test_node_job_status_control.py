@@ -236,19 +236,23 @@ class TestNodeReleaseResources(BaseApiTest):
 
     def test_release_resources(self):
 
-        job_for_5_sec = "| otstats index='test_index' | otstats index='test_index2' | otstats index='test_index3' | otstats index='test_index4' | otstats index='test_index7'"
-        job_for_3_sec = "| otstats index='test_index' | otstats index='test_index2' | otstats index='test_index3'"
-        job_for_1_sec = "| otstats index='test_index'"
+        job_for_5_sec = "| otstats index='test_index%d' | otstats index='test_index%d2' | otstats index='test_index%d3' | otstats index='test_index%d4' | otstats index='test_index%d7'"
+        job_for_3_sec = "| otstats index='test_index%d' | otstats index='test_index%d2' | otstats index='test_index%d3'"
+        job_for_1_sec = "| otstats index='test_index%d'"
+
+
 
         jobs_id = [None]*4
 
         # send 4 jobs to occupy all resources
         for i in range(4):
-            response = BaseApiTest.make_job_success(self, job_for_3_sec if i == 3 else job_for_5_sec)
+            response = BaseApiTest.make_job_success(
+                self, job_for_3_sec % (i, i, i) if i == 3 else job_for_5_sec % (i, i, i, i, i)
+            )
             jobs_id[i] = response['job_id']
 
         # send 1 job and check it's in queue
-        response = BaseApiTest.make_job_success(self, job_for_1_sec)
+        response = BaseApiTest.make_job_success(self, job_for_1_sec % 1)
         time.sleep(2)
         job_in_queue = response['job_id']
 

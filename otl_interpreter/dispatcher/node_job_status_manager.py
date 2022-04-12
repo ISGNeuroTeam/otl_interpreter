@@ -9,7 +9,7 @@ from asgiref.sync import sync_to_async
 
 from message_broker import Producer
 
-from otl_interpreter.interpreter_db.enums import NodeJobStatus, JobStatus, ResultStorage
+from otl_interpreter.interpreter_db.enums import NodeJobStatus, JobStatus, ResultStorage, ResultStatus
 from otl_interpreter.interpreter_db import node_job_manager, otl_job_manager
 
 from computing_node_pool import computing_node_pool
@@ -43,6 +43,9 @@ allowed_state_transfer_table = {
     NodeJobStatus.RUNNING: {
         NodeJobStatus.FINISHED, NodeJobStatus.FAILED, NodeJobStatus.CANCELED
     },
+    NodeJobStatus.WAITING_SAME_RESULT: {
+        NodeJobStatus.FINISHED, NodeJobStatus.FAILED, NodeJobStatus.CANCELED
+    },
     NodeJobStatus.FINISHED: {},
     NodeJobStatus.CANCELED: {},
     NodeJobStatus.FAILED: {NodeJobStatus.CANCELED, },
@@ -62,6 +65,7 @@ class NodeJobStatusManager:
             NodeJobStatus.SENT_TO_COMPUTING_NODE: self._on_sent_to_computing_node,
             NodeJobStatus.DECLINED_BY_COMPUTING_NODE: self._on_declined_by_computing_node,
             NodeJobStatus.RUNNING: self._on_running,
+            NodeJobStatus.WAITING_SAME_RESULT: self._on_waiting_same_result,
             NodeJobStatus.FINISHED: self._on_finished,
             NodeJobStatus.CANCELED: self._on_canceled,
             NodeJobStatus.FAILED: self._on_failed,
@@ -132,6 +136,24 @@ class NodeJobStatusManager:
         if node_job_dict is None:
             node_job_dict = node_job_manager.get_node_job_dict(node_job_uuid)
 
+        # check if the same result exists
+        result_status = node_job_manager.get_result_status(node_job_dict['storage'], node_job_dict['path'])
+        if result_status == ResultStatus.CALCULATED:
+            self._change_node_job_status(
+                node_job_uuid, NodeJobStatus.FINISHED,
+                f'Same result already calculated',
+                node_job_dict
+            )
+            return
+
+        if result_status == ResultStatus.CALCULATING:
+            self._change_node_job_status(
+                node_job_uuid, NodeJobStatus.WAITING_SAME_RESULT,
+                f'Same result is currently calculating by other node job',
+                node_job_dict
+            )
+            return
+
         # find computing node to execute
         find_only_local_computing_nodes = node_job_dict['storage'] == ResultStorage.LOCAL_POST_PROCESSING
         computing_node_uuid = computing_node_pool.get_least_loaded_node(
@@ -198,15 +220,42 @@ class NodeJobStatusManager:
         )
 
     def _on_running(self, node_job_uuid, node_job_dict=None):
+        if node_job_dict is None:
+            node_job_dict = node_job_manager.get_node_job_dict(node_job_uuid)
+
         # change otl job status
         otl_job_uuid = node_job_manager.get_otl_job_uuid(node_job_uuid)
         otl_job_manager.change_otl_job_status(otl_job_uuid, JobStatus.RUNNING)
+
+        # change result status
+        node_job_manager.set_result_status(node_job_dict['storage'], node_job_dict['path'], ResultStatus.CALCULATING)
+
+    def _on_waiting_same_result(self, node_job_uuid, node_job_dict=None):
+        pass
 
     def _on_finished(self, node_job_uuid, node_job_dict=None):
         log.debug(f'node_job_finished {node_job_uuid}')
 
         if node_job_dict is None:
             node_job_dict = node_job_manager.get_node_job_dict(node_job_uuid)
+
+        result_status = node_job_manager.get_result_status(node_job_dict['storage'], node_job_dict['path'])
+        # to avoid recursively changing status on waiting the same result node jobs
+        # check current result status
+        if result_status == ResultStatus.CALCULATING:
+            # change result status
+            node_job_manager.set_result_status(node_job_dict['storage'], node_job_dict['path'], ResultStatus.CALCULATED)
+
+            # find waiting on same results node jobs and change their status
+            waiting_same_result_node_jobs = node_job_manager.get_waiting_same_result_node_jobs(
+                node_job_dict['storage'], node_job_dict['path']
+            )
+            for waiting_node_job in waiting_same_result_node_jobs:
+                self._change_node_job_status(
+                    waiting_node_job['uuid'], NodeJobStatus.FINISHED,
+                    f'Other node job with same result finished',
+                    waiting_node_job
+                )
 
         next_node_job_dict = node_job_manager.get_next_node_job_to_execute(node_job_uuid)
 
@@ -231,7 +280,14 @@ class NodeJobStatusManager:
         if node_job_dict is None:
             node_job_dict = node_job_manager.get_node_job_dict(node_job_uuid)
 
-        if node_job_dict['status'] == NodeJobStatus.RUNNING:
+        #  if waiting same result exists do not cancel running tasks
+        waiting_same_result_node_jobs = node_job_manager.get_waiting_same_result_node_jobs(
+            node_job_dict['storage'], node_job_dict['path']
+        )
+
+        if node_job_dict['status'] == NodeJobStatus.RUNNING and \
+                len(waiting_same_result_node_jobs) == 0:
+
             self._cancel_running_node_job(node_job_uuid)
 
             # also check job queue
@@ -258,7 +314,26 @@ class NodeJobStatusManager:
                 f'Cancelled because of node job fail: {str(node_job_manager.get_node_job_dict(node_job_uuid))}'
             )
 
-        self._check_job_queue(node_job_dict['computing_node_type'])
+        # also set failed waiting the same result node jobs
+        result_status = node_job_manager.get_result_status(
+            node_job_dict['storage'], node_job_dict['path']
+        )
+
+        if result_status == ResultStatus.CALCULATING:
+            node_job_manager.set_result_status(node_job_dict['storage'], node_job_dict['path'], ResultStatus.NOT_EXIST)
+
+            # find waiting on same results node jobs and change their status
+            waiting_same_result_node_jobs = node_job_manager.get_waiting_same_result_node_jobs(
+                node_job_dict['storage'], node_job_dict['path']
+            )
+            for waiting_node_job in waiting_same_result_node_jobs:
+                self._change_node_job_status(
+                    waiting_node_job['uuid'], NodeJobStatus.FAILED,
+                    f'Other node job with same result failed',
+                    waiting_node_job
+                )
+
+            self._check_job_queue(node_job_dict['computing_node_type'])
 
     # ==================================================================================================================
 

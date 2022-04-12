@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.db.models import TextChoices
-from otl_interpreter.interpreter_db.enums import ComputingNodeType, NodeJobStatus, ResultStorage
+from otl_interpreter.interpreter_db.enums import ComputingNodeType, NodeJobStatus, ResultStorage, ResultStatus
 
 
 class OtlJobCommandName(TextChoices):
@@ -19,6 +19,7 @@ class NodeJobSerializer(serializers.Serializer):
     computing_node_type = serializers.CharField()
     commands = serializers.ListField()
     storage = serializers.ChoiceField(choices=ResultStorage.choices)
+    path = serializers.CharField()
 
 
 class NewOtlJobCommand(serializers.Serializer):
