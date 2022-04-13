@@ -33,17 +33,25 @@ default_ini_config = {
         'cache_ttl': 60,
         'timeout': 0,
         'shared_post_processing': True,
+
+    },
+    'result_managing': {
         'data_path': 'data',
-        'schema_path': '_SCHEMA'
+        'schema_path': '_SCHEMA',
+        'cleaning_period': 30
+    },
+    'storages': {
+        'shared_post_processing': '/opt/otp/shared_storage',
+        'local_post_processing': '/opt/otp/local_storage',
+        'interproc_storage': '/opt/otp/inter_proc_storage',
     }
 }
 
 config_parser = configparser.ConfigParser()
 
-config_parser.read_dict(default_ini_config)
 config_parser.read(Path(__file__).parent / 'otl_interpreter.conf')
 
-ini_config = config_parser
+ini_config = merge_ini_config_with_defaults(config_parser, default_ini_config)
 
 job_planer_config = ini_config['job_planer']
 
@@ -57,6 +65,13 @@ DATABASE = {
         "PASSWORD": ini_config['db_conf']['password'],
         "HOST": ini_config['db_conf']['host'],
         "PORT": ini_config['db_conf']['port']
+}
+
+CELERY_BEAT_SCHEDULE = {
+    'delete_old_results': {
+        'schedule': 60.0,
+        'task': 'otl_interpreter.tasks.delete_old_results',
+    },
 }
 
 
