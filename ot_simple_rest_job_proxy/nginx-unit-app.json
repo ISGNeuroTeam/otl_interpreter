@@ -1,0 +1,18 @@
+{
+  "type": "python 3.9",
+  "home": "./venv/",
+  "path": "./complex_rest",
+  "module": "core.wsgi",
+  "environment": {
+      "DJANGO_SETTINGS_MODULE": "core.settings",
+      "COMPLEX_REST_PLUGIN_NAME": "otl_interpreter ot_simple_rest_job_proxy"
+  },
+  "limits": {
+      "timeout": 60
+  },
+  "processes": {
+    "max": 20,
+    "spare": 5,
+    "idle_timeout": 20
+  }
+}
