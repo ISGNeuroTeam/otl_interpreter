@@ -23,7 +23,7 @@ pack: make_build
 	$(SET_BRANCH)
 	rm -f otl_interpreter-*.tar.gz
 	echo Create archive \"otl_interpreter-$(VERSION)-$(BRANCH).tar.gz\"
-	cd make_build; tar czf ../otl_interpreter-$(VERSION)-$(BRANCH).tar.gz otl_interpreter
+	cd make_build; tar czf ../otl_interpreter-$(VERSION)-$(BRANCH).tar.gz otl_interpreter ot_simple_rest_job_proxy
 
 clean_pack:
 	rm -f otl_interpreter-*.tar.gz
@@ -40,6 +40,7 @@ make_build: venv venv_pack
 	mkdir -p make_build
 
 	cp -R ./otl_interpreter make_build
+	cp -R ./ot_simple_rest_job_proxy make_build
 	rm -f make_build/otl_interpreter/otl_interpreter.conf
 	mv make_build/otl_interpreter/otl_interpreter.conf.example make_build/otl_interpreter/otl_interpreter.conf
 	cp *.md make_build/otl_interpreter/
