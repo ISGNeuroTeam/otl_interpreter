@@ -8,6 +8,8 @@ from pottery import RedisDict
 
 from core.settings import REDIS_CONNECTION_STRING
 from otl_interpreter.otl_job_manager import otl_job_manager, QueryError
+from otl_interpreter.interpreter_db.enums import ResultStatus
+from otl_interpreter.interpreter_db import otl_job_manager as db_otl_job_manager
 
 log = logging.getLogger('ot_simple_rest_job_proxy')
 
@@ -27,7 +29,11 @@ new_status_to_old_status = {
 class JobProxyManager:
     def __init__(self):
         redis = Redis.from_url(REDIS_CONNECTION_STRING)
+
+        # dictionary where key - hash of otl and tws, twf (otl_query_dict_key), value - query dictionary
         self.new_platform_queries = RedisDict(redis=redis, key='job_proxy_manager_queries')
+
+        # mapping jobid hex string to otl_query_dict_key
         self.new_platform_queries_job_id = RedisDict(redis=redis, key='job_proxy_manager_queries_id')
 
     def makejob(self, otl_query, user_guid: UUID, tws: str, twf: str, cache_ttl: str):
@@ -41,19 +47,30 @@ class JobProxyManager:
         twf = datetime.datetime.fromtimestamp(int(twf))
 
         cache_ttl = int(cache_ttl)
+        if otl_query_dict_key in self.new_platform_queries and\
+                self.new_platform_queries[otl_query_dict_key]['status'] != 'failed':
+            query = self.new_platform_queries[otl_query_dict_key]
+            # get result object from database
+            end_node_job_result = db_otl_job_manager.get_result(UUID(query['job_id']))
+
+            # if result already exists and calculating or already calculated return success status
+            # because check query will be return result of previous task
+            if end_node_job_result.status in (ResultStatus.CALCULATED, ResultStatus.CALCULATED):
+                return {'status': 'success', 'timestamp': datetime.datetime.now().isoformat()}
+
+        # if result for this otl job not exists make job for it
         try:
             job_id, storage_type, path = otl_job_manager.makejob(otl_query, user_guid, tws, twf, cache_ttl)
 
             self.new_platform_queries_job_id[job_id.hex] = otl_query_dict_key
 
-            if otl_query_dict_key not in self.new_platform_queries:
-                self.new_platform_queries[otl_query_dict_key] = {
-                    'job_id': job_id.hex,
-                    'storage_type': storage_type,
-                    'path': path,
-                    'status': 'new',
-                    'status_text': 'Job created'
-                }
+            self.new_platform_queries[otl_query_dict_key] = {
+                'job_id': job_id.hex,
+                'storage_type': storage_type,
+                'path': path,
+                'status': 'new',
+                'status_text': 'Job created'
+            }
         except QueryError as err:
             self.new_platform_queries[otl_query_dict_key] = {
                 'status': 'failed',

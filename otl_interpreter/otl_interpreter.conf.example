@@ -40,7 +40,7 @@ shared_post_processing = True
 
 [result_managing]
 ;how result data files will be named
-data_path = data,
+data_path = data
 
 ;how schema path will be named
 schema_path = _SCHEMA
