@@ -2,7 +2,8 @@ import datetime
 import logging
 
 from datetime import timedelta
-
+from django.db.models import F
+from django.db import transaction
 from .models import NodeJob, NodeJobResult, OtlJob, ComputingNode
 from .enums import NodeJobStatus, END_STATUSES, ResultStatus, ResultStorage
 
@@ -196,6 +197,23 @@ class NodeJobManager:
             return result.status
         except NodeJobResult.DoesNotExist:
             return ResultStatus.NOT_EXIST
+
+    @staticmethod
+    def set_not_exist_status_for_expired_results():
+        """
+        Find results that expired and set status to NOT_EXIST
+        Returns list of tuples with storage and path
+        """
+        with transaction.atomic():
+            results = NodeJobResult.objects.filter(
+                status=ResultStatus.CALCULATED,
+                last_touched_timestamp__lt=datetime.datetime.now()-F('ttl')
+            )
+            result_list = [(r[0], r[1]) for r in results.values_list('storage', 'path')]
+            results = results.select_for_update()
+            results.update(status=ResultStatus.NOT_EXIST)
+
+        return result_list
 
     @staticmethod
     def set_result_status(storage: ResultStorage, path, status: ResultStatus):

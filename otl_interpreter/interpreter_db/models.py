@@ -1,3 +1,4 @@
+import datetime
 import re
 import hashlib
 import uuid
@@ -125,7 +126,7 @@ class NodeJobResult(models.Model):
     )
 
     ttl = models.DurationField(
-        default=60
+        default=datetime.timedelta(seconds=60)
     )
     # last timestamp when nodejob result was read by anyone
     last_touched_timestamp = models.DateTimeField(
