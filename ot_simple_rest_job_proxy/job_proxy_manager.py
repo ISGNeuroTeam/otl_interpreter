@@ -1,6 +1,7 @@
 import re
 import datetime
 import logging
+import hashlib
 
 from uuid import UUID
 from redis import Redis
@@ -154,7 +155,8 @@ class JobProxyManager:
         """
         Makes unique key for query
         """
-        return hash(query + str(tws) + str(twf))
+        h = hashlib.md5((query + str(tws) + str(twf)).encode())
+        return h.digest().hex()
 
 
 job_proxy_manager = JobProxyManager()
