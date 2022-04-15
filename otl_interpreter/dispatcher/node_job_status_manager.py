@@ -57,6 +57,9 @@ class NodeJobStatusManager:
     Manages node job status
     """
     def __init__(self):
+
+        # methods will be invoked after status changed
+        # that methods can change status
         self.status_action_table = {
             NodeJobStatus.PLANNED: self._on_planned,
             NodeJobStatus.READY_TO_EXECUTE: self._on_ready_to_execute,
@@ -69,6 +72,15 @@ class NodeJobStatusManager:
             NodeJobStatus.FINISHED: self._on_finished,
             NodeJobStatus.CANCELED: self._on_canceled,
             NodeJobStatus.FAILED: self._on_failed,
+        }
+
+        # method will be invoked when status changes from one to another after changing
+        # that methods are not allowed to change
+        # see self._change_node_job_status
+        self.status_transit_action_table = {
+            NodeJobStatus.RUNNING: {
+                NodeJobStatus.CANCELED: self._on_from_running_to_cancel
+            }
         }
 
         # if Producer() throws error del method shouldn't invoke producer.stop()
@@ -277,6 +289,13 @@ class NodeJobStatusManager:
         self._check_job_queue(node_job_dict['computing_node_type'])
 
     def _on_canceled(self, node_job_uuid, node_job_dict=None):
+        pass
+
+    def _on_from_running_to_cancel(self, node_job_uuid, node_job_dict=None):
+        """
+        Invoked when status goes from running to cancel
+        Sends cancel message to computing node
+        """
         if node_job_dict is None:
             node_job_dict = node_job_manager.get_node_job_dict(node_job_uuid)
 
@@ -284,13 +303,12 @@ class NodeJobStatusManager:
         waiting_same_result_node_jobs = node_job_manager.get_waiting_same_result_node_jobs(
             node_job_dict['storage'], node_job_dict['path']
         )
-
-        if node_job_dict['status'] == NodeJobStatus.RUNNING and \
-                len(waiting_same_result_node_jobs) == 0:
-
+        if len(waiting_same_result_node_jobs) == 0:
             self._cancel_running_node_job(node_job_uuid)
 
-            # also check job queue
+            node_job_manager.set_result_status(node_job_dict['storage'], node_job_dict['path'], ResultStatus.NOT_EXIST)
+
+            # also check job queue because job was canceled and resources release
             self._check_job_queue(node_job_dict['computing_node_type'])
 
     def _on_failed(self, node_job_uuid, node_job_dict=None):
@@ -370,8 +388,13 @@ class NodeJobStatusManager:
         # change status in node_job_dict
         node_job_dict['status'] = status
 
+        # make actions on state change from one value to another
+        if cur_status in self.status_transit_action_table and status in self.status_transit_action_table[cur_status]:
+            self.status_transit_action_table[cur_status][status](node_job_uuid, node_job_dict)
+
         # make actions on state change
-        self.status_action_table[status](node_job_uuid, node_job_dict)
+        if status in self.status_action_table:
+            self.status_action_table[status](node_job_uuid, node_job_dict)
 
     def _cancel_running_node_job(self, node_job_uuid):
         computing_node_uuid = node_job_manager.get_computing_node_for_node_job(node_job_uuid)
