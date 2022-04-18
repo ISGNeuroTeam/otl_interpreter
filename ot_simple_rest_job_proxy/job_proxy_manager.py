@@ -158,5 +158,14 @@ class JobProxyManager:
         h = hashlib.md5((query + str(tws) + str(twf)).encode())
         return h.digest().hex()
 
+    def delete_query_info(self, job_id: str):
+        """
+        Removes query info with specified job_id from self.new_platform_queries
+        """
+        if job_id in self.new_platform_queries_job_id:
+            query_key = self.new_platform_queries_job_id[job_id]
+            del self.new_platform_queries[query_key]
+            del self.new_platform_queries_job_id[job_id]
+
 
 job_proxy_manager = JobProxyManager()

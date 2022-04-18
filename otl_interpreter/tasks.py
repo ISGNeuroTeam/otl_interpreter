@@ -13,6 +13,8 @@ from otl_interpreter.interpreter_db import (
 from otl_interpreter.interpreter_db.enums import ResultStorage
 from otl_interpreter.settings import ini_config
 
+from ot_simple_rest_job_proxy.job_proxy_manager import job_proxy_manager
+
 log = logging.getLogger('otl_interpreter.periodic_tasks')
 
 
@@ -75,5 +77,9 @@ def remove_old_otl_query_info_from_db():
         days=int(ini_config['service_task_options']['keep_query_info_days'])
     )
     log.info(f'Delete old otl query info. Days: f{days.days}')
-    db_otl_job_manager.delete_old_otl_query_info(days)
+    uuids = db_otl_job_manager.delete_old_otl_query_info(days)
     db_node_job_manager.delete_old_node_job_results(days)
+
+    # clear redis dictionaries for job proxy manager
+    for uuid in uuids:
+        job_proxy_manager.delete_query_info(uuid.hex)

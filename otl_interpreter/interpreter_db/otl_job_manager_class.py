@@ -75,8 +75,11 @@ class OtlJobManager:
     def delete_old_otl_query_info(older_than: datetime.timedelta):
         """
         Delete from database all otl queries that created before than <now - given timedelta>
+        Returns job id list
         """
         old_otl_queries = OtlJob.objects.filter(created_time__lt=datetime.datetime.now()-older_than)
+        uuids = list(old_otl_queries.values_list('uuid', flat=True))
         old_otl_queries.delete()
+        return uuids
 
 
