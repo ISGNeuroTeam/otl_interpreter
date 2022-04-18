@@ -224,7 +224,7 @@ class NodeJobManager:
             result = NodeJobResult.objects.get(storage=storage, path=path)
             result.status = status
             result.last_touched_timestamp = datetime.datetime.now()
-            if status == NodeJobStatus.FINISHED:
+            if status == ResultStatus.CALCULATED:
                 result.finish_timestamp = datetime.datetime.now()
             result.save()
         except NodeJobResult.DoesNotExist:
