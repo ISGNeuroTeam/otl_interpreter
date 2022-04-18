@@ -71,3 +71,12 @@ class OtlJobManager:
         finished_node_jobs = otl_job.nodejobs.filter(status=NodeJobStatus.FINISHED).count()
         return f'Running {running_node_jobs} of {total_node_jobs} node_jobs. Finished {finished_node_jobs} '
 
+    @staticmethod
+    def delete_old_otl_query_info(older_than: datetime.timedelta):
+        """
+        Delete from database all otl queries that created before than <now - given timedelta>
+        """
+        old_otl_queries = OtlJob.objects.filter(created_time__lt=datetime.datetime.now()-older_than)
+        old_otl_queries.delete()
+
+

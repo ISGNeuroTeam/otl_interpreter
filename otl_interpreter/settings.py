@@ -1,4 +1,5 @@
 import configparser
+import datetime
 import os
 
 from pathlib import Path
@@ -38,7 +39,10 @@ default_ini_config = {
     'result_managing': {
         'data_path': 'data',
         'schema_path': '_SCHEMA',
-        'cleaning_period': 30
+    },
+    'service_task_options': {
+        'remove_expired_dataframes_period': 15,
+        'keep_query_info_days': 30
     },
     'storages': {
         'shared_post_processing': '/opt/otp/shared_storage',
@@ -68,15 +72,23 @@ DATABASE = {
 }
 
 CELERY_BEAT_SCHEDULE = {
-    'delete_old_results': {
-        'schedule': 60.0,
-        'task': 'otl_interpreter.tasks.delete_old_results',
+    'delete_expired_results': {
+        'schedule': datetime.timedelta(
+            seconds=int(ini_config['service_task_options']['remove_expired_dataframes_period'])
+        ),
+        'task': 'otl_interpreter.tasks.delete_expired_results',
+    },
+    'remove_old_otl_query_info_from_db': {
+        'schedule': datetime.timedelta(
+            days=int(ini_config['service_task_options']['keep_query_info_days'])
+        ),
+        'task': 'otl_interpreter.tasks.remove_old_otl_query_info_from_db',
     },
 }
 
 
 def get_cache():
-    # plugin settings load before complex_rest setggings. redis is not configured so
+    # plugin settings load before complex_rest settings. redis is not configured so
     # import must be here
     from cache import get_cache as complex_rest_get_cache
     return complex_rest_get_cache(

@@ -280,3 +280,10 @@ class NodeJobManager:
 
         return list(running_node_jobs.values_list('uuid', flat=True))
 
+    @staticmethod
+    def delete_old_node_job_results(older_than: datetime.timedelta):
+        """
+        Delete all node job results older than given timedelta
+        """
+        old_node_jobs = NodeJobResult.objects.filter(last_touched_timestamp__lt=datetime.datetime.now() - older_than)
+        old_node_jobs.delete()
