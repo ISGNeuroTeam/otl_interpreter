@@ -69,7 +69,7 @@ class ComputingNode(models.Model):
     )
     active = models.BooleanField(default=True)
 
-    # computing node resuources as dictionary
+    # computing node resources as dictionary
     resources = models.JSONField(default=dict)
 
     def __str__(self):
@@ -80,7 +80,7 @@ class ComputingNode(models.Model):
 
 
 class NodeCommand(models.Model):
-    # if node is null then command is required must be implemented on every node
+    # if node is null then command is required, must be implemented on every node
     node = models.ForeignKey(
         ComputingNode, on_delete=models.CASCADE, related_name='node_commands', null=True
     )

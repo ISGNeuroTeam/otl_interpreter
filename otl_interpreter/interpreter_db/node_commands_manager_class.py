@@ -179,7 +179,7 @@ class NodeCommandsManager:
         Returns set of commands available for all computing nodes
         """
         return set(
-            NodeCommand.objects.filter(node__type=None).values_list('name', flat=True)
+            NodeCommand.objects.filter(node=None).values_list('name', flat=True)
         ).union(
             set(sys_computing_node_commands.keys())
         )
