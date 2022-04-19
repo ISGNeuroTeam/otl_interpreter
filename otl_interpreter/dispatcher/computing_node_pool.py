@@ -73,6 +73,12 @@ class ComputingNodePool:
 
         self.health_check_period: timedelta = timedelta(seconds=health_check_period)
 
+    def __contains__(self, uuid: UUID):
+        """
+        Checks if uuid in self.nodes
+        """
+        return uuid in self.nodes
+
     def add_computing_node(self, uuid: UUID, node_type: str, resources, local):
         """
         :param uuid: node uuid
