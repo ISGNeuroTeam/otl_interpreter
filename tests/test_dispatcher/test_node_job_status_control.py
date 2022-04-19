@@ -95,10 +95,11 @@ class TestNodeJobError(BaseApiTest):
         self.assertEqual(len(canceled_pp_node_jobs), 1)
 
     def tearDown(self):
-        self.dispatcher_process.kill()
         self.spark_computing_node.kill()
         self.eep_computing_node.kill()
         self.pp_computing_node.kill()
+        self.dispatcher_process.kill()
+
 
 
 class TestNodeJobDecline(BaseApiTest):
@@ -159,10 +160,10 @@ class TestNodeJobDecline(BaseApiTest):
             )
 
     def tearDown(self):
-        self.dispatcher_process.kill()
         self.spark_computing_node.kill()
         self.eep_computing_node.kill()
         self.pp_computing_node.kill()
+        self.dispatcher_process.kill()
 
 
 class TestNodeResoucesOccupied(BaseApiTest):
@@ -185,7 +186,7 @@ class TestNodeResoucesOccupied(BaseApiTest):
         time.sleep(5)
 
     def test_node_resources_occupied(self):
-        # send request for olt
+        # send request for otl
         otl_query = "| otstats index='test_index' "
         response = BaseApiTest.make_job_success(self, otl_query)
 
@@ -195,7 +196,7 @@ class TestNodeResoucesOccupied(BaseApiTest):
             computing_node_type='SPARK'
         )[0]
 
-        # spark node has no resources so job moves beetwen three statuses
+        # spark node has no resources so job moves between three statuses
         self.assertIn(
             spark_node_job.status,
             [
@@ -205,8 +206,9 @@ class TestNodeResoucesOccupied(BaseApiTest):
         )
 
     def tearDown(self):
-        self.dispatcher_process.kill()
         self.spark_computing_node.kill()
+        self.dispatcher_process.kill()
+
 
 
 
@@ -230,8 +232,9 @@ class TestNodeReleaseResources(BaseApiTest):
         time.sleep(5)
 
     def tearDown(self):
-        self.dispatcher_process.kill()
         self.spark_computing_node.kill()
+        self.dispatcher_process.kill()
+
 
 
     def test_release_resources(self):
@@ -304,8 +307,9 @@ class TestComputingNodeDown(BaseApiTest):
         time.sleep(5)
 
     def tearDown(self):
-        self.dispatcher_process.kill()
         self.spark_computing_node.kill()
+        self.dispatcher_process.kill()
+
 
     def test_computing_node_down(self):
 
@@ -361,8 +365,9 @@ class TestWithOneNode(BaseApiTest):
         time.sleep(5)
 
     def tearDown(self):
-        self.dispatcher_process.kill()
         self.spark_computing_node.kill()
+        self.dispatcher_process.kill()
+
 
     def test_system_command_usage(self):
         # send request for olt

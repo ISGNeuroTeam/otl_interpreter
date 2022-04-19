@@ -86,9 +86,10 @@ class TestOtlJobHandler(BaseApiTest):
             self.assertEqual(node_job.status, NodeJobStatus.FINISHED)
 
     def tearDown(self):
-        self.dispatcher_process.kill()
         self.spark_computing_node.kill()
         self.eep_computing_node.kill()
         self.pp_computing_node.kill()
+        self.dispatcher_process.kill()
+
 
 

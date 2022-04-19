@@ -96,10 +96,11 @@ class TestGetJobResult(BaseApiTest):
         time.sleep(5)
 
     def tearDown(self):
-        self.dispatcher_process.kill()
         self.spark_computing_node.kill()
         self.eep_computing_node.kill()
         self.pp_computing_node.kill()
+        self.dispatcher_process.kill()
+
 
     def test_getresults_no_errors(self):
         otl_query = "| otstats index='test_index' | join [ | collect index=some_index ] | pp_command2 | readfile 1,2,3 | sum 1,2,3"
@@ -197,8 +198,9 @@ class TestCheckJobView(BaseApiTest):
         time.sleep(1)
 
     def tearDown(self):
-        self.dispatcher_process.kill()
         self.spark_computing_node.kill()
+        self.dispatcher_process.kill()
+
 
     def test_check_job(self):
         otl_query = "| otstats index='test_index' | otstats index='test_index2' | otstats index='test_index3' | otstats index='test_index4' | otstats index='test_index5' | join [ | collect index=some_index | otstats index='test_index6' | otstats index='test_index7'] "
@@ -260,8 +262,9 @@ class TestCancelJobView(BaseApiTest):
         time.sleep(1)
 
     def tearDown(self):
-        self.dispatcher_process.kill()
         self.spark_computing_node.kill()
+        self.dispatcher_process.kill()
+
 
     def test_cancel_job(self):
         otl_query = ' '.join(["| otstats  index = 'test_index%d'" % i for i in range(20)])
