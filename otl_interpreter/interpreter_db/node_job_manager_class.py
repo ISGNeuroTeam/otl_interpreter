@@ -2,10 +2,10 @@ import datetime
 import logging
 
 from datetime import timedelta
-
+from django.db.models import F
+from django.db import transaction
 from .models import NodeJob, NodeJobResult, OtlJob, ComputingNode
-from .enums import NodeJobStatus
-
+from .enums import NodeJobStatus, END_STATUSES, ResultStatus, ResultStorage
 
 
 log = logging.getLogger('otl_interpreter.interpreter_db')
@@ -36,12 +36,11 @@ class NodeJobManager:
 
             result_address = node_job_tree.result_address
             if result_address:
-                node_job_result = NodeJobResult(
-                    storage=result_address.storage_type,
-                    path=result_address.path,
-                    ttl=timedelta(cache_ttl),
+                node_job_result = NodeJobManager._find_or_create_node_job_result(
+                    result_address.path,
+                    result_address.storage_type,
+                    cache_ttl
                 )
-                node_job_result.save()
             else:
                 node_job_result = None
 
@@ -55,6 +54,27 @@ class NodeJobManager:
             )
             node_job.save()
             node_job_for_job_tree[node_job_tree] = node_job
+
+    @staticmethod
+    def _find_or_create_node_job_result(path, storage_type, cache_ttl):
+        """
+        If such result already exists returns it or create a new one
+        """
+        try:
+            node_job_result = NodeJobResult.objects.get(
+                path=path, storage=storage_type
+            )
+
+            log.info(f'Find node job with same result, it is in {node_job_result.status} state')
+
+        except NodeJobResult.DoesNotExist:
+            node_job_result = NodeJobResult(
+                storage=storage_type,
+                path=path,
+                ttl=timedelta(seconds=cache_ttl),
+            )
+        node_job_result.save()
+        return node_job_result
 
     @staticmethod
     def set_computing_node_for_node_job(node_job_uuid,  computing_node_uuid=None):
@@ -103,11 +123,6 @@ class NodeJobManager:
             node_job = NodeJob.objects.get(uuid=node_job_uuid)
             node_job.status = status
             node_job.status_text = status_text
-            if status == NodeJobStatus.FINISHED:
-                node_job.result.finish_timestamp = datetime.datetime.now()
-                node_job.result.last_touched_timestamp = datetime.datetime.now()
-                node_job.result.calculated = True
-                node_job.result.save()
             node_job.save()
 
         except NodeJob.DoesNotExist:
@@ -166,8 +181,87 @@ class NodeJobManager:
             'status': node_job.status,
             'computing_node_type': node_job.computing_node_type,
             'commands': node_job.commands,
-            'storage': node_job.result.storage
+            'storage': node_job.result.storage,
+            'path': node_job.result.path
         }
+
+    @staticmethod
+    def get_result_status(storage: ResultStorage, path):
+        """
+        Returns status of node job result
+        """
+        try:
+            result = NodeJobResult.objects.get(storage=storage, path=path)
+            result.last_touched_timestamp = datetime.datetime.now()
+            result.save()
+            return result.status
+        except NodeJobResult.DoesNotExist:
+            return ResultStatus.NOT_EXIST
+
+    @staticmethod
+    def set_not_exist_status_for_expired_results():
+        """
+        Find results that expired and set status to NOT_EXIST
+        Returns list of tuples with storage and path
+        """
+        with transaction.atomic():
+            results = NodeJobResult.objects.filter(
+                status=ResultStatus.CALCULATED,
+                last_touched_timestamp__lt=datetime.datetime.now()-F('ttl')
+            )
+            result_list = [(r[0], r[1]) for r in results.values_list('storage', 'path')]
+            results = results.select_for_update()
+            results.update(status=ResultStatus.NOT_EXIST)
+
+        return result_list
+
+    @staticmethod
+    def set_result_status(storage: ResultStorage, path, status: ResultStatus):
+        """
+        Sets status result
+        """
+        try:
+            result = NodeJobResult.objects.get(storage=storage, path=path)
+            result.status = status
+            result.last_touched_timestamp = datetime.datetime.now()
+            if status == ResultStatus.CALCULATED:
+                result.finish_timestamp = datetime.datetime.now()
+            result.save()
+        except NodeJobResult.DoesNotExist:
+            log.error(f'Can\'t find node job result with storage = {storage}, path={path}')
+
+    @staticmethod
+    def get_waiting_same_result_node_jobs(storage: ResultStorage, path):
+        """
+        Returns dict of node jobs waiting the same result
+        """
+        try:
+            result = NodeJobResult.objects.get(storage=storage, path=path)
+            return list(map(
+                NodeJobManager.get_node_job_dict,
+                NodeJob.objects.filter(result=result, status=NodeJobStatus.WAITING_SAME_RESULT)
+            ))
+        except NodeJobResult.DoesNotExist:
+            return []
+
+    @staticmethod
+    def get_unfinished_node_jobs_for_otl_job(otl_job_uuid):
+        """
+        Returns list node jobs dictionary for otl job
+        """
+        try:
+            otl_job = OtlJob.objects.get(uuid=otl_job_uuid)
+            node_jobs = NodeJob.objects.filter(otl_job=otl_job).exclude(status__in=END_STATUSES)
+            return list(
+                map(
+                    lambda node_job: NodeJobManager.get_node_job_dict(node_job),
+                    node_jobs
+                ),
+            )
+        except OtlJob.DoesNotExist:
+            log.error(f'Can\'t find otl job with uuid {otl_job_uuid}')
+
+        return []
 
     @staticmethod
     def get_node_jobs_for_cancelling(failed_node_job):
@@ -180,13 +274,16 @@ class NodeJobManager:
         if not isinstance(failed_node_job, NodeJob):
             failed_node_job = NodeJob.objects.get(uuid=failed_node_job)
 
-        done_statuses = {NodeJobStatus.CANCELED, NodeJobStatus.FAILED, NodeJobStatus.FINISHED}
         running_node_jobs = NodeJob.objects.filter(
             otl_job=failed_node_job.otl_job
-        ).exclude(status__in=done_statuses)
+        ).exclude(status__in=END_STATUSES)
 
         return list(running_node_jobs.values_list('uuid', flat=True))
 
-
-
-
+    @staticmethod
+    def delete_old_node_job_results(older_than: datetime.timedelta):
+        """
+        Delete all node job results older than given timedelta
+        """
+        old_node_jobs = NodeJobResult.objects.filter(last_touched_timestamp__lt=datetime.datetime.now() - older_than)
+        old_node_jobs.delete()

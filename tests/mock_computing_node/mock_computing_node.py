@@ -92,6 +92,11 @@ class ComputingNode:
 
     async def _run_job(self, job):
         decline_rate = self.config['decline_rate']
+
+        # mock computing doesn't calculate anything so just quit
+        if job['status'] == 'CANCELED':
+            return
+
         lock = asyncio.Lock()
 
         job_was_declined = False

@@ -1,4 +1,5 @@
 import configparser
+import datetime
 import os
 
 from pathlib import Path
@@ -33,17 +34,28 @@ default_ini_config = {
         'cache_ttl': 60,
         'timeout': 0,
         'shared_post_processing': True,
+
+    },
+    'result_managing': {
         'data_path': 'data',
-        'schema_path': '_SCHEMA'
+        'schema_path': '_SCHEMA',
+    },
+    'service_task_options': {
+        'remove_expired_dataframes_period': 15,
+        'keep_query_info_days': 30
+    },
+    'storages': {
+        'shared_post_processing': '/opt/otp/shared_storage',
+        'local_post_processing': '/opt/otp/local_storage',
+        'interproc_storage': '/opt/otp/inter_proc_storage',
     }
 }
 
 config_parser = configparser.ConfigParser()
 
-config_parser.read_dict(default_ini_config)
 config_parser.read(Path(__file__).parent / 'otl_interpreter.conf')
 
-ini_config = config_parser
+ini_config = merge_ini_config_with_defaults(config_parser, default_ini_config)
 
 job_planer_config = ini_config['job_planer']
 
@@ -59,9 +71,24 @@ DATABASE = {
         "PORT": ini_config['db_conf']['port']
 }
 
+CELERY_BEAT_SCHEDULE = {
+    'delete_expired_results': {
+        'schedule': datetime.timedelta(
+            seconds=int(ini_config['service_task_options']['remove_expired_dataframes_period'])
+        ),
+        'task': 'otl_interpreter.tasks.delete_expired_results',
+    },
+    'remove_old_otl_query_info_from_db': {
+        'schedule': datetime.timedelta(
+            days=int(ini_config['service_task_options']['keep_query_info_days'])
+        ),
+        'task': 'otl_interpreter.tasks.remove_old_otl_query_info_from_db',
+    },
+}
+
 
 def get_cache():
-    # plugin settings load before complex_rest setggings. redis is not configured so
+    # plugin settings load before complex_rest settings. redis is not configured so
     # import must be here
     from cache import get_cache as complex_rest_get_cache
     return complex_rest_get_cache(

@@ -20,11 +20,11 @@ subsearch_is_node_job = True
 one_process_mode = False
 check_job_queue_period = 10
 
-# hostid linux command will be used if empty
+;hostid linux command will be used if empty
 host_id =
 
-# if computing node didn't send resource status in that interval
-# then it considered as inactive
+; if computing node didn't send resource status in that interval
+; then it considered as inactive
 health_check_period = 15
 
 
@@ -36,3 +36,24 @@ timeout = 0
 
 ; if the results will be available for all authenticated users
 shared_post_processing = True
+
+
+[result_managing]
+;how result data files will be named
+data_path = data
+
+;how schema path will be named
+schema_path = _SCHEMA
+
+
+[service_task_options]
+;interval for launching  task to remove expired dataframes in seconds
+remove_expired_dataframes_period = 15
+
+;keep queries info in database in days
+keep_query_info_days = 30
+
+[storages]
+shared_post_processing = /opt/otp/shared_storage
+local_post_processing = /opt/otp/local_storage
+interproc_storage = /opt/otp/inter_proc_storage

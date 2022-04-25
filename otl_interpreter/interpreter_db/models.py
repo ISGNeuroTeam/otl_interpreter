@@ -1,3 +1,4 @@
+import datetime
 import re
 import hashlib
 import uuid
@@ -5,7 +6,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from mptt.models import MPTTModel, TreeForeignKey
 from mixins.models import TimeStampedModel
-from .enums import JobStatus, NodeJobStatus, ResultStorage
+from .enums import JobStatus, NodeJobStatus, ResultStorage, ResultStatus
 
 
 class OtlJob(TimeStampedModel):
@@ -68,7 +69,7 @@ class ComputingNode(models.Model):
     )
     active = models.BooleanField(default=True)
 
-    # computing node resuources as dictionary
+    # computing node resources as dictionary
     resources = models.JSONField(default=dict)
 
     def __str__(self):
@@ -79,7 +80,7 @@ class ComputingNode(models.Model):
 
 
 class NodeCommand(models.Model):
-    # if node is null then command is required must be implemented on every node
+    # if node is null then command is required, must be implemented on every node
     node = models.ForeignKey(
         ComputingNode, on_delete=models.CASCADE, related_name='node_commands', null=True
     )
@@ -117,11 +118,15 @@ class NodeJobResult(models.Model):
     # flag to indicate that dataframe was read by client or next job
     was_read = models.BooleanField(default=False)
 
-    # job was finished and calculated
-    calculated = models.BooleanField(default=False)
+    status = models.CharField(
+        'Result status',
+        max_length=255,
+        choices=ResultStatus.choices, db_index=True,  # set index for fast finding when delete
+        default=ResultStatus.NOT_EXIST
+    )
 
     ttl = models.DurationField(
-        default=60
+        default=datetime.timedelta(seconds=60)
     )
     # last timestamp when nodejob result was read by anyone
     last_touched_timestamp = models.DateTimeField(
@@ -139,6 +144,7 @@ class NodeJobResult(models.Model):
 
     class Meta:
         app_label = 'otl_interpreter'
+        unique_together = ['storage', 'path']
 
 
 class NodeJob(TimeStampedModel, MPTTModel):
@@ -174,7 +180,7 @@ class NodeJob(TimeStampedModel, MPTTModel):
         related_name='awaited_jobs'
     )
 
-    result = models.OneToOneField(
+    result = models.ForeignKey(
         NodeJobResult, on_delete=models.CASCADE, null=True
     )
 

@@ -73,3 +73,25 @@ class BaseApiTest(TestCase):
 
     def check_job(self, job_id):
         pass
+
+    def cancel_job(self, job_id):
+        """
+        Send cancel job query and check status code
+        Returns response object
+        """
+        data = {
+            'job_id': job_id,
+        }
+        response = self.client.post(
+            self.full_url('/canceljob/'),
+            data=data,
+            format='json'
+        )
+        if response.status_code != 200:
+            print(response.data)
+
+        # checking status code
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['status'], 'success')
+        self.assertEqual(response.data['job_status'], 'CANCELED')
+        return response
