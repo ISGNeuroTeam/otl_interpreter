@@ -1,5 +1,7 @@
 from datetime import datetime
 from functools import wraps
+from uuid import UUID
+from django.forms.models import model_to_dict
 
 from otl_interpreter.settings import get_cache
 from otl_interpreter.interpreter_db.models import NodeCommand, ComputingNode
@@ -109,6 +111,12 @@ class NodeCommandsManager:
                 ).value_list('uuid', flat=True)
             )
 
+    @staticmethod
+    def get_all_node_uuids():
+        return list(
+            ComputingNode.objects.values_list('uuid', flat=True)
+        )
+
     @_set_commands_updated_timestamp_decorator
     def register_node_commands(self, node_uuid, commands):
 
@@ -171,7 +179,7 @@ class NodeCommandsManager:
         Returns set of commands available for all computing nodes
         """
         return set(
-            NodeCommand.objects.filter(node__type=None).values_list('name', flat=True)
+            NodeCommand.objects.filter(node=None).values_list('name', flat=True)
         ).union(
             set(sys_computing_node_commands.keys())
         )
@@ -189,3 +197,14 @@ class NodeCommandsManager:
         # computing node must not be register commands with sys_ prefix. Those commands considered as system commands
         result = {key: value for key, value in result.items() if not key.startswith('sys_')}
         return result
+
+    @staticmethod
+    def get_computing_node_dict(computing_node_uuid: UUID):
+        """
+        Returns computing node info as dict
+        """
+        try:
+            node = ComputingNode.objects.get(uuid=computing_node_uuid)
+            return model_to_dict(node)
+        except ComputingNode.DoesNotExist:
+            return {}

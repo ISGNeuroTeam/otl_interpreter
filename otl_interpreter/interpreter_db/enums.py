@@ -20,9 +20,19 @@ class NodeJobStatus(models.TextChoices):
     SENT_TO_COMPUTING_NODE = 'SENT_TO_COMPUTING_NODE', _('Sent to computing node')
     DECLINED_BY_COMPUTING_NODE = 'DECLINED_BY_COMPUTING_NODE', _('Declined by computing node')
     RUNNING = 'RUNNING', _('Running')
+    WAITING_SAME_RESULT = 'WAITING_SAME_RESULT', _('Waiting the same result from other node job')
     FINISHED = 'FINISHED', _('Finished')
     CANCELED = 'CANCELED', _('Canceled')
     FAILED = 'FAILED', _('Failed')
+
+
+class ResultStatus(models.TextChoices):
+    CALCULATING = 'CALCULATING', _('Result is calculating')
+    CALCULATED = 'CALCULATED', _('Result is calculated')
+    NOT_EXIST = 'NOT_EXIST', _('Result is not exist')
+
+
+END_STATUSES = {NodeJobStatus.CANCELED, NodeJobStatus.FAILED, NodeJobStatus.FINISHED}
 
 
 class ComputingNodeType(models.TextChoices):

@@ -30,9 +30,10 @@ class OtlJobManager:
         root_job = NodeJob.objects.get(otl_job=otl_job, next_job=None)
         return root_job.result
 
-    def cancel_job(self, otl_job_id: UUID):
+    def cancel_job(self, otl_job_id: UUID, status_text=None):
         otl_job = OtlJob.objects.get(uuid=otl_job_id)
         otl_job.status = JobStatus.CANCELED
+        otl_job.status_text = status_text or 'Canceled by user'
         otl_job.save()
         return otl_job.status
 
@@ -41,8 +42,13 @@ class OtlJobManager:
         try:
             otl_job = OtlJob.objects.get(uuid=otl_job_uuid)
             if status == JobStatus.RUNNING:
-                status_text = OtlJobManager._form_running_status_message(otl_job) + \
-                              (status_text if status_text is not None else '')
+                status_text = (status_text if status_text is not None else '') +\
+                              OtlJobManager._form_running_status_message(otl_job)
+
+            if status == JobStatus.FAILED:
+                status_text = (status_text if status_text is not None else '') + \
+                                OtlJobManager._form_fail_status_message(otl_job)
+                log.error(f'Failed and status_text={status_text}')
             otl_job.status = status
             otl_job.status_text = status_text
             otl_job.save()
@@ -50,9 +56,30 @@ class OtlJobManager:
             log.error(f'Otl job with uuid: {otl_job_uuid} doesn\'t exist')
 
     @staticmethod
+    def _form_fail_status_message(otl_job: OtlJob):
+        failed_node_jobs = otl_job.nodejobs.filter(status=NodeJobStatus.FAILED)
+        status_text = '\n'.join(map(
+            lambda node_job: str(node_job.uuid.hex) + ': ' + node_job.status_text,
+            failed_node_jobs
+        ))
+        return status_text
+
+    @staticmethod
     def _form_running_status_message(otl_job: OtlJob):
         total_node_jobs = otl_job.nodejobs.count()
         running_node_jobs = otl_job.nodejobs.filter(status=NodeJobStatus.RUNNING).count()
         finished_node_jobs = otl_job.nodejobs.filter(status=NodeJobStatus.FINISHED).count()
         return f'Running {running_node_jobs} of {total_node_jobs} node_jobs. Finished {finished_node_jobs} '
+
+    @staticmethod
+    def delete_old_otl_query_info(older_than: datetime.timedelta):
+        """
+        Delete from database all otl queries that created before than <now - given timedelta>
+        Returns job id list
+        """
+        old_otl_queries = OtlJob.objects.filter(created_time__lt=datetime.datetime.now()-older_than)
+        uuids = list(old_otl_queries.values_list('uuid', flat=True))
+        old_otl_queries.delete()
+        return uuids
+
 

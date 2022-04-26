@@ -22,6 +22,9 @@ register_node = sync_to_async(node_commands_manager.register_node)
 register_node_commands = sync_to_async(node_commands_manager.register_node_commands)
 get_active_nodes = sync_to_async(node_commands_manager.get_active_nodes_uuids)
 node_deactivate = sync_to_async(node_commands_manager.node_deactivate)
+node_activate = sync_to_async(node_commands_manager.node_activate)
+all_node_uuids = sync_to_async(node_commands_manager.get_all_node_uuids)
+get_computing_node_dict = sync_to_async(node_commands_manager.get_computing_node_dict)
 
 
 class ComputingNodeControlHandler(MessageHandler):
@@ -120,6 +123,22 @@ class ComputingNodeControlHandler(MessageHandler):
 
     async def process_resource_status(self, computing_node_uuid, resource_status_command: ResourceStatusCommand):
         resources = resource_status_command.validated_data['resources']
+        # if not in computing node pool
+        # this happens when dispatcher was reloaded
+        if computing_node_uuid not in computing_node_pool:
+            # if registered then set active and add to computing node pool
+            if computing_node_uuid in await all_node_uuids():
+                node_activate(computing_node_uuid)
+                computing_node_dict = await get_computing_node_dict(computing_node_uuid)
+                computing_node_pool.add_computing_node(
+                    computing_node_uuid, computing_node_dict['type'],
+                    computing_node_dict['resources'],
+                    computing_node_dict['host_id'] == local_host_id
+                )
+            else:
+                log.error(f'Get unregistered computing node resource for computing node: {computing_node_uuid}')
+                return
+
         computing_node_pool.update_node_resources(computing_node_uuid, resources)
 
     async def process_unregister(self, computing_node_uuid, unregister_command: UnregisterComputingNodeCommand):

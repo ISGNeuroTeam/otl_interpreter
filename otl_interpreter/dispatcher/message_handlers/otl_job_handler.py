@@ -11,7 +11,7 @@ from otl_interpreter.interpreter_db.enums import NodeJobStatus
 
 from node_job_status_manager import NodeJobStatusManager
 
-from message_serializers.otl_job import OtlJobCommand, OtlJobCommandName, NewOtlJobCommand
+from message_serializers.otl_job import OtlJobCommand, OtlJobCommandName, NewOtlJobCommand, CancelOtlJobCommand
 
 from .abstract_message_handler import MessageHandler, Message
 
@@ -50,8 +50,7 @@ class OtlJobHandler(MessageHandler):
         new_otl_job_command_serializer = NewOtlJobCommand(data=new_otl_job_command_dict)
         if not new_otl_job_command_serializer.is_valid():
             log.error(f'Dispatcher get invalid otl job: {new_otl_job_command_serializer.data}')
-            log.error(new_otl_job_command_serializer.errors)
-            # TODO set node job and otl job error state
+            log.error(str(new_otl_job_command_serializer.errors))
             return
 
         for node_job in new_otl_job_command_serializer.validated_data['node_jobs']:
@@ -61,5 +60,16 @@ class OtlJobHandler(MessageHandler):
                 node_job
             )
 
-    async def cancel_otl_job(self, otl_job_uuid):
-        pass
+    async def cancel_otl_job(self, cancel_otl_job_command_dict):
+        cancel_otl_job_serializer = CancelOtlJobCommand(data=cancel_otl_job_command_dict)
+        if not cancel_otl_job_serializer.is_valid():
+            log.error(f'Dispatcher get invalid cancel command: {cancel_otl_job_serializer.data}')
+            log.error(str(cancel_otl_job_serializer.errors))
+            return
+
+        for node_job in cancel_otl_job_serializer.validated_data['node_jobs']:
+            await self.node_job_status_manager.change_node_job_status(
+                node_job['uuid'], NodeJobStatus.CANCELED,
+                'Cancled by user',
+                node_job
+            )

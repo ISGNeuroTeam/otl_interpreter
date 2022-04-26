@@ -95,10 +95,11 @@ class TestNodeJobError(BaseApiTest):
         self.assertEqual(len(canceled_pp_node_jobs), 1)
 
     def tearDown(self):
-        self.dispatcher_process.kill()
         self.spark_computing_node.kill()
         self.eep_computing_node.kill()
         self.pp_computing_node.kill()
+        self.dispatcher_process.kill()
+
 
 
 class TestNodeJobDecline(BaseApiTest):
@@ -159,10 +160,10 @@ class TestNodeJobDecline(BaseApiTest):
             )
 
     def tearDown(self):
-        self.dispatcher_process.kill()
         self.spark_computing_node.kill()
         self.eep_computing_node.kill()
         self.pp_computing_node.kill()
+        self.dispatcher_process.kill()
 
 
 class TestNodeResoucesOccupied(BaseApiTest):
@@ -185,7 +186,7 @@ class TestNodeResoucesOccupied(BaseApiTest):
         time.sleep(5)
 
     def test_node_resources_occupied(self):
-        # send request for olt
+        # send request for otl
         otl_query = "| otstats index='test_index' "
         response = BaseApiTest.make_job_success(self, otl_query)
 
@@ -195,7 +196,7 @@ class TestNodeResoucesOccupied(BaseApiTest):
             computing_node_type='SPARK'
         )[0]
 
-        # spark node has no resources so job moves beetwen three statuses
+        # spark node has no resources so job moves between three statuses
         self.assertIn(
             spark_node_job.status,
             [
@@ -205,8 +206,9 @@ class TestNodeResoucesOccupied(BaseApiTest):
         )
 
     def tearDown(self):
-        self.dispatcher_process.kill()
         self.spark_computing_node.kill()
+        self.dispatcher_process.kill()
+
 
 
 
@@ -230,25 +232,30 @@ class TestNodeReleaseResources(BaseApiTest):
         time.sleep(5)
 
     def tearDown(self):
-        self.dispatcher_process.kill()
         self.spark_computing_node.kill()
+        self.dispatcher_process.kill()
+
 
 
     def test_release_resources(self):
 
-        job_for_5_sec = "| otstats index='test_index' | otstats index='test_index2' | otstats index='test_index3' | otstats index='test_index4' | otstats index='test_index7'"
-        job_for_3_sec = "| otstats index='test_index' | otstats index='test_index2' | otstats index='test_index3'"
-        job_for_1_sec = "| otstats index='test_index'"
+        job_for_5_sec = "| otstats index='test_index%d' | otstats index='test_index%d2' | otstats index='test_index%d3' | otstats index='test_index%d4' | otstats index='test_index%d7'"
+        job_for_3_sec = "| otstats index='test_index%d' | otstats index='test_index%d2' | otstats index='test_index%d3'"
+        job_for_1_sec = "| otstats index='test_index%d'"
+
+
 
         jobs_id = [None]*4
 
         # send 4 jobs to occupy all resources
         for i in range(4):
-            response = BaseApiTest.make_job_success(self, job_for_3_sec if i == 3 else job_for_5_sec)
+            response = BaseApiTest.make_job_success(
+                self, job_for_3_sec % (i, i, i) if i == 3 else job_for_5_sec % (i, i, i, i, i)
+            )
             jobs_id[i] = response['job_id']
 
         # send 1 job and check it's in queue
-        response = BaseApiTest.make_job_success(self, job_for_1_sec)
+        response = BaseApiTest.make_job_success(self, job_for_1_sec % 1)
         time.sleep(2)
         job_in_queue = response['job_id']
 
@@ -300,8 +307,9 @@ class TestComputingNodeDown(BaseApiTest):
         time.sleep(5)
 
     def tearDown(self):
-        self.dispatcher_process.kill()
         self.spark_computing_node.kill()
+        self.dispatcher_process.kill()
+
 
     def test_computing_node_down(self):
 
@@ -357,8 +365,9 @@ class TestWithOneNode(BaseApiTest):
         time.sleep(5)
 
     def tearDown(self):
-        self.dispatcher_process.kill()
         self.spark_computing_node.kill()
+        self.dispatcher_process.kill()
+
 
     def test_system_command_usage(self):
         # send request for olt

@@ -15,9 +15,17 @@ from otl_interpreter.interpreter_db import (
     otl_job_manager as db_otl_job_manager, node_job_manager as db_node_job_manager
 )
 
-from otl_interpreter.interpreter_db.enums import NodeJobStatus, JobStatus
+from otl_interpreter.interpreter_db.enums import NodeJobStatus, JobStatus, ResultStatus
 
 log = getLogger('otl_interpreter')
+
+
+class UUIDEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, UUID):
+            # if the obj is uuid, we simply return the value of uuid
+            return obj.hex
+        return json.JSONEncoder.default(self, obj)
 
 
 class QueryError(Exception):
@@ -60,6 +68,7 @@ class OtlJobManager:
 
         except SyntaxError as err:
             log.error(f'Query: {otl_query}\n \nUser_guid: {user_guid} Syntax error:\n {str(err)}')
+            db_otl_job_manager.change_otl_job_status(otl_job_uuid, JobStatus.FAILED, f'Syntax error:\n {str(err)}')
             raise QueryError(f'Translation error:\n {err.args[0]}') from err
 
         db_otl_job_manager.change_otl_job_status(
@@ -71,6 +80,7 @@ class OtlJobManager:
             top_node_job_tree = plan_job(translated_query, tws, twf, shared_post_processing, subsearch_is_node_job)
         except JobPlanException as err:
             log.info(f'Query: {otl_query}\n Job planer error: {str(err)}')
+            db_otl_job_manager.change_otl_job_status(otl_job_uuid, JobStatus.FAILED, f'Job planer error: {str(err)}')
             raise QueryError(err.args[0]) from err
 
         db_node_job_manager.create_node_jobs(top_node_job_tree, otl_job_uuid, cache_ttl)
@@ -102,7 +112,8 @@ class OtlJobManager:
                         'status': NodeJobStatus.PLANNED,
                         'computing_node_type': node_job_tree.computing_node_type,
                         'commands': node_job_tree.as_command_dict_list(),
-                        'storage': node_job_tree.result_address.storage_type
+                        'storage': node_job_tree.result_address.storage_type,
+                        'path': node_job_tree.result_address.path,
                     }
                     for node_job_tree in independent_node_job_trees
                 ]
@@ -119,21 +130,23 @@ class OtlJobManager:
 
     @staticmethod
     def cancel_job(job_id: UUID):
+        db_otl_job_manager.cancel_job(job_id)
         # send message to dispatcher to cancel node jobs
+        unfinished_node_jobs = db_node_job_manager.get_unfinished_node_jobs_for_otl_job(job_id)
         message = json.dumps(
             {
                 'command_name': 'CANCEL_JOB',
                 'command': {
-                    'uuid': job_id.hex
+                    'node_jobs': unfinished_node_jobs
                 }
-            }
+            },  cls=UUIDEncoder
         )
         with Producer() as producer:
             message_id = producer.send('otl_job', message)
 
     def get_result(self, job_id: UUID):
         result = db_otl_job_manager.get_result(job_id)
-        if not result.calculated:
+        if not result.status == ResultStatus.CALCULATED:
             raise QueryError("Result is not ready yet")
 
         data_path = f"{result.storage}/{result.path}/jsonl/{self.data_path}"
@@ -146,7 +159,7 @@ otl_job_manager = OtlJobManager(
     int(ini_config['otl_job_defaults']['cache_ttl']),
     int(ini_config['otl_job_defaults']['timeout']),
     bool(ini_config['otl_job_defaults']['shared_post_processing']),
-    ini_config['otl_job_defaults']['data_path'],
-    ini_config['otl_job_defaults']['schema_path']
+    ini_config['result_managing']['data_path'],
+    ini_config['result_managing']['schema_path']
 )
 
