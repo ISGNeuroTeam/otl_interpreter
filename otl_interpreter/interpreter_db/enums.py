@@ -29,7 +29,7 @@ class NodeJobStatus(models.TextChoices):
 class ResultStatus(models.TextChoices):
     CALCULATING = 'CALCULATING', _('Result is calculating')
     CALCULATED = 'CALCULATED', _('Result is calculated')
-    NOT_EXIST = 'NOT_EXIST', _('Result is not exist')
+    NOT_EXIST = 'NOT_EXIST', _('Result do not exist')
 
 
 END_STATUSES = {NodeJobStatus.CANCELED, NodeJobStatus.FAILED, NodeJobStatus.FINISHED}
