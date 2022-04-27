@@ -58,7 +58,7 @@ class NodeCommandAdmin(ModelAdmin):
 
 @register(NodeJobResult)
 class NodeJobResultAdmin(ModelAdmin):
-    list_display = ['path']
+    list_display = ['path', 'status']
 
 
 
