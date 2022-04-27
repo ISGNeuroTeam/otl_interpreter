@@ -26,7 +26,8 @@ allowed_state_transfer_table = {
         NodeJobStatus.READY_TO_EXECUTE, NodeJobStatus.CANCELED
     },
     NodeJobStatus.READY_TO_EXECUTE: {
-        NodeJobStatus.IN_QUEUE, NodeJobStatus.SENT_TO_COMPUTING_NODE, NodeJobStatus.FINISHED, NodeJobStatus.CANCELED
+        NodeJobStatus.IN_QUEUE, NodeJobStatus.SENT_TO_COMPUTING_NODE, NodeJobStatus.FINISHED, NodeJobStatus.CANCELED,
+        NodeJobStatus.WAITING_SAME_RESULT
     },
     NodeJobStatus.IN_QUEUE: {
         NodeJobStatus.TAKEN_FROM_QUEUE, NodeJobStatus.CANCELED
