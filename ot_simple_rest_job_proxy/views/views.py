@@ -7,7 +7,7 @@ from jwt.exceptions import PyJWTError
 
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import get_user_model
-from django.http import HttpResponse
+from django.http import HttpResponse, QueryDict
 
 from rest.response import ErrorResponse, Response, status
 
@@ -15,8 +15,6 @@ from ot_simple_rest_job_proxy.job_proxy_manager import job_proxy_manager
 from ot_simple_rest_job_proxy.settings import ini_config
 
 from .proxy import proxy_view
-
-
 
 User = get_user_model()
 
@@ -50,7 +48,12 @@ def makejob(request):
     # django forbids access to body property after reading POST,
     # so to get post data without error in proxy_view we are parsing body
     data = BytesIO(request.body)
-    post_dict, _ = request.parse_file_upload(request.META, data)
+    if request.content_type == 'application/x-www-form-urlencoded':
+        post_dict = QueryDict(request._body, encoding=request._encoding)
+    elif request.content_type == 'multipart/form-data':
+        post_dict, _ = request.parse_file_upload(request.META, data)
+    else:
+        post_dict = QueryDict(encoding=request._encoding)
 
     query = post_dict['original_otl']
     tws = post_dict['tws']
