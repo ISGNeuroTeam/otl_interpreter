@@ -25,17 +25,30 @@ node_deactivate = sync_to_async(node_commands_manager.node_deactivate)
 node_activate = sync_to_async(node_commands_manager.node_activate)
 all_node_uuids = sync_to_async(node_commands_manager.get_all_node_uuids)
 get_computing_node_dict = sync_to_async(node_commands_manager.get_computing_node_dict)
+get_active_nodes_list = sync_to_async(node_commands_manager.get_active_nodes_list)
 
 
 class ComputingNodeControlHandler(MessageHandler):
     def __init__(self):
         self.node_job_status_manager = NodeJobStatusManager()
+        # if dispatcher was stopped, registered computing nodes might be present in database
 
     async def __aenter__(self):
+        await self._load_computing_nodes_from_db()
         return self
 
     async def __aexit__(self, exc_type, exc_value, exc_traceback):
         pass
+
+    @staticmethod
+    async def _load_computing_nodes_from_db():
+        active_nodes = await get_active_nodes_list()
+        for node in active_nodes:
+            computing_node_pool.add_computing_node(
+                node['uuid'], node['type'],
+                node['resources'],
+                node['host_id'] == local_host_id
+            )
 
     async def process_message(self, message: Message) -> None:
         log.debug(f'computing_node_control recieved message: {message.value}')
@@ -111,7 +124,7 @@ class ComputingNodeControlHandler(MessageHandler):
             except NodeCommandsError as err:
                 log.error(f'Fail to register computing node {computing_node_uuid}: {str(err)}')
 
-        # add compuging node information in computing node pool
+        # add computing node information in computing node pool
         computing_node_pool.add_computing_node(
             computing_node_uuid, register_command.validated_data['computing_node_type'],
             register_command.validated_data['resources'],

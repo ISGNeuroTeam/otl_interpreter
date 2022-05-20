@@ -112,6 +112,18 @@ class NodeCommandsManager:
             )
 
     @staticmethod
+    def get_active_nodes_list():
+        """
+        Returns list of dictionaries representing active computing nodes
+        """
+        return list(
+            map(
+                model_to_dict,
+                ComputingNode.objects.filter(active=True)
+            )
+        )
+
+    @staticmethod
     def get_all_node_uuids():
         return list(
             ComputingNode.objects.values_list('uuid', flat=True)

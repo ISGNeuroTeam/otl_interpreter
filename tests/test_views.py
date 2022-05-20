@@ -101,7 +101,6 @@ class TestGetJobResult(BaseApiTest):
         self.pp_computing_node.kill()
         self.dispatcher_process.kill()
 
-
     def test_getresults_no_errors(self):
         otl_query = "| otstats index='test_index' | join [ | collect index=some_index ] | pp_command2 | readfile 1,2,3 | sum 1,2,3"
         response = BaseApiTest.make_job_success(self, otl_query)
@@ -201,7 +200,6 @@ class TestCheckJobView(BaseApiTest):
         self.spark_computing_node.kill()
         self.dispatcher_process.kill()
 
-
     def test_check_job(self):
         otl_query = "| otstats index='test_index' | otstats index='test_index2' | otstats index='test_index3' | otstats index='test_index4' | otstats index='test_index5' | join [ | collect index=some_index | otstats index='test_index6' | otstats index='test_index7'] "
         response = BaseApiTest.make_job_success(self, otl_query)
@@ -265,7 +263,6 @@ class TestCancelJobView(BaseApiTest):
         self.spark_computing_node.kill()
         self.dispatcher_process.kill()
 
-
     def test_cancel_job(self):
         otl_query = ' '.join(["| otstats  index = 'test_index%d'" % i for i in range(20)])
 
@@ -274,13 +271,13 @@ class TestCancelJobView(BaseApiTest):
         job_id = response['job_id']
         otl_job = OtlJob.objects.get(uuid=job_id)
 
-        for _ in range(5):
+        for _ in range(10):
             if otl_job.status == JobStatus.RUNNING:
                 break
             time.sleep(1)
             otl_job.refresh_from_db()
         else:
-            raise TimeoutError("Job hasn't achieved running state in 5 seconds")
+            raise TimeoutError("Job hasn't achieved running state in 10 seconds")
 
         # check that otl job is running
         time.sleep(2)
