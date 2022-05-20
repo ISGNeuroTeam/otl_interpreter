@@ -15,15 +15,17 @@ class NodeJobManager:
     def __init__(self, default_cache_ttl):
         self.default_cache_ttl = default_cache_ttl
 
-    def create_node_jobs(self, root_job_tree, otl_job_uuid, cache_ttl=None):
+    def create_node_jobs(self, root_job_tree, otl_job_uuid, otl_job_cache_ttl, node_job_cache_ttl=None, ):
         """
         Creates in database NodeJob tree
         :param root_job_tree: job planer NodeJobTree
         :param otl_job_uuid: otl job uuid
-        :param cache_ttl: time to store node job results
+        :param otl_job_cache_ttl: time to store root node job results
+        :param node_job_cache_ttl: time to store node job results
         :return:
         """
-        cache_ttl = cache_ttl or self.default_cache_ttl
+        node_job_cache_ttl = max(node_job_cache_ttl or self.default_cache_ttl, 30)
+
         otl_job = OtlJob.objects.get(uuid=otl_job_uuid)
         node_job_for_job_tree = {}
 
@@ -31,8 +33,10 @@ class NodeJobManager:
 
             if node_job_tree.parent:
                 parent_node_job = node_job_for_job_tree[node_job_tree.parent]
+                cache_ttl = node_job_cache_ttl
             else:
                 parent_node_job = None
+                cache_ttl = otl_job_cache_ttl
 
             result_address = node_job_tree.result_address
             if result_address:
@@ -64,7 +68,8 @@ class NodeJobManager:
             node_job_result = NodeJobResult.objects.get(
                 path=path, storage=storage_type
             )
-
+            # not allow new query reduce ttl of old query
+            node_job_result.ttl = timedelta(seconds=max(node_job_result.ttl.seconds, cache_ttl))
             log.info(f'Find node job with same result, it is in {node_job_result.status} state')
 
         except NodeJobResult.DoesNotExist:

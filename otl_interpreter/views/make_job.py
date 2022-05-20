@@ -24,7 +24,7 @@ class MakeJobView(APIView):
                 request.user.guid,
                 tws=make_job_serializer.validated_data['tws'],
                 twf=make_job_serializer.validated_data['twf'],
-                cache_ttl=make_job_serializer.validated_data['cache_ttl'],
+                otl_job_cache_ttl=make_job_serializer.validated_data['cache_ttl'],
                 timeout=make_job_serializer.validated_data['timeout'],
                 shared_post_processing=make_job_serializer.validated_data['shared_post_processing'],
                 subsearch_is_node_job=make_job_serializer.validated_data['subsearch_is_node_job'],

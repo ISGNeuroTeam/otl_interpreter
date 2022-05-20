@@ -41,7 +41,7 @@ class OtlJobManager:
         self.schema_path = schema_path
 
     def makejob(
-            self, otl_query, user_guid, tws, twf, cache_ttl=None,
+            self, otl_query, user_guid, tws, twf, otl_job_cache_ttl=None,
             timeout=None, shared_post_processing=None, subsearch_is_node_job=None,
     ):
         """
@@ -49,19 +49,20 @@ class OtlJobManager:
         :param user_guid: user guid
         :param tws: time window start
         :param twf: time window finish
-        :param cache_ttl: number of seconds to keep node job results
+        :param otl_job_cache_ttl: number of seconds to keep node job results
         :param timeout: timeout for otl job
         :param shared_post_processing: result will be in shared storage or local
         :param subsearch_is_node_job: create new node job for each subsearch or not
         """
-        cache_ttl = cache_ttl or self.default_cache_ttl
+        node_job_cache_ttl = otl_job_cache_ttl
+        otl_job_cache_ttl = max(otl_job_cache_ttl or self.default_cache_ttl, 30)
         # TODO create check of timeouts
         timeout = timeout or self.default_timeout
 
         if shared_post_processing is None:
             shared_post_processing = self.default_shared_post_processing
 
-        otl_job_uuid = db_otl_job_manager.make_otl_job(otl_query, user_guid, tws, twf, cache_ttl)
+        otl_job_uuid = db_otl_job_manager.make_otl_job(otl_query, user_guid, tws, twf, otl_job_cache_ttl)
 
         try:
             translated_query = translate_otl(otl_query)
@@ -83,7 +84,7 @@ class OtlJobManager:
             db_otl_job_manager.change_otl_job_status(otl_job_uuid, JobStatus.FAILED, f'Job planer error: {str(err)}')
             raise QueryError(err.args[0]) from err
 
-        db_node_job_manager.create_node_jobs(top_node_job_tree, otl_job_uuid, cache_ttl)
+        db_node_job_manager.create_node_jobs(top_node_job_tree, otl_job_uuid, otl_job_cache_ttl, node_job_cache_ttl)
 
         db_otl_job_manager.change_otl_job_status(
             otl_job_uuid, JobStatus.PLANNED,
