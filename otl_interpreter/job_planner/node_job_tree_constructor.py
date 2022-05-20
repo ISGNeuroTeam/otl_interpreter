@@ -199,8 +199,9 @@ def _define_node_job_tree_for_previous_command_tree_in_pipeline(
 
     node_job_tree = node_job_tree_storage.get_node_job_tree_for_command_tree(command_tree)
 
-    if nodejob_for_subsearch_was_created or command_tree.previous_command_tree_in_pipeline.computing_node_type != \
-            command_tree.computing_node_type:
+    if nodejob_for_subsearch_was_created or \
+            command_tree.previous_command_tree_in_pipeline.computing_node_type != command_tree.computing_node_type or \
+            command_tree.previous_command_tree_in_pipeline.always_new_node_job:
 
         read_sys_command_tree = _create_new_node_job_for_child_command_tree(
             command_tree, command_tree.previous_command_tree_in_pipeline, node_job_tree_storage,

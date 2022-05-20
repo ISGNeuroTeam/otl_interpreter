@@ -32,6 +32,10 @@ class CommandTree(AbstractTree):
 
         self.computing_node_type = None
 
+        # command tree constructor can set this flag
+        # node job tree constructor consider it
+        self.always_new_node_job = False
+
         if previous_command_tree_in_pipeline is not None:
             self.set_previous_command_tree_in_pipeline(previous_command_tree_in_pipeline)
 
