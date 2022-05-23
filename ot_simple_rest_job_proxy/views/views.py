@@ -59,13 +59,16 @@ def makejob(request):
     tws = post_dict['tws']
     twf = post_dict['twf']
     cache_ttl = post_dict['cache_ttl']
+    timeout = post_dict.get('timeout', '0')
 
     new_platform_query_index = job_proxy_manager.is_new_platform_query(query)
 
     if not new_platform_query_index:
         return proxy_view(request, makejob_uri)
 
-    log.info(f'Get makejob request for new platform{query}, tws={tws}, twf={twf}, cache_ttl={cache_ttl}')
+    log.info(
+        f'Get makejob request for new platform{query}, tws={tws}, twf={twf}, cache_ttl={cache_ttl}, timeout={timeout}'
+    )
 
     eva_token = request.COOKIES.get('eva_token')
     if not eva_token:
@@ -77,7 +80,7 @@ def makejob(request):
 
     username = token_payload['username']
     user = get_or_create_user(username)
-    resp = job_proxy_manager.makejob(query[new_platform_query_index:], user.guid, tws, twf, cache_ttl)
+    resp = job_proxy_manager.makejob(query[new_platform_query_index:], user.guid, tws, twf, cache_ttl, timeout)
     return HttpResponse(json.dumps(resp))
 
 

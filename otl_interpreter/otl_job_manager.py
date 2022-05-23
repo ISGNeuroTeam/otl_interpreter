@@ -56,8 +56,8 @@ class OtlJobManager:
         """
         node_job_cache_ttl = otl_job_cache_ttl
         otl_job_cache_ttl = max(otl_job_cache_ttl or self.default_cache_ttl, 30)
-        # TODO create check of timeouts
-        timeout = timeout or self.default_timeout
+        if timeout is None:
+            timeout = self.default_timeout
 
         if shared_post_processing is None:
             shared_post_processing = self.default_shared_post_processing
