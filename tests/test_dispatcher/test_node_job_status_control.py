@@ -278,7 +278,7 @@ class TestNodeReleaseResources(BaseApiTest):
         self.assertIn(response_data['job_status'], [JobStatus.RUNNING, JobStatus.FINISHED])
 
         if response_data['job_status'] == JobStatus.RUNNING:
-            time.sleep(2)
+            time.sleep(5)
             response = self.client.get(
                 self.full_url(f'/checkjob/?job_id={job_in_queue}'),
             )

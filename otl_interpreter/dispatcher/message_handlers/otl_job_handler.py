@@ -70,6 +70,6 @@ class OtlJobHandler(MessageHandler):
         for node_job in cancel_otl_job_serializer.validated_data['node_jobs']:
             await self.node_job_status_manager.change_node_job_status(
                 node_job['uuid'], NodeJobStatus.CANCELED,
-                'Cancled by user',
+                'Canceled by user or by timeout',
                 node_job
             )

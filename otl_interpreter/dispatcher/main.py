@@ -65,6 +65,7 @@ async def health_check():
 async def main():
 
     tasks = [
+        # broadcast is true, all dispatcher instances  will get information about nodes
         asyncio.create_task(
             consume_messages('computing_node_control', ComputingNodeControlHandler, {'broadcast': True})
         ),

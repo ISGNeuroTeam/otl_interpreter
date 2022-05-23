@@ -97,6 +97,9 @@ class CommandTreeConstructor:
             async_subsearch_tree, subsearch_awaited_command_trees = \
                 self.create_command_tree(self.async_subsearches[await_name].value)
 
+            # mark that tree must be in separate node job in any case
+            async_subsearch_tree.always_new_node_job = True
+
             self.processed_async_subsearches.add(await_name)
             del self.async_subsearches[await_name]
 

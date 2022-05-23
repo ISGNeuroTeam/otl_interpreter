@@ -22,7 +22,7 @@ new_status_to_old_status = {
     'PLANNED': 'running',
     'RUNNING': 'running',
     'FINISHED': 'success',
-    'CANCELED': 'canceled',
+    'CANCELED': 'failed',
     'FAILED': 'failed',
 }
 
@@ -37,7 +37,7 @@ class JobProxyManager:
         # mapping jobid hex string to otl_query_dict_key
         self.new_platform_queries_job_id = RedisDict(redis=redis, key='job_proxy_manager_queries_id')
 
-    def makejob(self, otl_query, user_guid: UUID, tws: str, twf: str, cache_ttl: str):
+    def makejob(self, otl_query, user_guid: UUID, tws: str, twf: str, cache_ttl: str, timeout: str):
         """
         Use otl job manager to make a query
         Returns dictionary like makejob endpoint of ot_simple_rest
@@ -46,6 +46,7 @@ class JobProxyManager:
         # convert time to datetime
         tws = datetime.datetime.fromtimestamp(int(tws))
         twf = datetime.datetime.fromtimestamp(int(twf))
+        timeout = int(timeout)
 
         cache_ttl = int(cache_ttl)
         if otl_query_dict_key in self.new_platform_queries and\
@@ -61,7 +62,7 @@ class JobProxyManager:
 
         # if result for this otl job not exists make job for it
         try:
-            job_id, storage_type, path = otl_job_manager.makejob(otl_query, user_guid, tws, twf, cache_ttl)
+            job_id, storage_type, path = otl_job_manager.makejob(otl_query, user_guid, tws, twf, cache_ttl, timeout)
 
             self.new_platform_queries_job_id[job_id.hex] = otl_query_dict_key
 

@@ -51,9 +51,11 @@ class JobPlanner:
             for node_type in self.node_type_priority
         }
 
-
+        # exclude from computing node type priority list types that not registered
+        node_types = node_commands_manager.get_node_types()
+        node_type_priority = [x for x in self.node_type_priority if x in node_types]
         define_computing_node_type_for_command_tree(
-            top_command_tree, self.node_type_priority, command_name_set
+            top_command_tree, node_type_priority, command_name_set
         )
 
         node_job_tree = make_node_job_tree(top_command_tree, tws, twf, shared_post_processing, subsearch_is_node_job)
