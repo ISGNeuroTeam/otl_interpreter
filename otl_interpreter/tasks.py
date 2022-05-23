@@ -83,3 +83,15 @@ def remove_old_otl_query_info_from_db():
     # clear redis dictionaries for job proxy manager
     for uuid in uuids:
         job_proxy_manager.delete_query_info(uuid.hex)
+
+
+@app.task()
+def cancel_otl_job_by_timeout():
+    """
+    Finds running otl tasks and cancel them if timeout expired
+    """
+    job_uuids_with_expired_timeout = db_otl_job_manager.get_otl_jobs_with_expired_timeout()
+    for job_uuid in job_uuids_with_expired_timeout:
+        log.info(f'Found otl job with expired timeout, job uuid: {job_uuid}')
+        otl_job_manager.cancel_job(job_uuid, 'Canceled by timeout')
+

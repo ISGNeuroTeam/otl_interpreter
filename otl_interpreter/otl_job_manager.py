@@ -62,7 +62,7 @@ class OtlJobManager:
         if shared_post_processing is None:
             shared_post_processing = self.default_shared_post_processing
 
-        otl_job_uuid = db_otl_job_manager.make_otl_job(otl_query, user_guid, tws, twf, otl_job_cache_ttl)
+        otl_job_uuid = db_otl_job_manager.make_otl_job(otl_query, user_guid, tws, twf, otl_job_cache_ttl, timeout)
 
         try:
             translated_query = translate_otl(otl_query)
@@ -130,8 +130,8 @@ class OtlJobManager:
         return db_otl_job_manager.check_job(job_id)
 
     @staticmethod
-    def cancel_job(job_id: UUID):
-        db_otl_job_manager.cancel_job(job_id)
+    def cancel_job(job_id: UUID, status_text=None):
+        db_otl_job_manager.cancel_job(job_id, status_text)
         # send message to dispatcher to cancel node jobs
         unfinished_node_jobs = db_node_job_manager.get_unfinished_node_jobs_for_otl_job(job_id)
         message = json.dumps(

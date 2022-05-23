@@ -21,14 +21,17 @@ class OtlJob(TimeStampedModel):
     twf = models.DateTimeField()
 
     ttl = models.DurationField(
-        'ttl', default=60
+        'ttl', default=datetime.timedelta(seconds=60)
+    )
+    timeout = models.DurationField(
+        'timeout', default=datetime.timedelta(seconds=0)
     )
     user_guid = models.UUIDField(
          null=False
     )
     status = models.CharField(
         max_length=255,
-        choices=JobStatus.choices, default=JobStatus.NEW
+        choices=JobStatus.choices, default=JobStatus.NEW, db_index=True
     )
     status_text = models.TextField(null=True)
 

@@ -2,7 +2,7 @@ import logging
 import datetime
 
 from uuid import UUID
-
+from django.db.models import F
 from .models import OtlJob, NodeJob
 from .enums import JobStatus, NodeJobStatus
 
@@ -10,13 +10,14 @@ log = logging.getLogger('otl_interpreter.interpreter_db')
 
 
 class OtlJobManager:
-    def make_otl_job(self, otl_query, user_guid, tws, twf, ttl):
+    def make_otl_job(self, otl_query, user_guid, tws, twf, ttl, timeout):
         """
         Creates new OtlQuery instance in database 
         """
         otl_job = OtlJob(
             query=otl_query, user_guid=user_guid,
-            tws=tws, twf=twf, ttl=datetime.timedelta(seconds=ttl), status=JobStatus.NEW
+            tws=tws, twf=twf, ttl=datetime.timedelta(seconds=ttl),
+            status=JobStatus.NEW, timeout=datetime.timedelta(seconds=timeout)
         )
         otl_job.save()
         return otl_job.uuid
@@ -82,4 +83,16 @@ class OtlJobManager:
         old_otl_queries.delete()
         return uuids
 
+    @staticmethod
+    def get_otl_jobs_with_expired_timeout():
+        """
+        Finds running otl jobs with expired timeout
+        Returns list of otl job uuids
+        """
+        jobs_with_expired_timeout = OtlJob.objects.filter(
+            status=JobStatus.RUNNING
+        ).exclude(
+            timeout=datetime.timedelta(seconds=0)
+        ).filter(created_time__lt=datetime.datetime.now() - F('timeout')).values_list('uuid', flat=True)
+        return list(jobs_with_expired_timeout)
 
