@@ -172,14 +172,17 @@ class NodeJobManager:
     @staticmethod
     def get_node_job_dict(node_job):
         """
-        returns node job dictionary representation
+        returns node job dictionary representation or None if node job does't exist
         :param node_job: NodeJob instance or node job uuid
         :param node_job: NodeJob instance
         :return:
         """
-
-        if not isinstance(node_job, NodeJob):
-            node_job = NodeJob.objects.get(uuid=node_job)
+        try:
+            if not isinstance(node_job, NodeJob):
+                node_job = NodeJob.objects.get(uuid=node_job)
+        except NodeJob.DoesNotExist:
+            log.error(f'Node job with uuid={str(node_job)} does not exist')
+            return None
 
         return {
             'uuid': node_job.uuid,
