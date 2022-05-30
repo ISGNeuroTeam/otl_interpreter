@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.4] - 2022-05-30
+### Changed
+- `use_timewindow` flag stored in NodeCommand model now
+### Added
+- Add `idempotent` flag to command model. If `False` then `__timestamp__` argument will be added in parsed command.
+
 ## [1.0.3] - 2022-05-23
 ### Fixed
 - Planning node job for inactive computing nodes was fixed

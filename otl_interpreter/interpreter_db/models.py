@@ -91,6 +91,9 @@ class NodeCommand(models.Model):
         max_length=255
     )
     syntax = models.JSONField()
+    description = models.TextField(null=True, blank=True)
+    idempotent = models.BooleanField(default=True)
+    use_timewindow = models.BooleanField(default=False)
 
     resource_necessity = models.JSONField(
         null=True

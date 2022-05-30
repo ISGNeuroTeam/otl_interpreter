@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from functools import wraps
 from uuid import UUID
@@ -7,6 +8,9 @@ from otl_interpreter.settings import get_cache
 from otl_interpreter.interpreter_db.models import NodeCommand, ComputingNode
 
 from otl_interpreter.core_commands import job_planer_commands, sys_computing_node_commands
+
+
+log = logging.getLogger('otl_interpreter.interpreter_db')
 
 
 class NodeCommandsError(ValueError):
@@ -143,26 +147,34 @@ class NodeCommandsManager:
         except ComputingNode.DoesNotExist:
             raise NodeCommandsError(f'Node with uuid {node_uuid} was not registered')
 
-        for command_name, command_syntax in commands.items():
+        for command_name, command_descr in commands.items():
+            use_timewindow = command_descr.pop('use_timewindow', False)
+            idempotent = command_descr.pop('idempotent', True)
+            description = command_descr.pop('description', '')
             NodeCommand.objects.update_or_create(
                 defaults={
-                    'syntax': command_syntax,
+                    'syntax': command_descr,
                     'active': True,
                 },
+                use_timewindow=use_timewindow,
+                idempotent=idempotent,
+                description=description,
                 node=computing_node,
                 name=command_name,
             )
 
     @staticmethod
-    def is_command_need_timewindow(command_name):
+    def get_command_attributes(command_name):
         """
-        Returns true if command need earliest and latest timestpaps arguments to be added
+        Returns dictionary with use_timewindow and idempotent fields
         """
-        # todo optimize this, without database
+
         command = NodeCommand.objects.filter(name=command_name).first()
         if command:
-            return command.syntax.get('use_timewindow', False)
-        return False
+            return {'use_timewindow': command.use_timewindow, 'idempotent': command.idempotent}
+        if not command_name.startswith('sys_'):
+            log.error(f'Command with name "{command_name}" not found in database')
+        return {'use_timewindow': False, 'idempotent': True}
 
     @staticmethod
     def get_node_types():

@@ -367,6 +367,9 @@ class NodeJobStatusManager:
 
         if node_job_dict is None:
             node_job_dict = node_job_manager.get_node_job_dict(node_job_uuid)
+            if node_job_dict is None:
+                log.error(f'Impossible to change node job status with uuid {str(node_job_uuid)}, node job not exist')
+                return
 
         cur_status = node_job_dict['status']
 

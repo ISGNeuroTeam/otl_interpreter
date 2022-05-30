@@ -1,3 +1,5 @@
+import datetime
+
 from .node_job_tree import NodeJobTree
 from .command_tree import CommandTree
 from .result_address import ResultAddress
@@ -40,7 +42,8 @@ def make_node_job_tree(top_command_tree, tws=None, twf=None, shared_post_process
     _make_address_for_result_node_job(top_node_job, shared_post_processing)
 
     # set time window for commands
-    _set_timewindow_to_commands(top_node_job, tws, twf)
+    # set timestamp to not idempotent commands
+    _set_arguments_to_commands(top_node_job, tws, twf)
 
     # calculate result dataframe paths as hash of command tree json
     _set_read_write_commands_paths(top_node_job)
@@ -93,16 +96,20 @@ def _set_read_write_commands_paths(top_node_job):
             node_job.set_path_for_result_address(path)
 
 
-def _set_timewindow_to_commands(top_node_job, tws, twf):
+def _set_arguments_to_commands(top_node_job, tws, twf):
     """
-    Sets additional named arguments for all commands with timewindow
+    Sets additional named arguments for all commands with use_timewindow (earliest, latest) and idempotent flag
     """
     for node_job in top_node_job.parent_first_order_traverse_iterator():
         for command in node_job.command_iterator():
-            if node_commands_manager.is_command_need_timewindow(command.name):
+            command_attr = node_commands_manager.get_command_attributes(command.name)
+            if command_attr['use_timewindow']:
                 command.add_argument('earliest', value=int(tws.timestamp()), key='earliest')
                 command.add_argument('latest', value=int(twf.timestamp()), key='latest')
-
+            if command_attr['idempotent']:
+                command.add_argument(
+                    '__timestamp__', value=int(datetime.datetime.now().timestamp()), key='__timestamp__'
+                )
 
 def _put_subsearches_to_command_arguments(top_node_job):
     """
