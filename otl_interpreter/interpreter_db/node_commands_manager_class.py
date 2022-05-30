@@ -168,10 +168,12 @@ class NodeCommandsManager:
         """
         Returns dictionary with use_timewindow and idempotent fields
         """
+
         command = NodeCommand.objects.filter(name=command_name).first()
         if command:
             return {'use_timewindow': command.use_timewindow, 'idempotent': command.idempotent}
-        log.error(f'Command with name "{command_name}" not found in database')
+        if not command_name.startswith('sys_'):
+            log.error(f'Command with name "{command_name}" not found in database')
         return {'use_timewindow': False, 'idempotent': True}
 
     @staticmethod
