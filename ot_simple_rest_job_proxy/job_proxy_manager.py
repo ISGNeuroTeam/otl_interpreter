@@ -57,7 +57,7 @@ class JobProxyManager:
 
             # if result already exists and calculating or already calculated return success status
             # because check query will be return result of previous task
-            if end_node_job_result.status in (ResultStatus.CALCULATED, ResultStatus.CALCULATED):
+            if end_node_job_result.status in (ResultStatus.CALCULATING, ResultStatus.CALCULATED):
                 return {'status': 'success', 'timestamp': datetime.datetime.now().isoformat()}
 
         # if result for this otl job not exists make job for it
