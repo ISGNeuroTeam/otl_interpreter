@@ -240,8 +240,13 @@ class NodeJobStatusManager:
         otl_job_uuid = node_job_manager.get_otl_job_uuid(node_job_uuid)
         otl_job_manager.change_otl_job_status(otl_job_uuid, JobStatus.RUNNING)
 
+        result_status = node_job_manager.get_result_status(node_job_dict['storage'], node_job_dict['path'])
+
         # change result status
-        node_job_manager.set_result_status(node_job_dict['storage'], node_job_dict['path'], ResultStatus.CALCULATING)
+        if result_status == ResultStatus.NOT_EXIST:
+            node_job_manager.set_result_status(
+                node_job_dict['storage'], node_job_dict['path'], ResultStatus.CALCULATING
+            )
 
     def _on_waiting_same_result(self, node_job_uuid, node_job_dict=None):
         pass
