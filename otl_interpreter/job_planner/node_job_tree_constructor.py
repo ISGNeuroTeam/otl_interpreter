@@ -106,7 +106,7 @@ def _set_arguments_to_commands(top_node_job, tws, twf):
             if command_attr['use_timewindow']:
                 command.add_argument('earliest', value=int(tws.timestamp()), key='earliest')
                 command.add_argument('latest', value=int(twf.timestamp()), key='latest')
-            if command_attr['idempotent']:
+            if not command_attr['idempotent']:
                 command.add_argument(
                     '__timestamp__', value=int(datetime.datetime.now().timestamp()), key='__timestamp__'
                 )

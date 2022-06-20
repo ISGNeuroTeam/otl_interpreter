@@ -147,8 +147,9 @@ class OtlJobManager:
 
     def get_result(self, job_id: UUID):
         result = db_otl_job_manager.get_result(job_id)
-        if not result.status == ResultStatus.CALCULATED:
-            raise QueryError("Result is not ready yet")
+        status, status_text = db_otl_job_manager.check_job(job_id)
+        if status != JobStatus.FINISHED:
+            raise QueryError(f"Result is not ready yet. {status}: {status_text}")
 
         data_path = f"{result.storage}/{result.path}/jsonl/{self.data_path}"
         schema_path = f"{result.storage}/{result.path}/jsonl/{self.schema_path}"
