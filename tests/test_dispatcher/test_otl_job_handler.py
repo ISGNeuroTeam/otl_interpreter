@@ -10,7 +10,7 @@ from django.conf import settings
 from rest.test import TransactionTestCase, APIClient
 from otl_interpreter.interpreter_db.models import NodeJob
 from otl_interpreter.interpreter_db.enums import NodeJobStatus
-from base_api_test_class import BaseApiTest
+from base_classes import BaseApiTest, BaseTearDown
 from create_test_users import create_test_users
 
 from rest_auth.models import User
@@ -34,7 +34,7 @@ computing_node_env = os.environ.copy()
 computing_node_env["PYTHONPATH"] = f'{base_rest_dir}:{plugins_dir}:{str(test_dir)}'
 
 
-class TestOtlJobHandler(BaseApiTest):
+class TestOtlJobHandler(BaseTearDown, BaseApiTest):
     def setUp(self) -> None:
         BaseApiTest.setUp(self)
 
@@ -84,12 +84,3 @@ class TestOtlJobHandler(BaseApiTest):
                 node_job.result.status, 'CALCULATED'
             )
             self.assertEqual(node_job.status, NodeJobStatus.FINISHED)
-
-    def tearDown(self):
-        self.spark_computing_node.kill()
-        self.eep_computing_node.kill()
-        self.pp_computing_node.kill()
-        self.dispatcher_process.kill()
-
-
-

@@ -12,7 +12,7 @@ from otl_interpreter.interpreter_db.models import NodeJob
 from otl_interpreter.interpreter_db.enums import NodeJobStatus, JobStatus
 from otl_interpreter.settings import ini_config
 
-from base_api_test_class import BaseApiTest
+from base_classes import BaseApiTest, BaseTearDown
 
 from rest_auth.models import User
 
@@ -35,7 +35,7 @@ computing_node_env = os.environ.copy()
 computing_node_env["PYTHONPATH"] = f'{base_rest_dir}:{plugins_dir}:{str(test_dir)}'
 
 
-class TestNodeJobError(BaseApiTest):
+class TestNodeJobError(BaseTearDown, BaseApiTest):
     def setUp(self) -> None:
         BaseApiTest.setUp(self)
 
@@ -94,15 +94,8 @@ class TestNodeJobError(BaseApiTest):
         )
         self.assertEqual(len(canceled_pp_node_jobs), 1)
 
-    def tearDown(self):
-        self.spark_computing_node.kill()
-        self.eep_computing_node.kill()
-        self.pp_computing_node.kill()
-        self.dispatcher_process.kill()
 
-
-
-class TestNodeJobDecline(BaseApiTest):
+class TestNodeJobDecline(BaseTearDown, BaseApiTest):
     def setUp(self) -> None:
         BaseApiTest.setUp(self)
 
@@ -159,14 +152,8 @@ class TestNodeJobDecline(BaseApiTest):
                 ],
             )
 
-    def tearDown(self):
-        self.spark_computing_node.kill()
-        self.eep_computing_node.kill()
-        self.pp_computing_node.kill()
-        self.dispatcher_process.kill()
 
-
-class TestNodeResoucesOccupied(BaseApiTest):
+class TestNodeResoucesOccupied(BaseTearDown, BaseApiTest):
     def setUp(self) -> None:
         BaseApiTest.setUp(self)
 
@@ -204,12 +191,6 @@ class TestNodeResoucesOccupied(BaseApiTest):
                 NodeJobStatus.READY_TO_EXECUTE
             ],
         )
-
-    def tearDown(self):
-        self.spark_computing_node.kill()
-        self.dispatcher_process.kill()
-
-
 
 
 class TestNodeReleaseResources(BaseApiTest):
