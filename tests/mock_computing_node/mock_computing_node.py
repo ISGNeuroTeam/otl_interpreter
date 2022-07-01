@@ -45,6 +45,8 @@ class ComputingNode:
         asyncio.create_task(self._send_resources_task())
         asyncio.create_task(self._stop_on_timeout())
 
+        self.job_tasks = {}
+
     async def start(self):
         await self.producer.start()
         await self._register()
@@ -88,14 +90,15 @@ class ComputingNode:
         async with Consumer(self.job_topic, value_deserializer=json.loads) as job_consumer:
             async for job_message in job_consumer:
                 #pp(job_message.value)
-                asyncio.create_task(self._run_job(job_message.value))
+                job = job_message.value
+                # mock computing doesn't calculate anything so just quit
+                if job['status'] == 'CANCELED':
+                    self.job_tasks[job['uuid']].cancel()
+                else:
+                    self.job_tasks[job['uuid']] = asyncio.create_task(self._run_job(job_message.value))
 
     async def _run_job(self, job):
         decline_rate = self.config['decline_rate']
-
-        # mock computing doesn't calculate anything so just quit
-        if job['status'] == 'CANCELED':
-            return
 
         lock = asyncio.Lock()
 
@@ -146,7 +149,7 @@ class ComputingNode:
         await self._send_resources()
 
     async def _send_node_job_status(
-        self, node_job_uuid, status, status_text=None, last_finished_command=None
+            self, node_job_uuid, status, status_text=None, last_finished_command=None
     ):
         message = {
             'uuid': node_job_uuid,
