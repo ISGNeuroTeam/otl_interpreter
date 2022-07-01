@@ -160,7 +160,7 @@ class OtlJobManager:
 otl_job_manager = OtlJobManager(
     int(ini_config['otl_job_defaults']['cache_ttl']),
     int(ini_config['otl_job_defaults']['timeout']),
-    bool(ini_config['otl_job_defaults']['shared_post_processing']),
+    ini_config['otl_job_defaults']['shared_post_processing'].lower() == 'true',
     ini_config['result_managing']['data_path'],
     ini_config['result_managing']['schema_path']
 )
