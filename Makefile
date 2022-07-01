@@ -2,7 +2,7 @@
 #.SILENT:
 SHELL = /bin/bash
 
-.PHONY: clean clean_build clean_pack clean_test clean_docker_test clean_venv test docker_test
+.PHONY: clean clean_build clean_pack clean_test clean_docker_test clean_venv test docker_test clean_otl_interpreter_venv
 
 all:
 	echo -e "Required section:\n\
@@ -63,10 +63,17 @@ venv: clean_venv
 	echo Create venv
 	conda create --copy -p ./venv -y
 	conda install -p ./venv python==3.9.7 -y
-	./venv/bin/pip install --no-input  -r requirements.txt
+	./venv/bin/pip install --no-input  -r requirements.txt 	--extra-index-url http://s.dev.isgneuro.com/repository/ot.platform/simple --trusted-host s.dev.isgneuro.com
 
 venv_pack: venv
 	conda pack -p ./venv -o ./venv.tar.gz
+
+otl_interpreter/venv: venv_pack
+	mkdir -p otl_interpreter/venv
+	tar -xzf ./venv.tar.gz -C otl_interpreter/venv
+
+clean_otl_interpreter_venv:
+	rm -rf otl_interpreter/venv
 
 clean_venv:
 	rm -rf venv
@@ -80,7 +87,7 @@ test: docker_test
 logs:
 	mkdir -p ./logs
 
-docker_test: logs
+docker_test: logs otl_interpreter/venv
 	$(call clean_docker_containers)
 	@echo "Testing..."
 	CURRENT_UID=$$(id -u):$$(id -g) docker-compose -f docker-compose-test.yml run --rm  complex_rest python ./complex_rest/manage.py test ./tests --settings=core.settings.test --no-input
@@ -89,7 +96,7 @@ docker_test: logs
 clean_docker_test:
 	$(call clean_docker_containers)
 
-clean_test: clean_docker_test
+clean_test: clean_docker_test clean_otl_interpreter_venv
 
 
 
