@@ -168,7 +168,7 @@ class CommandTreeConstructor:
 
     def _is_await_with_override(self, translated_otl_command):
         override = self._get_kwarg_by_name(translated_otl_command, 'override')
-        return override is not None and override.lower() == 'true'
+        return override is not None and override
 
     def _get_await_name(self, translated_otl_command):
         return self._get_kwarg_by_name(translated_otl_command, 'name')

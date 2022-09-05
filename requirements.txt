@@ -1,4 +1,4 @@
-otlang==1.1.1
+otlang==1.2.0
 --extra-index-url http://s.dev.isgneuro.com/repository/ot.platform/simple
 --trusted-host s.dev.isgneuro.com
 

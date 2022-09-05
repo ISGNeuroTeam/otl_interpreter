@@ -18,22 +18,22 @@ default_ini_config = {
         'password': 'otl_interpreter'
     },
     'node_job': {
-      'cache_ttl': 60
+      'cache_ttl': '60'
     },
     'job_planer': {
         'computing_node_type_priority': 'SPARK EEP POST_PROCESSING',
-        'subsearch_is_node_job': True
+        'subsearch_is_node_job': 'True'
     },
     'dispatcher': {
-        'one_process_mode': False,
-        'check_job_queue_period': 10,
+        'one_process_mode': 'False',
+        'check_job_queue_period': '10',
         'host_id': os.popen("hostid").read().strip(),
-        'health_check_period': 15
+        'health_check_period': '15'
     },
     'otl_job_defaults': {
-        'cache_ttl': 60,
-        'timeout': 0,
-        'shared_post_processing': True,
+        'cache_ttl': '60',
+        'timeout': '0',
+        'shared_post_processing': 'True',
 
     },
     'result_managing': {
@@ -41,8 +41,8 @@ default_ini_config = {
         'schema_path': '_SCHEMA',
     },
     'service_task_options': {
-        'remove_expired_dataframes_period': 15,
-        'keep_query_info_days': 30
+        'remove_expired_dataframes_period': '15',
+        'keep_query_info_days': '30'
     },
     'storages': {
         'shared_post_processing': '/opt/otp/shared_storage',

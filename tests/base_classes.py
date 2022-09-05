@@ -1,3 +1,5 @@
+import time
+
 from datetime import datetime
 from rest.test import APIClient, TransactionTestCase as TestCase
 from create_test_users import create_test_users
@@ -95,3 +97,19 @@ class BaseApiTest(TestCase):
         self.assertEqual(response.data['status'], 'success')
         self.assertEqual(response.data['job_status'], 'CANCELED')
         return response
+
+
+class BaseTearDown:
+    def tearDown(self):
+        if hasattr(self, 'spark_computing_node'):
+            self.spark_computing_node.kill()
+        if hasattr(self, 'eep_computing_node'):
+            self.eep_computing_node.kill()
+        if hasattr(self, 'pp_computing_node'):
+            self.pp_computing_node.kill()
+        if hasattr(self, 'computing_node_process'):
+            self.computing_node_process.kill()
+        if hasattr(self, 'dispatcher_process'):
+            # wait for dispatcher to process remaining messages
+            time.sleep(3)
+            self.dispatcher_process.kill()

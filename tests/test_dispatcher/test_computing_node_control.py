@@ -12,7 +12,7 @@ from otl_interpreter.interpreter_db import node_commands_manager
 from otl_interpreter.interpreter_db.models import NodeCommand, ComputingNode
 
 from mock_computing_node.computing_node_config import read_computing_node_config, read_otl_command_syntax
-
+from base_classes import BaseTearDown
 
 plugins_dir = settings.PLUGINS_DIR
 base_rest_dir = settings.BASE_DIR
@@ -29,7 +29,7 @@ computing_node_env = os.environ.copy()
 computing_node_env["PYTHONPATH"] = f'{base_rest_dir}:{plugins_dir}:{str(test_dir)}'
 
 
-class TestCoumputingNodeRegister(TestCase):
+class TestCoumputingNodeRegister(BaseTearDown, TestCase):
 
     def setUp(self):
 
@@ -52,13 +52,8 @@ class TestCoumputingNodeRegister(TestCase):
         node_conf = read_computing_node_config('spark1.json')
         self.assertEqual(guids_list[0].hex, node_conf['uuid'])
 
-    def tearDown(self):
-        self.computing_node_process.kill()
-        self.dispatcher_process.kill()
 
-
-
-class TestAnotherNodeRegister(TestCase):
+class TestAnotherNodeRegister(BaseTearDown, TestCase):
 
     def setUp(self):
 
@@ -81,14 +76,8 @@ class TestAnotherNodeRegister(TestCase):
         node_conf = read_computing_node_config('another_name.json')
         self.assertEqual(guids_list[0].hex, node_conf['uuid'])
 
-    def tearDown(self):
-        self.computing_node_process.kill()
-        self.dispatcher_process.kill()
 
-
-
-
-class TestCoumputingNodeUnRegister(TestCase):
+class TestCoumputingNodeUnRegister(BaseTearDown, TestCase):
 
     def setUp(self):
 
@@ -138,9 +127,6 @@ class TestCoumputingNodeUnRegister(TestCase):
         for node_command in node_commands:
             self.assertEqual(node_command.active, True)
 
-    def tearDown(self):
-        self.computing_node_process.kill()
-        self.dispatcher_process.kill()
 
 
 

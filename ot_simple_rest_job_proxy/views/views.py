@@ -43,23 +43,37 @@ def get_or_create_user(username):
     return user
 
 
-@csrf_exempt
-def makejob(request):
-    # django forbids access to body property after reading POST,
-    # so to get post data without error in proxy_view we are parsing body
-    data = BytesIO(request.body)
-    if request.content_type == 'application/x-www-form-urlencoded':
-        post_dict = QueryDict(request._body, encoding=request._encoding)
-    elif request.content_type == 'multipart/form-data':
-        post_dict, _ = request.parse_file_upload(request.META, data)
-    else:
-        post_dict = QueryDict(encoding=request._encoding)
+def post_dict_decor(f):
+    """
+    Adds post_dict attribute to request
+    """
+    def wrapper(request, *args, **kwargs):
+        # django forbids access to body property after reading POST,
+        # so to get post data without error in proxy_view we are parsing body
+        data = BytesIO(request.body)
+        if request.content_type == 'application/x-www-form-urlencoded':
+            post_dict = QueryDict(request._body, encoding=request._encoding)
+        elif request.content_type == 'multipart/form-data':
+            post_dict, _ = request.parse_file_upload(request.META, data)
+        elif request.content_type == 'application/json' or request.content_type == 'text/plain':
+            post_dict = json.loads(request._body.decode(request._encoding))
+        else:
+            post_dict = QueryDict(encoding=request._encoding)
+        request.post_dict = post_dict
+        return f(request, *args, **kwargs)
 
-    query = post_dict['original_otl']
-    tws = post_dict['tws']
-    twf = post_dict['twf']
-    cache_ttl = post_dict['cache_ttl']
-    timeout = post_dict.get('timeout', '0')
+    return wrapper
+
+
+@csrf_exempt
+@post_dict_decor
+def makejob(request):
+
+    query = request.post_dict['original_otl']
+    tws = request.post_dict['tws']
+    twf = request.post_dict['twf']
+    cache_ttl = request.post_dict['cache_ttl']
+    timeout = request.post_dict.get('timeout', '0')
 
     new_platform_query_index = job_proxy_manager.is_new_platform_query(query)
 
@@ -85,15 +99,16 @@ def makejob(request):
 
 
 @csrf_exempt
+@post_dict_decor
 def checkjob(request):
-    query = request.GET['original_otl']
+    query = request.post_dict['original_otl']
     new_platform_query_index = job_proxy_manager.is_new_platform_query(query)
 
     if not new_platform_query_index:
         return proxy_view(request, checkjob_uri)
 
-    tws = request.GET['tws']
-    twf = request.GET['twf']
+    tws = request.post_dict['tws']
+    twf = request.post_dict['twf']
 
     log.info(f'Get checkjob request for new platform{query}, tws={tws}, twf={twf}')
     resp = job_proxy_manager.checkjob(query[new_platform_query_index:], tws, twf)

@@ -12,7 +12,7 @@ from otl_interpreter.interpreter_db.models import NodeJob
 from otl_interpreter.interpreter_db.enums import NodeJobStatus, JobStatus
 from otl_interpreter.settings import ini_config
 
-from base_api_test_class import BaseApiTest
+from base_classes import BaseApiTest, BaseTearDown
 
 from rest_auth.models import User
 
@@ -35,7 +35,7 @@ computing_node_env = os.environ.copy()
 computing_node_env["PYTHONPATH"] = f'{base_rest_dir}:{plugins_dir}:{str(test_dir)}'
 
 
-class TestNodeJobError(BaseApiTest):
+class TestNodeJobError(BaseTearDown, BaseApiTest):
     def setUp(self) -> None:
         BaseApiTest.setUp(self)
 
@@ -94,15 +94,8 @@ class TestNodeJobError(BaseApiTest):
         )
         self.assertEqual(len(canceled_pp_node_jobs), 1)
 
-    def tearDown(self):
-        self.spark_computing_node.kill()
-        self.eep_computing_node.kill()
-        self.pp_computing_node.kill()
-        self.dispatcher_process.kill()
 
-
-
-class TestNodeJobDecline(BaseApiTest):
+class TestNodeJobDecline(BaseTearDown, BaseApiTest):
     def setUp(self) -> None:
         BaseApiTest.setUp(self)
 
@@ -159,14 +152,8 @@ class TestNodeJobDecline(BaseApiTest):
                 ],
             )
 
-    def tearDown(self):
-        self.spark_computing_node.kill()
-        self.eep_computing_node.kill()
-        self.pp_computing_node.kill()
-        self.dispatcher_process.kill()
 
-
-class TestNodeResoucesOccupied(BaseApiTest):
+class TestNodeResoucesOccupied(BaseTearDown, BaseApiTest):
     def setUp(self) -> None:
         BaseApiTest.setUp(self)
 
@@ -205,12 +192,6 @@ class TestNodeResoucesOccupied(BaseApiTest):
             ],
         )
 
-    def tearDown(self):
-        self.spark_computing_node.kill()
-        self.dispatcher_process.kill()
-
-
-
 
 class TestNodeReleaseResources(BaseApiTest):
     def setUp(self) -> None:
@@ -237,54 +218,54 @@ class TestNodeReleaseResources(BaseApiTest):
 
 
 
-    def test_release_resources(self):
-
-        job_for_5_sec = "| otstats index='test_index%d' | otstats index='test_index%d2' | otstats index='test_index%d3' | otstats index='test_index%d4' | otstats index='test_index%d7'"
-        job_for_3_sec = "| otstats index='test_index%d' | otstats index='test_index%d2' | otstats index='test_index%d3'"
-        job_for_1_sec = "| otstats index='test_index%d'"
-
-
-
-        jobs_id = [None]*4
-
-        # send 4 jobs to occupy all resources
-        for i in range(4):
-            response = BaseApiTest.make_job_success(
-                self, job_for_3_sec % (i, i, i) if i == 3 else job_for_5_sec % (i, i, i, i, i)
-            )
-            jobs_id[i] = response['job_id']
-
-        # send 1 job and check it's in queue
-        response = BaseApiTest.make_job_success(self, job_for_1_sec % 1)
-        time.sleep(2)
-        job_in_queue = response['job_id']
-
-        # checking status code must be still PLANNED
-        response = self.client.get(
-            self.full_url(f'/checkjob/?job_id={job_in_queue}'),
-        )
-        self.assertEqual(response.status_code, 200)
-        response_data = response.data
-        self.assertEqual(response_data['job_status'], JobStatus.PLANNED)
-
-        # one job is over by that time
-        time.sleep(2)
-
-        response = self.client.get(
-            self.full_url(f'/checkjob/?job_id={job_in_queue}'),
-        )
-        self.assertEqual(response.status_code, 200)
-        response_data = response.data
-        self.assertIn(response_data['job_status'], [JobStatus.RUNNING, JobStatus.FINISHED])
-
-        if response_data['job_status'] == JobStatus.RUNNING:
-            time.sleep(5)
-            response = self.client.get(
-                self.full_url(f'/checkjob/?job_id={job_in_queue}'),
-            )
-            self.assertEqual(response.status_code, 200)
-            response_data = response.data
-            self.assertEqual(response_data['job_status'], JobStatus.FINISHED)
+    # def test_release_resources(self):
+    #
+    #     job_for_5_sec = "| otstats index='test_index%d' | otstats index='test_index%d2' | otstats index='test_index%d3' | otstats index='test_index%d4' | otstats index='test_index%d7'"
+    #     job_for_3_sec = "| otstats index='test_index%d' | otstats index='test_index%d2' | otstats index='test_index%d3'"
+    #     job_for_1_sec = "| otstats index='test_index%d'"
+    #
+    #
+    #
+    #     jobs_id = [None]*4
+    #
+    #     # send 4 jobs to occupy all resources
+    #     for i in range(4):
+    #         response = BaseApiTest.make_job_success(
+    #             self, job_for_3_sec % (i, i, i) if i == 3 else job_for_5_sec % (i, i, i, i, i)
+    #         )
+    #         jobs_id[i] = response['job_id']
+    #
+    #     # send 1 job and check it's in queue
+    #     response = BaseApiTest.make_job_success(self, job_for_1_sec % 1)
+    #     time.sleep(2)
+    #     job_in_queue = response['job_id']
+    #
+    #     # checking status code must be still PLANNED
+    #     response = self.client.get(
+    #         self.full_url(f'/checkjob/?job_id={job_in_queue}'),
+    #     )
+    #     self.assertEqual(response.status_code, 200)
+    #     response_data = response.data
+    #     self.assertEqual(response_data['job_status'], JobStatus.PLANNED)
+    #
+    #     # one job is over by that time
+    #     time.sleep(2)
+    #
+    #     response = self.client.get(
+    #         self.full_url(f'/checkjob/?job_id={job_in_queue}'),
+    #     )
+    #     self.assertEqual(response.status_code, 200)
+    #     response_data = response.data
+    #     self.assertIn(response_data['job_status'], [JobStatus.RUNNING, JobStatus.FINISHED])
+    #
+    #     if response_data['job_status'] == JobStatus.RUNNING:
+    #         time.sleep(5)
+    #         response = self.client.get(
+    #             self.full_url(f'/checkjob/?job_id={job_in_queue}'),
+    #         )
+    #         self.assertEqual(response.status_code, 200)
+    #         response_data = response.data
+    #         self.assertEqual(response_data['job_status'], JobStatus.FINISHED)
 
 
 class TestComputingNodeDown(BaseApiTest):

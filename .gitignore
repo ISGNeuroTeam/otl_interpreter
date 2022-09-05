@@ -110,3 +110,5 @@ otl_interpreter.conf
 venv.tar.gz
 
 nginx/
+
+logs/
