@@ -33,7 +33,10 @@ class NodeJobManager:
 
             if node_job_tree.parent:
                 parent_node_job = node_job_for_job_tree[node_job_tree.parent]
-                cache_ttl = node_job_cache_ttl
+                if node_job_tree.cache_ttl:
+                    cache_ttl = node_job_tree.cache_ttl
+                else:
+                    cache_ttl = node_job_cache_ttl
             else:
                 parent_node_job = None
                 cache_ttl = otl_job_cache_ttl

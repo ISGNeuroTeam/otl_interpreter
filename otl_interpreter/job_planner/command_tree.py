@@ -36,6 +36,9 @@ class CommandTree(AbstractTree):
         # node job tree constructor consider it
         self.always_new_node_job = False
 
+        # cache_ttl for future node job
+        self.cache_ttl = None
+
         if previous_command_tree_in_pipeline is not None:
             self.set_previous_command_tree_in_pipeline(previous_command_tree_in_pipeline)
 
