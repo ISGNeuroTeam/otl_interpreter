@@ -25,7 +25,7 @@ job_planer_commands = {
             "key": "override", "required": False
         },
     ]},
-    "sys_cache": {"rules": [
+    "set_cache": {"rules": [
         {
             "name": "ttl",
             "type": "kwarg",

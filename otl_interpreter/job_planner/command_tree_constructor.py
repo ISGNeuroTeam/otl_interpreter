@@ -83,8 +83,8 @@ class CommandTreeConstructor:
             elif self._is_await(translated_otl_command):
                 self._process_await_command(translated_otl_command, command_pipeline_state)
 
-            elif self._is_sys_cache(translated_otl_command):
-                self._process_sys_cache_command(translated_otl_command, command_pipeline_state)
+            elif self._is_set_cache(translated_otl_command):
+                self._process_set_cache_command(translated_otl_command, command_pipeline_state)
 
             else:
                 self._process_ordinary_command(translated_otl_command, command_pipeline_state)
@@ -155,7 +155,7 @@ class CommandTreeConstructor:
             awaited_command_trees_from_subsearches
         )
 
-    def _process_sys_cache_command(self, translated_otl_command, command_pipeline_state):
+    def _process_set_cache_command(self, translated_otl_command, command_pipeline_state):
         """
         Sets in previous command tree node_job flag and ttl
         """
@@ -192,8 +192,8 @@ class CommandTreeConstructor:
         return self._get_kwarg_by_name(translated_otl_command, 'name')
 
     @staticmethod
-    def _is_sys_cache(translated_otl_command):
-        return translated_otl_command.name == 'sys_cache'
+    def _is_set_cache(translated_otl_command):
+        return translated_otl_command.name == 'set_cache'
 
     @staticmethod
     def _get_kwarg_by_name(translated_otl_command, kwarg_name):
