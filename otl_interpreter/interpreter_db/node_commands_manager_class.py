@@ -220,7 +220,6 @@ class NodeCommandsManager:
         # ignore commands with sys_ prefix
         # computing node must not be register commands with sys_ prefix. Those commands considered as system commands
         result = {key: value for key, value in result.items() if not key.startswith('sys_')}
-        print(result)
         return result
 
     @staticmethod

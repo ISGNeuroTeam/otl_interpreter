@@ -315,5 +315,21 @@ class TestNodeJobTree(TestCase):
         otstats_command = otstats_node_job.command_tree.previous_command_tree_in_pipeline.command.name
         self.assertEqual(otstats_command, 'otstats')
 
+    def test_cache_two_node_jobs(self):
+        test_otl = "readfile 1,2,3 | readfile 3,4,5 | readfile 6,7,8"
+        top_node_job = self.get_node_job_tree_from_otl(test_otl)
+        # count node jobs
+        counter = 0
+        for node_job in top_node_job.parent_first_order_traverse_iterator():
+            counter += 1
+        self.assertEqual(counter, 1, 'Only onw node must be created')
+
+        test_otl_with_set_cache = "readfile 1,2,3 | readfile 3,4,5 | set_cache | readfile 6,7,8"
+        top_node_job = self.get_node_job_tree_from_otl(test_otl_with_set_cache)
+        counter = 0
+        for node_job in top_node_job.parent_first_order_traverse_iterator():
+            counter += 1
+        self.assertEqual(counter, 2, 'Two node jobs must be created')
+
 
 

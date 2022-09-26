@@ -356,5 +356,9 @@ class TestWithOneNode(BaseApiTest):
         response = BaseApiTest.make_job_error(self, otl_query)
         self.assertIn('Translation error', response.data['error'])
 
-
-
+    def test_with_set_cache(self):
+        otl_query = "| readfile 1,2,3 | set_cache ttl=15 | readfile 4,5,6"
+        response = BaseApiTest.make_job_success(self, otl_query)
+        self.assertEqual(NodeJob.objects.all().count(), 2, 'Two node jobs must be created')
+        child_node_job = NodeJob.objects.filter(level=2)
+        self.assertEqual(child_node_job.result.ttl.seconds, 15, 'Node job result must be with 15 sec ttl')
