@@ -339,7 +339,7 @@ class TestWithOneNode(BaseApiTest):
         time.sleep(5)
 
         self.spark_computing_node = subprocess.Popen(
-            [sys.executable, '-m', 'mock_computing_node', 'spark1.json', 'spark_commands1.json'],
+            [sys.executable, '-m', 'mock_computing_node', 'spark_1s_command.json', 'spark_commands1.json'],
             env=computing_node_env
         )
         # wait until node register
@@ -348,7 +348,6 @@ class TestWithOneNode(BaseApiTest):
     def tearDown(self):
         self.spark_computing_node.kill()
         self.dispatcher_process.kill()
-
 
     def test_system_command_usage(self):
         # send request for olt
@@ -360,5 +359,27 @@ class TestWithOneNode(BaseApiTest):
         otl_query = "| readfile 1,2,3 | set_cache ttl=15 | readfile 4,5,6"
         response = BaseApiTest.make_job_success(self, otl_query)
         self.assertEqual(NodeJob.objects.all().count(), 2, 'Two node jobs must be created')
-        child_node_job = NodeJob.objects.filter(level=2)
+        child_node_job = NodeJob.objects.filter(level=1).first()
         self.assertEqual(child_node_job.result.ttl.seconds, 15, 'Node job result must be with 15 sec ttl')
+
+    def test_check_cache_speed(self):
+        otl_query = "| readfile 1,2,3 | readfile 4,5,6 | readfile 7,8,9 | set_cache ttl=120 | readfile 12,234,34"
+        response_data = BaseApiTest.make_job_success(self, otl_query)
+        job_id = response_data['job_id']
+        BaseApiTest.wait_until_complete(self, job_id, 8)
+
+        node_job_with_cache = NodeJob.objects.filter(otl_job__uuid=job_id, level=1).first()
+
+        self.assertEqual(node_job_with_cache.result.ttl.seconds, 120, 'First node job must have 120 sec ttl')
+        cache_uuid = node_job_with_cache.result.path
+
+        otl_query = "| readfile 1,2,3 | readfile 4,5,6 | readfile 7,8,9 | set_cache ttl=120"
+        response_data = BaseApiTest.make_job_success(self, otl_query)
+        job_id = response_data['job_id']
+        time.sleep(2)
+        response_data = BaseApiTest.check_job(self, job_id)
+        node_job_with_cache2 = NodeJob.objects.filter(otl_job__uuid=job_id, level=1).first()
+        self.assertEqual(node_job_with_cache2.status, 'FINISHED')
+        self.assertEqual(node_job_with_cache2.result.path, node_job_with_cache.result.path)
+        self.assertEqual(node_job_with_cache2.result.ttl.seconds, 120, 'First node job must have 120 sec ttl')
+

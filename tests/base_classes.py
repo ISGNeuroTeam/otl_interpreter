@@ -71,10 +71,35 @@ class BaseApiTest(TestCase):
         response = self._make_job(otl_query)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['status'], 'error')
-        return response
+        return response.data
 
     def check_job(self, job_id):
-        pass
+        """
+        Send check_job request
+        Returns status string
+        """
+        response = self.client.get(
+            self.full_url(f'/checkjob/?job_id={job_id}'),
+        )
+        if response.status_code != 200:
+            print(response.data)
+        self.assertEqual(response.status_code, 200)
+        return response.data
+
+    def wait_until_complete(self, job_id, wait_time_sec=1):
+        time.sleep(wait_time_sec)
+        status = None
+        time_counter = 0
+        while status != 'FINISHED':
+            response_data = BaseApiTest.check_job(self, job_id)
+            print(response_data)
+            status = response_data['job_status']
+            print(status)
+            time.sleep(1)
+            time_counter += 1
+            if time_counter > wait_time_sec:
+                raise Exception(f'Job must be completed in {wait_time_sec} seconds')
+        self.assertEqual(status, 'FINISHED')
 
     def cancel_job(self, job_id):
         """
@@ -96,7 +121,7 @@ class BaseApiTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['status'], 'success')
         self.assertEqual(response.data['job_status'], 'CANCELED')
-        return response
+        return response.data
 
 
 class BaseTearDown:
