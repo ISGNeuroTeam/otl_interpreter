@@ -352,8 +352,8 @@ class TestWithOneNode(BaseApiTest):
     def test_system_command_usage(self):
         # send request for olt
         otl_query = "| sys_read_interproc asdfasdfasdfasd, 'INTERPROC_STORAGE'"
-        response = BaseApiTest.make_job_error(self, otl_query)
-        self.assertIn('Translation error', response.data['error'])
+        response_data = BaseApiTest.make_job_error(self, otl_query)
+        self.assertIn('Translation error', response_data['error'])
 
     def test_with_set_cache(self):
         otl_query = "| readfile 1,2,3 | set_cache ttl=15 | readfile 4,5,6"
