@@ -96,7 +96,7 @@ class NodeCommand(models.Model):
     use_timewindow = models.BooleanField(default=False)
 
     resource_necessity = models.JSONField(
-        null=True
+        null=True, blank=True
     )
     active = models.BooleanField(default=True)
 
