@@ -86,11 +86,11 @@ def makejob(request):
 
     eva_token = request.COOKIES.get('eva_token')
     if not eva_token:
-        return ErrorResponse(error_message='Unauthorized', http_status=status.HTTP_401_UNAUTHORIZED)
+        return HttpResponse(content='Unauthorized', status=status.HTTP_401_UNAUTHORIZED)
     try:
         token_payload = decode_token(eva_token)
     except PyJWTError:
-        return ErrorResponse(error_message='Unauthorized', http_status=status.HTTP_401_UNAUTHORIZED)
+        return HttpResponse(content='Unauthorized', status=status.HTTP_401_UNAUTHORIZED)
 
     username = token_payload['username']
     user = get_or_create_user(username)
@@ -101,6 +101,7 @@ def makejob(request):
 @csrf_exempt
 @post_dict_decor
 def checkjob(request):
+    request.post_dict = request.post_dict or request.GET
     query = request.post_dict['original_otl']
     new_platform_query_index = job_proxy_manager.is_new_platform_query(query)
 
