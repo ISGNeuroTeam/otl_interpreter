@@ -36,6 +36,9 @@ class NodeJobTree(AbstractTree):
 
         self.cache_ttl = None
 
+        # flag for indicating cache existence
+        self.result_calculated = False
+
     @property
     def children(self):
         return self.awaited_node_job_trees

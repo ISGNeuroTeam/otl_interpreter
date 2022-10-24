@@ -48,6 +48,9 @@ class NodeJobManager:
                     result_address.storage_type,
                     cache_ttl
                 )
+                # mark result is calculated
+                if node_job_result.status == ResultStatus.CALCULATED:
+                    node_job_tree.result_calculated = True
             else:
                 node_job_result = None
 

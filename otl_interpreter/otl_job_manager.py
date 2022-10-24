@@ -101,7 +101,10 @@ class OtlJobManager:
         sends message to dispatcher with list of NodeJobs to execute in first order
         """
         # find node jobs that don't expect other's results (job tree leaves)
-        independent_node_job_trees = top_node_job_tree.leaf_iterator()
+        # or jobs with calculated results
+        independent_node_job_trees = top_node_job_tree.leaf_iterator(
+            leaf_condition=lambda tree: tree.result_calculated
+        )
 
         # form message for message broker
         message = json.dumps({
