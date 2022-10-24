@@ -107,6 +107,8 @@ def _set_arguments_to_commands(top_node_job, tws, twf):
                 command.add_argument('earliest', value=int(tws.timestamp()), key='earliest')
                 command.add_argument('latest', value=int(twf.timestamp()), key='latest')
             if not command_attr['idempotent']:
+                # command idempotent
+                # Adding __timestamp__ argument leads to another hash, so result id will be different every time
                 command.add_argument(
                     '__timestamp__', value=int(datetime.datetime.now().timestamp()), key='__timestamp__'
                 )

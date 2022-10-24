@@ -81,6 +81,7 @@ class NodeJobManager:
                 path=path,
                 ttl=timedelta(seconds=cache_ttl),
             )
+        node_job_result.last_touched_timestamp = datetime.datetime.now()
         node_job_result.save()
         return node_job_result
 

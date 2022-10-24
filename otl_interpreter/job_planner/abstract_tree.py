@@ -1,3 +1,4 @@
+from typing import Callable
 from abc import ABC, abstractmethod
 from collections import deque
 
@@ -64,10 +65,11 @@ class AbstractTree(ABC):
 
             yield tree
 
-    def leaf_iterator(self, children_attribute=None):
+    def leaf_iterator(self, children_attribute=None, leaf_condition: Callable = lambda x: False):
         """
         Generator. Traverse through leaves from left to right
-        :param children_attribut:
+        :param children_attribute: attribute used to find children
+        :param leaf_condition: condition for detecting leaf, by default condition is  'no children'
         """
         children_attribute = children_attribute or 'children'
         stack = deque()
@@ -79,7 +81,7 @@ class AbstractTree(ABC):
             if callable(children):
                 children = children()
 
-            if children:
-                stack.extend(reversed(children))
-            else:
+            if not children or leaf_condition(tree):
                 yield tree
+            else:
+                stack.extend(reversed(children))
