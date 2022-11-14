@@ -284,7 +284,7 @@ class NodeJobStatusManager:
                 f'Children node jobs are finished',
                 next_node_job_dict
             )
-        else:
+        elif node_job_manager.is_root_node_job(node_job_uuid):
             otl_job_uuid = node_job_manager.get_otl_job_uuid(node_job_uuid)
             otl_job_manager.change_otl_job_status(
                 otl_job_uuid, JobStatus.FINISHED,

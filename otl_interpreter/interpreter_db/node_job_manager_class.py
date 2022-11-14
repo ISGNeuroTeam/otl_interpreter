@@ -170,6 +170,10 @@ class NodeJobManager:
                 return self.get_node_job_dict(node_job=next_node_job)
         return None
 
+    def is_root_node_job(self, node_job_uuid):
+        node_job = NodeJob.objects.get(uuid=node_job_uuid)
+        return node_job.level == 0
+
     @staticmethod
     def get_otl_job_uuid(node_job):
         if not isinstance(node_job, NodeJob):
