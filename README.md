@@ -104,7 +104,16 @@ make pack
 ```
 * Unpack archive into complex_rest plugins directory
 * Create database for otl_interpreter and make migrations
-* Configure otl_interpreter
+* Make otl_interpreter config and configure it
+```bash
+cp ./otl_interpreter/otl_interpreter.conf.example ./otl_interpreter/otl_interpreter.conf
+```
+* Make ot_simple_rest_job_proxy config and configure it 
+```bash
+cp ./ot_simple_rest_job_proxy/ot_simple_rest_job_proxy.conf.example ./ot_simple_rest_job_proxy/ot_simple_rest_job_proxy.conf
+```
+
+
 
 ## Built With
 
