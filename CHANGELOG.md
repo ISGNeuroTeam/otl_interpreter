@@ -3,6 +3,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2022-11-22
+### Changed
+- Using otlang version 1.2.1
+### Added
+- Add set_cache command.
+- Add node job uuid in admin list display 
+- Add complex rest authentication support to ot_simple_rest_job_proxy
+### Fixed
+- Fix otl job finished status before executing root job
+- Fix ot_simple_rest_job_proxy views. Using ordinary django views.
+
 ## [1.1.0] - 2022-09-05
 ### Changed
 - Job proxy checkjob view accepts POST requests
