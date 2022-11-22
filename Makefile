@@ -49,7 +49,6 @@ make_build: venv venv_pack
 	cp -R ./otl_interpreter make_build
 	cp -R ./ot_simple_rest_job_proxy make_build
 	rm -f make_build/otl_interpreter/otl_interpreter.conf
-	mv make_build/otl_interpreter/otl_interpreter.conf.example make_build/otl_interpreter/otl_interpreter.conf
 	cp *.md make_build/otl_interpreter/
 	cp *.py make_build/otl_interpreter/
 	cp ./docs/scripts/create_db.sh make_build/otl_interpreter/

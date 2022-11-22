@@ -52,7 +52,6 @@ class OtlJobHandler(MessageHandler):
             log.error(f'Dispatcher get invalid otl job: {new_otl_job_command_serializer.data}')
             log.error(str(new_otl_job_command_serializer.errors))
             return
-
         for node_job in new_otl_job_command_serializer.validated_data['node_jobs']:
             await self.node_job_status_manager.change_node_job_status(
                 node_job['uuid'], NodeJobStatus.READY_TO_EXECUTE,

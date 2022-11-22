@@ -90,7 +90,7 @@ class OtlJobManager:
             otl_job_uuid, JobStatus.PLANNED,
             status_text=f'Otl job was decomposed on node jobs and planned'
         )
-
+        log.info(f'Send otl job {otl_job_uuid} to dispatcher')
         self._send_new_job_to_dispatcher(top_node_job_tree)
 
         return otl_job_uuid, top_node_job_tree.result_address.storage_type, top_node_job_tree.result_address.path
@@ -101,7 +101,10 @@ class OtlJobManager:
         sends message to dispatcher with list of NodeJobs to execute in first order
         """
         # find node jobs that don't expect other's results (job tree leaves)
-        independent_node_job_trees = top_node_job_tree.leaf_iterator()
+        # or jobs with calculated results
+        independent_node_job_trees = top_node_job_tree.leaf_iterator(
+            leaf_condition=lambda tree: tree.result_calculated
+        )
 
         # form message for message broker
         message = json.dumps({

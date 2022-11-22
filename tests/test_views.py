@@ -59,13 +59,13 @@ class TestMakeJob(BaseApiTest):
 
     def test_makejob_with_syntax_error(self):
         otl_query = "| otstats2 index='test_index' "
-        response = BaseApiTest.make_job_error(self, otl_query)
-        self.assertIn('otstats2', response.data['error'])
+        response_data = BaseApiTest.make_job_error(self, otl_query)
+        self.assertIn('otstats2', response_data['error'])
 
     def test_makejob_with_job_planner_error(self):
         otl_query = "async name=test, [otstats index='test_index'] | readfile 1,2,3"
-        response = BaseApiTest.make_job_error(self, otl_query)
-        self.assertEqual('Async subsearches with names: test was never awaited', response.data['error'])
+        response_data = BaseApiTest.make_job_error(self, otl_query)
+        self.assertEqual('Async subsearches with names: test was never awaited', response_data['error'])
 
 
 class TestGetJobResult(BaseTearDown, BaseApiTest):

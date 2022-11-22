@@ -284,17 +284,22 @@ class NodeJobStatusManager:
                 f'Children node jobs are finished',
                 next_node_job_dict
             )
-        else:
+        elif node_job_manager.is_root_node_job(node_job_uuid):
             otl_job_uuid = node_job_manager.get_otl_job_uuid(node_job_uuid)
             otl_job_manager.change_otl_job_status(
                 otl_job_uuid, JobStatus.FINISHED,
                 f'All node jobs successfully finished'
             )
+            log.info(f'Otl job {otl_job_uuid} is finished')
 
         # check job queue for that computing node type
         self._check_job_queue(node_job_dict['computing_node_type'])
 
     def _on_canceled(self, node_job_uuid, node_job_dict=None):
+        # TODO
+        #  IF NODE JOB WITH AWAITING RESULT WAS CANCELED RUN FIRST NODE JOB WHO WAITING SAME RESULT
+        #  and set result not_exist
+
         pass
 
     def _on_from_running_to_cancel(self, node_job_uuid, node_job_dict=None):
@@ -368,7 +373,7 @@ class NodeJobStatusManager:
             node_job_dict: dict = None
 
     ):
-        log.debug(f'Change node job {str(node_job_uuid)} status to {str(status)}. {status_text}')
+        log.info(f'Change node job {str(node_job_uuid)} status to {str(status)}. {status_text}')
 
         if node_job_dict is None:
             node_job_dict = node_job_manager.get_node_job_dict(node_job_uuid)
@@ -381,7 +386,7 @@ class NodeJobStatusManager:
         # if status the same do nothing
         if cur_status == status and status_text is not None:
             # just refresh status text
-            log.debug(f'Refresh node job status, node job uuid {node_job_uuid}, status: {status_text}')
+            log.info(f'Refresh node job status, node job uuid {node_job_uuid}, status: {status_text}')
             node_job_manager.change_node_job_status(node_job_uuid, status, status_text)
             return
 

@@ -35,7 +35,7 @@ class OtlQueryAdmin(ModelAdmin):
 
 @register(NodeJob)
 class NodeJobAdmin(MPTTModelAdmin):
-    list_display = ['computing_node_type', 'result', 'status']
+    list_display = ['computing_node_type', 'result', 'uuid', 'status']
 
     search_fields = ['otl_job__uuid', ]
 
@@ -59,6 +59,7 @@ class NodeCommandAdmin(ModelAdmin):
 @register(NodeJobResult)
 class NodeJobResultAdmin(ModelAdmin):
     list_display = ['path', 'status']
+    search_fields = ['path', ]
 
 
 

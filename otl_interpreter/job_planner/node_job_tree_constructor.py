@@ -107,6 +107,8 @@ def _set_arguments_to_commands(top_node_job, tws, twf):
                 command.add_argument('earliest', value=int(tws.timestamp()), key='earliest')
                 command.add_argument('latest', value=int(twf.timestamp()), key='latest')
             if not command_attr['idempotent']:
+                # command idempotent
+                # Adding __timestamp__ argument leads to another hash, so result id will be different every time
                 command.add_argument(
                     '__timestamp__', value=int(datetime.datetime.now().timestamp()), key='__timestamp__'
                 )
@@ -134,16 +136,18 @@ def _make_address_for_result_node_job(top_node_job, shared_post_processing):
     return result_address
 
 
-def _create_new_node_job_for_child_command_tree(command_tree, child_command_tree, node_job_tree_storage):
+def _create_new_node_job_for_child_command_tree(
+        command_tree, child_command_tree, node_job_tree_storage
+):
     """
-    Split commandre in two parts, creates node_job_tree for child_command_tree
+    Split command tree in two parts, creates node_job_tree for child_command_tree
     command_tree gets sys_read_interproc command as a child command
     child_command_tree gets sys_write_interproc command on the top
 
     :param command_tree: command_tree
     :param child_command_tree: child command tree of command_tree
     :param node_job_tree_storage: storage for node_jobs
-    command_tree alreage has created node_job
+    :param cache_ttl: cache ttl for child node job
     :return:
     read_sys_command_tree, invoke function will attach it to childs tree
     """
@@ -162,6 +166,9 @@ def _create_new_node_job_for_child_command_tree(command_tree, child_command_tree
     # put write command on the top of child command tree and create new node job
     write_sys_command_tree.set_previous_command_tree_in_pipeline(child_command_tree)
     new_node_job_tree = NodeJobTree(write_sys_command_tree, parent_node_job_tree=node_job_tree)
+
+    # set cache ttl if child command tree have it
+    new_node_job_tree.cache_ttl = child_command_tree.cache_ttl
 
     # child command tree creates dataframe for command tree
     # create address object for result, path to result will be generated later

@@ -10,6 +10,7 @@ from django.contrib.auth import get_user_model
 from django.http import HttpResponse, QueryDict
 
 from rest.response import ErrorResponse, Response, status
+from rest_auth.authentication import JWTAuthentication
 
 from ot_simple_rest_job_proxy.job_proxy_manager import job_proxy_manager
 from ot_simple_rest_job_proxy.settings import ini_config
@@ -84,16 +85,23 @@ def makejob(request):
         f'Get makejob request for new platform{query}, tws={tws}, twf={twf}, cache_ttl={cache_ttl}, timeout={timeout}'
     )
 
-    eva_token = request.COOKIES.get('eva_token')
-    if not eva_token:
-        return ErrorResponse(error_message='Unauthorized', http_status=status.HTTP_401_UNAUTHORIZED)
-    try:
-        token_payload = decode_token(eva_token)
-    except PyJWTError:
-        return ErrorResponse(error_message='Unauthorized', http_status=status.HTTP_401_UNAUTHORIZED)
+    # check complex rest auth
+    jwt_auth = JWTAuthentication()
+    user = jwt_auth.authenticate(request)
 
-    username = token_payload['username']
-    user = get_or_create_user(username)
+    # if complex rest authentication not work try old authentication
+    if not user:
+        eva_token = request.COOKIES.get('eva_token')
+        if not eva_token:
+            return HttpResponse(content='Unauthorized', status=status.HTTP_401_UNAUTHORIZED)
+        try:
+            token_payload = decode_token(eva_token)
+        except PyJWTError:
+            return HttpResponse(content='Unauthorized', status=status.HTTP_401_UNAUTHORIZED)
+
+        username = token_payload['username']
+        user = get_or_create_user(username)
+
     resp = job_proxy_manager.makejob(query[new_platform_query_index:], user.guid, tws, twf, cache_ttl, timeout)
     return HttpResponse(json.dumps(resp))
 
@@ -101,6 +109,7 @@ def makejob(request):
 @csrf_exempt
 @post_dict_decor
 def checkjob(request):
+    request.post_dict = request.post_dict or request.GET
     query = request.post_dict['original_otl']
     new_platform_query_index = job_proxy_manager.is_new_platform_query(query)
 

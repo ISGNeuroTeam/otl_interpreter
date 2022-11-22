@@ -33,7 +33,10 @@ class NodeJobManager:
 
             if node_job_tree.parent:
                 parent_node_job = node_job_for_job_tree[node_job_tree.parent]
-                cache_ttl = node_job_cache_ttl
+                if node_job_tree.cache_ttl:
+                    cache_ttl = node_job_tree.cache_ttl
+                else:
+                    cache_ttl = node_job_cache_ttl
             else:
                 parent_node_job = None
                 cache_ttl = otl_job_cache_ttl
@@ -45,6 +48,9 @@ class NodeJobManager:
                     result_address.storage_type,
                     cache_ttl
                 )
+                # mark result is calculated
+                if node_job_result.status == ResultStatus.CALCULATED:
+                    node_job_tree.result_calculated = True
             else:
                 node_job_result = None
 
@@ -78,6 +84,7 @@ class NodeJobManager:
                 path=path,
                 ttl=timedelta(seconds=cache_ttl),
             )
+        node_job_result.last_touched_timestamp = datetime.datetime.now()
         node_job_result.save()
         return node_job_result
 
@@ -162,6 +169,10 @@ class NodeJobManager:
             else:
                 return self.get_node_job_dict(node_job=next_node_job)
         return None
+
+    def is_root_node_job(self, node_job_uuid):
+        node_job = NodeJob.objects.get(uuid=node_job_uuid)
+        return node_job.level == 0
 
     @staticmethod
     def get_otl_job_uuid(node_job):

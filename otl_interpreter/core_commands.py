@@ -25,6 +25,14 @@ job_planer_commands = {
             "key": "override", "required": False
         },
     ]},
+    "set_cache": {"rules": [
+        {
+            "name": "ttl",
+            "type": "kwarg",
+            "key": "ttl",
+            "required": False,
+        }]
+    }
 }
 
 sys_computing_node_commands = {

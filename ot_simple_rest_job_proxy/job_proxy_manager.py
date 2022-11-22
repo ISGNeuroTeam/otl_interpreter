@@ -58,6 +58,7 @@ class JobProxyManager:
             # if result already exists and calculating or already calculated return success status
             # because check query will be return result of previous task
             if end_node_job_result.status in (ResultStatus.CALCULATING, ResultStatus.CALCULATED):
+                log.info(f'Otl query  {otl_query} already calculating or calculated')
                 return {'status': 'success', 'timestamp': datetime.datetime.now().isoformat()}
 
         # if result for this otl job not exists make job for it
@@ -73,6 +74,8 @@ class JobProxyManager:
                 'status': 'new',
                 'status_text': 'Job created'
             }
+            log.debug(f'Makejob: Otl query {otl_query} has id: {job_id.hex} in new architecture')
+
         except QueryError as err:
             self.new_platform_queries[otl_query_dict_key] = {
                 'status': 'failed',
@@ -99,6 +102,8 @@ class JobProxyManager:
         job_id = UUID(query['job_id'])
 
         status, status_text = otl_job_manager.check_job(job_id)
+
+        log.debug(f'Checkjob: Otl query {otl_query} has id: {job_id.hex} in new architecture')
 
         old_status = new_status_to_old_status[status]
 
