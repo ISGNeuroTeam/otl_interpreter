@@ -112,3 +112,5 @@ venv.tar.gz
 nginx/
 
 logs/
+
+conda/

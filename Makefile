@@ -2,7 +2,7 @@
 #.SILENT:
 SHELL = /bin/bash
 
-.PHONY: clean clean_build clean_pack clean_test clean_docker_test clean_venv test docker_test clean_otl_interpreter_venv
+.PHONY: clean clean_build clean_pack clean_test clean_docker_test clean_venv test docker_test clean_otl_interpreter_venv install_conda install_conda_pack
 
 all:
 	echo -e "Required section:\n\
@@ -12,18 +12,40 @@ all:
  pack - make output archive, file name format \"otl_interpreter_vX.Y.Z_BRANCHNAME.tar.gz\"\n\
 Addition section:\n\
  venv\n\
+ install_conda - install miniconda in local directory \n\
+ install_conda_pack - install conda pack in local directory\n\
 "
 
-GENERATE_VERSION = $(shell cat setup.py | grep __version__ | head -n 1 | sed -re 's/[^"]+//' | sed -re 's/"//g' )
-GENERATE_BRANCH = $(shell git name-rev $$(git rev-parse HEAD) | cut -d\  -f2 | sed -re 's/^(remotes\/)?origin\///' | tr '/' '_')
-SET_VERSION = $(eval VERSION=$(GENERATE_VERSION))
-SET_BRANCH = $(eval BRANCH=$(GENERATE_BRANCH))
+
+VERSION := $(shell cat setup.py | grep __version__ | head -n 1 | sed -re "s/[^\"']+//" | sed -re "s/[\"',]//g")
+BRANCH := $(shell git name-rev $$(git rev-parse HEAD) | cut -d\  -f2 | sed -re 's/^(remotes\/)?origin\///' | tr '/' '_')
+
+CONDA = conda/miniconda/bin/conda
+ENV_PYTHON = venv/bin/python3.9
 
 define clean_docker_containers
 	@echo "Stopping and removing docker containers"
 	docker-compose -f docker-compose-test.yml stop
 	if [[ $$(docker ps -aq -f name=otl_interpreter) ]]; then docker rm $$(docker ps -aq -f name=otl_interpreter);  fi;
 endef
+
+conda/miniconda.sh:
+	echo Download Miniconda
+	mkdir -p conda
+	wget https://repo.anaconda.com/miniconda/Miniconda3-py39_4.12.0-Linux-x86_64.sh -O conda/miniconda.sh; \
+
+conda/miniconda: conda/miniconda.sh
+	bash conda/miniconda.sh -b -p conda/miniconda; \
+
+install_conda: conda/miniconda
+
+conda/miniconda/bin/conda-pack: conda/miniconda
+	conda/miniconda/bin/conda install conda-pack -c conda-forge  -y
+
+install_conda_pack: conda/miniconda/bin/conda-pack
+
+clean_conda:
+	rm -rf ./conda
 
 pack: make_build
 	$(SET_VERSION)
@@ -58,14 +80,14 @@ make_build: venv venv_pack
 clean_build:
 	rm -rf make_build
 
-venv: clean_venv
+venv: clean_venv conda/miniconda
 	echo Create venv
-	conda create --copy -p ./venv -y
-	conda install -p ./venv python==3.9.7 -y
-	./venv/bin/pip install --no-input  -r requirements.txt 	--extra-index-url http://s.dev.isgneuro.com/repository/ot.platform/simple --trusted-host s.dev.isgneuro.com
+	$(CONDA) create --copy -p ./venv -y
+	$(CONDA) install -p ./venv python==3.9.7 -y
+	$(ENV_PYTHON) -m pip install --no-input  -r requirements.txt 	--extra-index-url http://s.dev.isgneuro.com/repository/ot.platform/simple --trusted-host s.dev.isgneuro.com
 
-venv_pack: venv
-	conda pack -p ./venv -o ./venv.tar.gz
+venv_pack: venv conda/miniconda/bin/conda-pack
+	$(CONDA) pack -p ./venv -o ./venv.tar.gz
 
 otl_interpreter/venv: venv_pack
 	mkdir -p otl_interpreter/venv
@@ -79,7 +101,7 @@ clean_venv:
 	rm -f ./venv.tar.gz
 
 
-clean: clean_build clean_venv clean_pack clean_test
+clean: clean_build clean_venv clean_pack clean_test clean_conda
 
 test: docker_test
 
