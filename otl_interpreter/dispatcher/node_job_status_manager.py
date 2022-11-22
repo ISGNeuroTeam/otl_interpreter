@@ -296,6 +296,10 @@ class NodeJobStatusManager:
         self._check_job_queue(node_job_dict['computing_node_type'])
 
     def _on_canceled(self, node_job_uuid, node_job_dict=None):
+        # TODO
+        #  IF NODE JOB WITH AWAITING RESULT WAS CANCELED RUN FIRST NODE JOB WHO WAITING SAME RESULT
+        #  and set result not_exist
+
         pass
 
     def _on_from_running_to_cancel(self, node_job_uuid, node_job_dict=None):

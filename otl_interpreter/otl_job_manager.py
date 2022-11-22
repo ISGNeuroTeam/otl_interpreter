@@ -90,7 +90,7 @@ class OtlJobManager:
             otl_job_uuid, JobStatus.PLANNED,
             status_text=f'Otl job was decomposed on node jobs and planned'
         )
-
+        log.info(f'Send otl job {otl_job_uuid} to dispatcher')
         self._send_new_job_to_dispatcher(top_node_job_tree)
 
         return otl_job_uuid, top_node_job_tree.result_address.storage_type, top_node_job_tree.result_address.path
