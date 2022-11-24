@@ -87,10 +87,10 @@ def makejob(request):
 
     # check complex rest auth
     jwt_auth = JWTAuthentication()
-    user = jwt_auth.authenticate(request)
+    user_token_tuple = jwt_auth.authenticate(request)
 
     # if complex rest authentication not work try old authentication
-    if not user:
+    if not user_token_tuple:
         eva_token = request.COOKIES.get('eva_token')
         if not eva_token:
             return HttpResponse(content='Unauthorized', status=status.HTTP_401_UNAUTHORIZED)
@@ -101,6 +101,8 @@ def makejob(request):
 
         username = token_payload['username']
         user = get_or_create_user(username)
+    else:
+        user = user_token_tuple[0]
 
     resp = job_proxy_manager.makejob(query[new_platform_query_index:], user.guid, tws, twf, cache_ttl, timeout)
     return HttpResponse(json.dumps(resp))
