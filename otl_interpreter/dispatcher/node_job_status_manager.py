@@ -5,7 +5,7 @@ import datetime
 from uuid import UUID
 from typing import List
 from asgiref.sync import sync_to_async
-
+from rest_framework.renderers import JSONRenderer
 
 from message_broker import Producer
 
@@ -15,7 +15,7 @@ from otl_interpreter.interpreter_db import node_job_manager, otl_job_manager
 from computing_node_pool import computing_node_pool
 
 from node_job_queue import node_job_queue
-
+from message_serializers.otl_job import NodeJobSerializer
 
 log = logging.getLogger('otl_interpreter.dispatcher')
 
@@ -187,10 +187,11 @@ class NodeJobStatusManager:
         node_job_manager.set_computing_node_for_node_job(node_job_dict['uuid'], computing_node_uuid)
 
         # send node job to computing node
-        node_job_dict['uuid'] = node_job_dict['uuid'].hex
         node_job_dict['status'] = NodeJobStatus.READY_TO_EXECUTE
 
-        self._send_message_to_computing_node(computing_node_uuid, json.dumps(node_job_dict))
+        self._send_message_to_computing_node(
+            computing_node_uuid, JSONRenderer().render(NodeJobSerializer(node_job_dict).data)
+        )
 
         self._change_node_job_status(
             node_job_dict['uuid'],
@@ -410,7 +411,7 @@ class NodeJobStatusManager:
         if status in self.status_action_table:
             self.status_action_table[status](node_job_uuid, node_job_dict)
 
-    def _cancel_running_node_job(self, node_job_uuid):
+    def _cancel_running_node_job(self, node_job_uuid: UUID):
         computing_node_uuid = node_job_manager.get_computing_node_for_node_job(node_job_uuid)
         message_dict = {
             'uuid': node_job_uuid.hex,
@@ -418,7 +419,7 @@ class NodeJobStatusManager:
         }
         self._send_message_to_computing_node(computing_node_uuid, json.dumps(message_dict))
 
-    def _send_message_to_computing_node(self, computing_node_uuid, message):
+    def _send_message_to_computing_node(self, computing_node_uuid: UUID, message):
         """
         Sends message to topic for computing node
         :param computing_node_uuid: compurtingg node uuid

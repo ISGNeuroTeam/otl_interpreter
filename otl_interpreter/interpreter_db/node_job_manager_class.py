@@ -196,13 +196,13 @@ class NodeJobManager:
             return None
 
         return {
-            'uuid': node_job.uuid,
+            'uuid': node_job.uuid.hex,
             'status': node_job.status,
             'computing_node_type': node_job.computing_node_type,
             'commands': node_job.commands,
             'storage': node_job.result.storage,
             'path': node_job.result.path,
-            'user_guid': node_job.otl_job.user_guid
+            'user_guid': node_job.otl_job.user_guid.hex
         }
 
     @staticmethod

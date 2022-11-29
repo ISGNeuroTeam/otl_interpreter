@@ -118,6 +118,16 @@ class TestPriorityQueue(BaseTestCases.TestPriorityQueue):
     def setUp(self) -> None:
         self.queue = PriorityQueue()
 
+def _get_test_computing_node_dict(status=None, computing_node_type=None):
+    return {
+        'uuid': uuid.uuid4(),
+        'status': status or "FINISHED",
+        'computing_node_type': computing_node_type or "POST_PROCESSING",
+        'commands': [],
+        'storage': "shared_post_processing",
+        'path': "fff",
+        'user_guid': uuid.uuid4()
+    }
 
 class BaseNodeJobQueueTestCases:
 
@@ -132,14 +142,9 @@ class BaseNodeJobQueueTestCases:
             self.assertEqual(type(node_job_queue.queues['SPARK']), RedisPriorityQueue)
 
         def test_simple_add_pop(self):
-            node_job_dict1 = {
-                'uuid': uuid.uuid4(),
-                'computing_node_type': 'SPARK'
-            }
-            node_job_dict2 = {
-                'uuid': uuid.uuid4(),
-                'computing_node_type': 'SPARK'
-            }
+            node_job_dict1 = _get_test_computing_node_dict(computing_node_type='SPARK')
+            node_job_dict2 = _get_test_computing_node_dict(computing_node_type='SPARK')
+
             score = datetime.datetime.now().timestamp()
             self.node_job_queue.add(node_job_dict1, score)
             score2 = datetime.datetime.now().timestamp() + 1
@@ -153,10 +158,9 @@ class BaseNodeJobQueueTestCases:
 
         def test_computing_node_type_keys(self):
             node_job_dicts = [
-                {
-                    'uuid': uuid.uuid4(),
-                    'computing_node_type': ''.join(random.choices(string.ascii_uppercase, k=random.randint(4, 10)))
-                }
+                _get_test_computing_node_dict(
+                    computing_node_type=''.join(random.choices(string.ascii_uppercase, k=random.randint(4, 10)))
+                )
                 for i in range(10)
             ]
             score = datetime.datetime.now().timestamp()

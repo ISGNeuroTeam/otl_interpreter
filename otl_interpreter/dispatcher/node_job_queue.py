@@ -1,13 +1,14 @@
 import json
+from rest_framework.renderers import JSONRenderer
+
 
 from typing import Union, Dict, Tuple
-from uuid import UUID
 
 from core.settings import REDIS_CONFIG
 
 from otl_interpreter.settings import ini_config
 from otl_interpreter.utils.priority_queue import RedisPriorityQueue, PriorityQueue
-
+from otl_interpreter.dispatcher.message_serializers.otl_job import NodeJobSerializer
 
 class DictQueue(dict):
     """
@@ -45,10 +46,9 @@ class NodeJobQueue:
         :param priority_score: any float as priority
         :return:
         """
-        # uuid serialization
-        node_job_dict = node_job_dict.copy()
-        node_job_dict['uuid'] = node_job_dict['uuid'].hex
-        self.queues[node_job_dict['computing_node_type']].add(priority_score, json.dumps(node_job_dict).encode())
+        self.queues[node_job_dict['computing_node_type']].add(
+            priority_score,  JSONRenderer().render(NodeJobSerializer(node_job_dict).data)
+        )
 
     def pop(self, computing_node_type: str) -> Tuple[dict, float]:
         """
@@ -56,10 +56,9 @@ class NodeJobQueue:
         """
         node_job_dict_bin, priority = self.queues[computing_node_type].pop(count=1, min_score=True)[0]
 
-        # uuid deserialization
-        node_job_dict = json.loads(node_job_dict_bin)
-        node_job_dict['uuid'] = UUID(node_job_dict['uuid'])
-
+        njs = NodeJobSerializer(data=json.loads(node_job_dict_bin))
+        njs.is_valid()
+        node_job_dict = njs.validated_data
         return node_job_dict, priority
 
     def node_jobs_in_queue(self, computing_node_type: str):
