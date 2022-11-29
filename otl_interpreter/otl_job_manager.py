@@ -41,7 +41,7 @@ class OtlJobManager:
         self.schema_path = schema_path
 
     def makejob(
-            self, otl_query, user_guid, tws, twf, otl_job_cache_ttl=None,
+            self, otl_query, user_guid: UUID, tws, twf, otl_job_cache_ttl=None,
             timeout=None, shared_post_processing=None, subsearch_is_node_job=None,
     ):
         """
@@ -91,12 +91,12 @@ class OtlJobManager:
             status_text=f'Otl job was decomposed on node jobs and planned'
         )
         log.info(f'Send otl job {otl_job_uuid} to dispatcher')
-        self._send_new_job_to_dispatcher(top_node_job_tree)
+        self._send_new_job_to_dispatcher(top_node_job_tree, user_guid)
 
         return otl_job_uuid, top_node_job_tree.result_address.storage_type, top_node_job_tree.result_address.path
 
     @staticmethod
-    def _send_new_job_to_dispatcher(top_node_job_tree):
+    def _send_new_job_to_dispatcher(top_node_job_tree, user_guid: UUID):
         """
         sends message to dispatcher with list of NodeJobs to execute in first order
         """
@@ -118,6 +118,7 @@ class OtlJobManager:
                         'commands': node_job_tree.as_command_dict_list(),
                         'storage': node_job_tree.result_address.storage_type,
                         'path': node_job_tree.result_address.path,
+                        'user_guid': user_guid.hex,
                     }
                     for node_job_tree in independent_node_job_trees
                 ]

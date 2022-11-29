@@ -201,7 +201,8 @@ class NodeJobManager:
             'computing_node_type': node_job.computing_node_type,
             'commands': node_job.commands,
             'storage': node_job.result.storage,
-            'path': node_job.result.path
+            'path': node_job.result.path,
+            'user_guid': node_job.otl_job.user_guid
         }
 
     @staticmethod
