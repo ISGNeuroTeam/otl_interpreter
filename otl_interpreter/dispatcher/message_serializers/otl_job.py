@@ -20,6 +20,7 @@ class NodeJobSerializer(serializers.Serializer):
     commands = serializers.ListField()
     storage = serializers.ChoiceField(choices=ResultStorage.choices)
     path = serializers.CharField()
+    user_guid = serializers.UUIDField()
 
 
 class NewOtlJobCommand(serializers.Serializer):
