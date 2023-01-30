@@ -141,7 +141,8 @@ class ComputingNodeControlHandler(MessageHandler):
         if computing_node_uuid not in computing_node_pool:
             # if registered then set active and add to computing node pool
             if computing_node_uuid in await all_node_uuids():
-                node_activate(computing_node_uuid)
+                log.info(f'Inactive node {computing_node_uuid} sent resource status. Making it active again')
+                await node_activate(computing_node_uuid)
                 computing_node_dict = await get_computing_node_dict(computing_node_uuid)
                 computing_node_pool.add_computing_node(
                     computing_node_uuid, computing_node_dict['type'],
@@ -155,6 +156,9 @@ class ComputingNodeControlHandler(MessageHandler):
         computing_node_pool.update_node_resources(computing_node_uuid, resources)
 
     async def process_unregister(self, computing_node_uuid, unregister_command: UnregisterComputingNodeCommand):
+        log.info(f'Unregister node {computing_node_uuid}')
+        computing_node_pool.del_computing_node(computing_node_uuid)
+
         # only one instance of dispatcher put node information in database
         unregister_node_lock = Lock(
             key=f'unregister_computing_node_{computing_node_uuid}'
@@ -163,7 +167,6 @@ class ComputingNodeControlHandler(MessageHandler):
             await node_deactivate(computing_node_uuid)
             unregister_node_lock.release()
 
-        computing_node_pool.del_computing_node(computing_node_uuid)
         await self.node_job_status_manager.inactive_computing_node(computing_node_uuid)
 
     async def check_computing_node_health(self):
