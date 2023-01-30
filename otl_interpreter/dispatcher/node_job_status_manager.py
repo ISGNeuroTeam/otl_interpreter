@@ -48,7 +48,9 @@ allowed_state_transfer_table = {
         NodeJobStatus.FINISHED, NodeJobStatus.FAILED, NodeJobStatus.CANCELED
     },
     NodeJobStatus.FINISHED: {},
-    NodeJobStatus.CANCELED: {},
+    # if nodejob canceled and result is awaited by other nodejobs
+    # then nodejob do not cancel on computing node and may be finished or FAILED
+    NodeJobStatus.CANCELED: {NodeJobStatus.FINISHED, NodeJobStatus.FAILED},
     NodeJobStatus.FAILED: {NodeJobStatus.CANCELED, },
 }
 
@@ -297,10 +299,6 @@ class NodeJobStatusManager:
         self._check_job_queue(node_job_dict['computing_node_type'])
 
     def _on_canceled(self, node_job_uuid, node_job_dict=None):
-        # TODO
-        #  IF NODE JOB WITH AWAITING RESULT WAS CANCELED RUN FIRST NODE JOB WHO WAITING SAME RESULT
-        #  and set result not_exist
-
         pass
 
     def _on_from_running_to_cancel(self, node_job_uuid, node_job_dict=None):
@@ -315,10 +313,10 @@ class NodeJobStatusManager:
         waiting_same_result_node_jobs = node_job_manager.get_waiting_same_result_node_jobs(
             node_job_dict['storage'], node_job_dict['path']
         )
+        # if nodejob canceled but results are awaited by other nodejob then do not actually cancel it/
         if len(waiting_same_result_node_jobs) == 0:
-            self._cancel_running_node_job(node_job_uuid)
-
             node_job_manager.set_result_status(node_job_dict['storage'], node_job_dict['path'], ResultStatus.NOT_EXIST)
+            self._cancel_running_node_job(node_job_uuid)
 
             # also check job queue because job was canceled and resources release
             self._check_job_queue(node_job_dict['computing_node_type'])
