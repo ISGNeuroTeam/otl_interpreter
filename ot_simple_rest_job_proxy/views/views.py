@@ -52,14 +52,20 @@ def post_dict_decor(f):
         # django forbids access to body property after reading POST,
         # so to get post data without error in proxy_view we are parsing body
         data = BytesIO(request.body)
+        if request._encoding is None:
+            request_encoding = 'utf8'
+        else:
+            request_encoding = request._encoding
+
         if request.content_type == 'application/x-www-form-urlencoded':
-            post_dict = QueryDict(request._body, encoding=request._encoding)
+            post_dict = QueryDict(request._body, encoding=request_encoding)
         elif request.content_type == 'multipart/form-data':
             post_dict, _ = request.parse_file_upload(request.META, data)
         elif request.content_type == 'application/json' or request.content_type == 'text/plain':
-            post_dict = json.loads(request._body.decode(request._encoding))
+            post_dict = json.loads(request._body.decode(request_encoding))
         else:
-            post_dict = QueryDict(encoding=request._encoding)
+
+            post_dict = QueryDict(encoding=request_encoding)
         request.post_dict = post_dict
         return f(request, *args, **kwargs)
 
