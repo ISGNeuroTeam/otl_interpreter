@@ -2,6 +2,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.3.1] - 2023-01-31
+### Changed
+- When node job failed put only node job uuid in status text instead of entire body
+- Computing node activated when getting resource info 
+- Set default encoding to utf-8 in ot_simple_rest_job_proxy
+
+### Fixed
+- Fixed error when nodejob canceled and awated results  nodejobs exists
+- Delete otl job info from redis when otl job deleted
+
+
 ## [1.3.0] - 2022-12-02
 ### Added
 - Add user guid in node job dictionary
