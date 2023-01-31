@@ -329,7 +329,7 @@ class NodeJobStatusManager:
         otl_job_manager.change_otl_job_status(
             otl_job_uuid,
             JobStatus.FAILED,
-            f'Failed because of node job: {str(node_job_manager.get_node_job_dict(node_job_uuid))}'
+            f'Failed because of node job: {node_job_uuid}'
         )
         # find other running jobs and cancel them
         running_jobs_uuids = node_job_manager.get_node_jobs_for_cancelling(node_job_uuid)
@@ -339,7 +339,7 @@ class NodeJobStatusManager:
         for job_uuid in running_jobs_uuids:
             self._change_node_job_status(
                 job_uuid, NodeJobStatus.CANCELED,
-                f'Cancelled because of node job fail: {str(node_job_manager.get_node_job_dict(node_job_uuid))}'
+                f'Cancelled because of node job fail: {node_job_uuid}'
             )
 
         # also set failed waiting the same result node jobs
