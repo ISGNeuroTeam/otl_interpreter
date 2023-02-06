@@ -4,6 +4,8 @@ import logging
 from datetime import timedelta
 from django.db.models import F
 from django.db import transaction
+from django.db.utils import IntegrityError
+
 from .models import NodeJob, NodeJobResult, OtlJob, ComputingNode
 from .enums import NodeJobStatus, END_STATUSES, ResultStatus, ResultStorage
 
@@ -43,7 +45,7 @@ class NodeJobManager:
 
             result_address = node_job_tree.result_address
             if result_address:
-                node_job_result = NodeJobManager._find_or_create_node_job_result(
+                node_job_result = self._find_or_create_node_job_result(
                     result_address.path,
                     result_address.storage_type,
                     cache_ttl
@@ -65,18 +67,12 @@ class NodeJobManager:
             node_job.save()
             node_job_for_job_tree[node_job_tree] = node_job
 
-    @staticmethod
-    def _find_or_create_node_job_result(path, storage_type, cache_ttl):
+    def _find_or_create_node_job_result(self, path, storage_type, cache_ttl):
         """
         If such result already exists returns it or create a new one
         """
         try:
-            node_job_result = NodeJobResult.objects.get(
-                path=path, storage=storage_type
-            )
-            # not allow new query reduce ttl of old query
-            node_job_result.ttl = timedelta(seconds=max(node_job_result.ttl.seconds, cache_ttl))
-            log.info(f'Find node job with same result, it is in {node_job_result.status} state')
+            node_job_result = self._find_existing_node_job_result(path, storage_type, cache_ttl)
 
         except NodeJobResult.DoesNotExist:
             node_job_result = NodeJobResult(
@@ -84,8 +80,21 @@ class NodeJobManager:
                 path=path,
                 ttl=timedelta(seconds=cache_ttl),
             )
-        node_job_result.last_touched_timestamp = datetime.datetime.now()
-        node_job_result.save()
+        try:
+            node_job_result.last_touched_timestamp = datetime.datetime.now()
+            node_job_result.save()
+        except IntegrityError as err:  # when two processes try simultaneously create NodeJobResult object
+            node_job_result = self._find_existing_node_job_result(path, storage_type, cache_ttl)
+        return node_job_result
+
+    @staticmethod
+    def _find_existing_node_job_result(path, storage_type, cache_ttl):
+        node_job_result = NodeJobResult.objects.get(
+            path=path, storage=storage_type
+        )
+        # not allow new query reduce ttl of old query
+        node_job_result.ttl = timedelta(seconds=max(node_job_result.ttl.seconds, cache_ttl))
+        log.info(f'Find node job with same result, it is in {node_job_result.status} state')
         return node_job_result
 
     @staticmethod
