@@ -90,7 +90,7 @@ class OtlJobManager:
         Returns list of otl job uuids
         """
         jobs_with_expired_timeout = OtlJob.objects.filter(
-            status=JobStatus.RUNNING
+            status__in=(JobStatus.RUNNING, JobStatus.PLANNED)
         ).exclude(
             timeout=datetime.timedelta(seconds=0)
         ).filter(created_time__lt=datetime.datetime.now() - F('timeout')).values_list('uuid', flat=True)
