@@ -85,6 +85,11 @@ def remove_old_otl_query_info_from_db():
         job_proxy_manager.delete_query_info(uuid.hex)
 
 
+@app.task
+def remove_forever_calculating_results():
+    db_node_job_manager.remove_failed_forever_calculating_results()
+
+
 @app.task()
 def cancel_otl_job_by_timeout():
     """

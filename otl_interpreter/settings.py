@@ -84,6 +84,12 @@ CELERY_BEAT_SCHEDULE = {
         ),
         'task': 'otl_interpreter.tasks.remove_old_otl_query_info_from_db',
     },
+    'remove_forever_calculating_results': {
+        'schedule': datetime.timedelta(
+            minutes=5
+        ),
+        'task': 'otl_interpreter.tasks.remove_forever_calculating_results',
+    },
     'cancel_otl_job_by_timeout': {
         'schedule': datetime.timedelta(
             seconds=15

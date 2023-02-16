@@ -5,6 +5,7 @@ from datetime import timedelta
 from django.db.models import F
 from django.db import transaction
 from django.db.utils import IntegrityError
+from django.utils import timezone
 
 from .models import NodeJob, NodeJobResult, OtlJob, ComputingNode
 from .enums import NodeJobStatus, END_STATUSES, ResultStatus, ResultStorage
@@ -243,6 +244,22 @@ class NodeJobManager:
             results.update(status=ResultStatus.NOT_EXIST)
 
         return result_list
+
+    @staticmethod
+    def remove_failed_forever_calculating_results():
+        # find calculating results
+        # find created time and timeout from otl jobs
+        # remove all results where created time + timeout + 60 sec < now
+        calculating_results = NodeJobResult.objects.filter(status=ResultStatus.CALCULATING)
+        for result in calculating_results:
+            otl_jobs = OtlJob.objects.filter(nodejobs__result=result)
+            for otl_job in otl_jobs:
+                time1 = otl_job.created_time + otl_job.timeout + datetime.timedelta(seconds=60)
+                if otl_job.created_time + otl_job.timeout + datetime.timedelta(seconds=120) > timezone.now():
+                    break
+            else:  # no break
+                result.status = ResultStatus.NOT_EXIST
+                result.save()
 
     @staticmethod
     def set_result_status(storage: ResultStorage, path, status: ResultStatus):
