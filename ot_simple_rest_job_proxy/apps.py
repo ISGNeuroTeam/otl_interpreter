@@ -14,3 +14,13 @@ class SimpleRestJobProxyConfig(AppConfig):
         @receiver(post_delete, sender=OtlJob)
         def delete_info_from_redis(sender, instance, using, **kwargs):
             job_proxy_manager.delete_query_info(instance.uuid.hex)
+
+        import logging
+        log = logging.getLogger('otl_interpreter')
+        try:
+            from otl_interpreter.setup import __version__
+            log.error(f'Plugin otl_interpreter is ready. Version is {__version__}')
+        except ImportError as err:
+            log.error(f'Plugin otl_interpreter is ready. Version is unknown')
+
+

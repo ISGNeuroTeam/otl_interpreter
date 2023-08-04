@@ -1,9 +1,11 @@
 import logging
 import datetime
 
+from typing import Optional
 from uuid import UUID
 from django.db.models import F
-from .models import OtlJob, NodeJob
+from django.core.exceptions import ObjectDoesNotExist
+from .models import OtlJob, NodeJob, NodeJobResult
 from .enums import JobStatus, NodeJobStatus
 
 log = logging.getLogger('otl_interpreter.interpreter_db')
@@ -26,9 +28,13 @@ class OtlJobManager:
         otl_job = OtlJob.objects.get(uuid=otl_job_id)
         return otl_job.status, otl_job.status_text
 
-    def get_result(self, otl_job_id: UUID):
-        otl_job = OtlJob.objects.get(uuid=otl_job_id)
-        root_job = NodeJob.objects.get(otl_job=otl_job, next_job=None)
+    def get_result(self, otl_job_id: UUID) -> Optional[NodeJobResult]:
+        try:
+            otl_job = OtlJob.objects.get(uuid=otl_job_id)
+            root_job = NodeJob.objects.get(otl_job=otl_job, next_job=None)
+        except ObjectDoesNotExist as err:
+            log.warning(f'Otl job with uuid = {str(otl_job_id)} not found in database. \n{str(err)}')
+            return None
         return root_job.result
 
     def cancel_job(self, otl_job_id: UUID, status_text=None):

@@ -11,10 +11,7 @@ ENV PYTHONPATH=/complex_rest/complex_rest
 
 RUN mkdir /complex_rest
 
-ADD ./docs/docker/complex_rest/id_rsa_plugin /root/.ssh/id_rsa_plugin
-RUN chmod 600 /root/.ssh/id_rsa_plugin
-RUN ssh-keyscan -t rsa github.com >> /root/.ssh/known_hosts
-RUN eval "$(ssh-agent -s)" && ssh-add /root/.ssh/id_rsa_plugin && git clone git@github.com:ISGNeuroTeam/complex_rest.git
+RUN git clone  https://github.com/ISGNeuroTeam/complex_rest.git
 
 RUN chmod -R 0777 /complex_rest
 WORKDIR /complex_rest
