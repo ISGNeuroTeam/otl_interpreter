@@ -51,9 +51,19 @@ default_ini_config = {
     }
 }
 
+PROJECT_DIR = Path(__file__).parent
+
+# try to read path to config from environment
+conf_path_env = os.environ.get('otl_interpreter_conf', None)
+
+if conf_path_env is None:
+    conf_path = PROJECT_DIR / 'otl_interpreter.conf'
+else:
+    conf_path = Path(conf_path_env).resolve()
+
 config_parser = configparser.ConfigParser()
 
-config_parser.read(Path(__file__).parent / 'otl_interpreter.conf')
+config_parser.read(conf_path)
 
 ini_config = merge_ini_config_with_defaults(config_parser, default_ini_config)
 
