@@ -25,6 +25,7 @@ ENV_PYTHON = venv/bin/python3.9
 
 define clean_docker_containers
 	@echo "Stopping and removing docker containers"
+	docker network prune -f
 	docker-compose -f docker-compose-test.yml stop
 	-if [[ $$(docker ps -aq -f name=otl_interpreter) ]]; then docker rm -f $$(docker ps -aq -f name=otl_interpreter);  fi;
 endef
