@@ -88,6 +88,7 @@ venv: conda/miniconda
 	$(ENV_PYTHON) -m pip install --no-input  -r requirements.txt 	--extra-index-url http://s.dev.isgneuro.com/repository/ot.platform/simple --trusted-host s.dev.isgneuro.com
 
 venv.tar.gz: venv conda/miniconda/bin/conda-pack
+	rm -f ./venv.tar.gz
 	$(CONDA) pack -p ./venv -o ./venv.tar.gz
 
 otl_interpreter/venv: venv.tar.gz
