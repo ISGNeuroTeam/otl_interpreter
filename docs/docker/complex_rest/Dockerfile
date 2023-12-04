@@ -1,4 +1,7 @@
 FROM python:3.9.7
+RUN apt-get update
+RUN apt-get install -y postgresql-client
+
 ENV PYTHONUNBUFFERED=1
 
 ENV DATABASE=postgres
@@ -8,6 +11,7 @@ ENV DB_HOST=postgres
 ENV DB_PORT=5432
 ENV REST_CONF=/complex_rest/docs/docker_dev/complex_rest/rest.conf
 ENV PYTHONPATH=/complex_rest/complex_rest
+
 
 RUN mkdir /complex_rest
 

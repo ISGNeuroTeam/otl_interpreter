@@ -110,7 +110,7 @@ services:
     build:
       context: ./
       dockerfile: ./docs/docker/complex_rest/Dockerfile
-    image: "complex_rest_for_plugin:1.0.2"
+    image: "complex_rest_for_plugin:1.1.2"
 
     volumes:
       - ./otl_interpreter:/complex_rest/plugins/otl_interpreter
