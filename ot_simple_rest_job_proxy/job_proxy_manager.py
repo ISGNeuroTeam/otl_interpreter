@@ -93,7 +93,7 @@ class JobProxyManager:
         otl_query_dict_key = self._make_key_for_query(otl_query, tws, twf)
 
         if otl_query_dict_key not in self.new_platform_queries:
-            return {"status": "notfound", "error": "Job is not found"}
+            return {"status": "notfound", "error": "Job proxy manager: Job is not found in arch2.0 job list"}
         query = self.new_platform_queries[otl_query_dict_key]
 
         if query['status'] == 'failed':

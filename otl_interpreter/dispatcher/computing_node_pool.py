@@ -98,9 +98,10 @@ class ComputingNodePool:
         ;:param uuid: node uuid
         :return:
         """
-        node_type = self.nodes[uuid].type
-        del self.nodes_by_types[node_type][uuid]
-        del self.nodes[uuid]
+        if uuid in self.nodes:
+            node_type = self.nodes[uuid].type
+            del self.nodes_by_types[node_type][uuid]
+            del self.nodes[uuid]
 
     def get_least_loaded_node(self, node_type, only_local_nodes=False):
         """

@@ -25,6 +25,7 @@ ENV_PYTHON = venv/bin/python3.9
 
 define clean_docker_containers
 	@echo "Stopping and removing docker containers"
+	docker network prune -f
 	docker-compose -f docker-compose-test.yml stop
 	-if [[ $$(docker ps -aq -f name=otl_interpreter) ]]; then docker rm -f $$(docker ps -aq -f name=otl_interpreter);  fi;
 endef
@@ -63,7 +64,7 @@ otl_interpreter.tar.gz: build
 
 build: make_build
 
-make_build: venv venv_pack
+make_build: venv venv.tar.gz
 	# required section
 	echo make_build
 	mkdir -p make_build
@@ -80,16 +81,17 @@ make_build: venv venv_pack
 clean_build:
 	rm -rf make_build
 
-venv: clean_venv conda/miniconda
+venv: conda/miniconda
 	echo Create venv
 	$(CONDA) create --copy -p ./venv -y
 	$(CONDA) install -p ./venv python==3.9.7 -y
 	$(ENV_PYTHON) -m pip install --no-input  -r requirements.txt 	--extra-index-url http://s.dev.isgneuro.com/repository/ot.platform/simple --trusted-host s.dev.isgneuro.com
 
-venv_pack: venv conda/miniconda/bin/conda-pack
+venv.tar.gz: venv conda/miniconda/bin/conda-pack
+	rm -f ./venv.tar.gz
 	$(CONDA) pack -p ./venv -o ./venv.tar.gz
 
-otl_interpreter/venv: venv_pack
+otl_interpreter/venv: venv.tar.gz
 	mkdir -p otl_interpreter/venv
 	tar -xzf ./venv.tar.gz -C otl_interpreter/venv
 
@@ -113,6 +115,13 @@ docker_test: logs otl_interpreter/venv
 	@echo "Testing..."
 	CURRENT_UID=$$(id -u):$$(id -g) docker-compose -f docker-compose-test.yml run --rm  complex_rest python ./complex_rest/manage.py test ./tests --settings=core.settings.test --no-input
 	$(call clean_docker_containers)
+
+docker_dev: otl_interpreter/venv
+	$(call clean_docker_containers)
+	CURRENT_UID=$$(id -u):$$(id -g) docker-compose -f docker-compose-dev.yml up -d
+
+docker_dev_stop:
+	CURRENT_UID=$$(id -u):$$(id -g) docker-compose -f docker-compose-dev.yml stop
 
 clean_docker_test:
 	$(call clean_docker_containers)
