@@ -412,10 +412,10 @@ class NodeJobStatusManager:
     def _cancel_running_node_job(self, node_job_uuid: UUID):
         computing_node_uuid = node_job_manager.get_computing_node_for_node_job(node_job_uuid)
         message_dict = {
-            'uuid': node_job_uuid.hex,
+            'uuid': node_job_uuid,
             'status': NodeJobStatus.CANCELED
         }
-        self._send_message_to_computing_node(computing_node_uuid, json.dumps(message_dict))
+        self._send_message_to_computing_node(computing_node_uuid, JSONRenderer().render(message_dict))
 
     def _send_message_to_computing_node(self, computing_node_uuid: UUID, message):
         """

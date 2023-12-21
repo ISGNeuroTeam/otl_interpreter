@@ -2,7 +2,7 @@
 #.SILENT:
 SHELL = /bin/bash
 
-.PHONY: clean clean_build clean_pack clean_test clean_docker_test clean_venv test docker_test clean_otl_interpreter_venv install_conda install_conda_pack
+.PHONY: clean clean_build clean_pack clean_test clean_docker_test clean_venv test docker_test clean_otl_interpreter_venv install_conda install_conda_pack docker_up docker_down
 
 all:
 	echo -e "Required section:\n\
@@ -120,8 +120,13 @@ docker_dev: otl_interpreter/venv
 	$(call clean_docker_containers)
 	CURRENT_UID=$$(id -u):$$(id -g) docker-compose -f docker-compose-dev.yml up -d
 
+docker_up:
+	CURRENT_UID=$$(id -u):$$(id -g) docker-compose -f docker-compose-dev.yml up -d
+
 docker_dev_stop:
 	CURRENT_UID=$$(id -u):$$(id -g) docker-compose -f docker-compose-dev.yml stop
+
+docker_down: docker_dev_stop
 
 clean_docker_test:
 	$(call clean_docker_containers)
